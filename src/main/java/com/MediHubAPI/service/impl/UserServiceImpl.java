@@ -13,8 +13,12 @@ import com.MediHubAPI.model.User;
 import com.MediHubAPI.repository.RoleRepository;
 import com.MediHubAPI.repository.UserRepository;
 import com.MediHubAPI.service.UserService;
+import com.MediHubAPI.specification.UserSpecification;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -138,6 +142,7 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+
     @Override
     public UserDto getUserById(Long id) {
         User user = userRepository.findById(id)
@@ -196,5 +201,24 @@ public class UserServiceImpl implements UserService {
                         role + " with ID " + id + " not found"
                 ));
     }
+
+    @Override
+    public Page<UserDto> searchPatients(String keyword, String specialization, Pageable pageable) {
+        Specification<User> spec = (root, query, cb) -> cb.conjunction();
+
+        spec = spec.and(UserSpecification.hasRole(ERole.PATIENT));
+
+        if (keyword != null && !keyword.isEmpty()) {
+            spec = spec.and(UserSpecification.searchByKeyword(keyword));
+        }
+
+        if (specialization != null && !specialization.isEmpty()) {
+            spec = spec.and(UserSpecification.hasSpecialization(specialization));
+        }
+
+        return userRepository.findAll(spec, pageable)
+                .map(this::mapToDTO);
+    }
+
 
 }
