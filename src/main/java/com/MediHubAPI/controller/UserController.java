@@ -1,20 +1,23 @@
 package com.MediHubAPI.controller;
 
-import com.MediHubAPI.dto.UserCreateDto;
-import com.MediHubAPI.dto.UserDto;
-import com.MediHubAPI.dto.UserStatusUpdateDto;
+import com.MediHubAPI.dto.*;
 import com.MediHubAPI.exception.HospitalAPIException;
 import com.MediHubAPI.exception.ResourceNotFoundException;
 import com.MediHubAPI.model.ERole;
+import com.MediHubAPI.model.Patient;
+import com.MediHubAPI.service.PatientService;
 import com.MediHubAPI.service.UserService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
 import java.util.List;
@@ -28,9 +31,11 @@ public class UserController {
 
     private final UserService userService;
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+    private final PatientService patientService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, PatientService patientService) {
         this.userService = userService;
+        this.patientService = patientService;
     }
 
     @PostMapping
@@ -44,6 +49,17 @@ public class UserController {
             logger.error("Unexpected error creating user", e);
             throw new HospitalAPIException(HttpStatus.INTERNAL_SERVER_ERROR, "Error creating user");
         }
+    }
+
+
+    /** Create patient with JSON + photo in the same request */
+    @PostMapping(value = "/registerPatient", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PatientResponseDto> registerPatient(
+            @RequestPart("data") @Valid PatientCreateDto data,
+            @RequestPart(value = "photo", required = false) MultipartFile photo) {
+
+        PatientResponseDto saved = patientService.registerPatient(data, photo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
 
@@ -140,5 +156,19 @@ public class UserController {
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(userService.searchPatients(keyword, specialization, pageable));
     }
+
+    @GetMapping("/{id}/photo")
+    public ResponseEntity<byte[]> getPatientPhoto(@PathVariable Long id) {
+        Patient patient = patientService.findById(id);
+
+        if (patient.getPhoto() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG) // or detect dynamically
+                .body(patient.getPhoto());
+    }
+
 
 }
