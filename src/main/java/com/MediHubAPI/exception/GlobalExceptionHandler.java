@@ -120,38 +120,39 @@ public class GlobalExceptionHandler {
     }
 
         // ✅ NEW: Handle invalid enum (like wrong role value)
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidFormat(HttpMessageNotReadableException ex, WebRequest request) {
-        Throwable cause = ex.getMostSpecificCause();
-        String message = "Invalid input format";
+        @ExceptionHandler(HttpMessageNotReadableException.class)
+        public ResponseEntity<ErrorResponse> handleInvalidFormat(HttpMessageNotReadableException ex, WebRequest request) {
+            Throwable cause = ex.getMostSpecificCause();
+            String message = "Invalid input format";
 
-        if (cause instanceof InvalidFormatException formatEx && formatEx.getTargetType().isEnum()) {
-            String invalidValue = formatEx.getValue().toString();
-            Class<?> enumClass = formatEx.getTargetType();
+            if (cause instanceof InvalidFormatException formatEx && formatEx.getTargetType().isEnum()) {
+                String invalidValue = formatEx.getValue().toString();
+                Class<?> enumClass = formatEx.getTargetType();
 
-            if (enumClass.getSimpleName().equals("ERole")) {
-                boolean isCaseIssue = java.util.Arrays.stream(com.MediHubAPI.model.ERole.values())
-                        .anyMatch(role -> role.name().equalsIgnoreCase(invalidValue));
+                if (enumClass.getSimpleName().equals("ERole")) {
+                    boolean isCaseIssue = java.util.Arrays.stream(com.MediHubAPI.model.ERole.values())
+                            .anyMatch(role -> role.name().equalsIgnoreCase(invalidValue));
 
-                if (isCaseIssue) {
-                    message = "Please enter the role in uppercase.";
+                    if (isCaseIssue) {
+                        message = "Please enter the role in uppercase.";
+                    } else {
+                        message = "Role not found.";
+                    }
                 } else {
-                    message = "Role not found.";
+                    // ✅ Here we include the enum type name and the invalid value
+                    message = String.format("Invalid value '%s' for enum %s.", invalidValue, enumClass.getSimpleName());
                 }
-            } else {
-                message = "Invalid enum value.";
             }
-        }
 
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                message,
-                request.getDescription(false),
-                Instant.now()
-        );
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
-    }
+            ErrorResponse error = new ErrorResponse(
+                    HttpStatus.BAD_REQUEST.value(),
+                    HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                    message,
+                    request.getDescription(false),
+                    Instant.now()
+            );
+            return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+        }
 
 
 

@@ -29,7 +29,7 @@ public class PatientCreateDto {
 
 
     @NotNull(message = "Date of birth is mandatory")
-    @Future(message = "Date of birth must be in the past")
+    @Past(message = "Date of birth must be in the past")
     private LocalDate dateOfBirth;
 
 
