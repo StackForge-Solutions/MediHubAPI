@@ -15,6 +15,7 @@ public class DoctorScheduleDto {
     private Long id;
     private String name;
     private String specialization;
+    private Long departmentId;
     private String avatarUrl;
     private List<HourlySlotGroupDto> timeSlots;
 }
