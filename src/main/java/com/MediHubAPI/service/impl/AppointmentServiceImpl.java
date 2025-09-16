@@ -130,7 +130,7 @@ public class AppointmentServiceImpl implements AppointmentService {
             List<Predicate> predicates = new ArrayList<>();
 
             LocalDate today = LocalDate.now();
-            LocalDate startDate = null;
+            LocalDate startDate =  null;
             LocalDate endDate = null;
 
             // Determine date filtering logic

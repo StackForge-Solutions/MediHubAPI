@@ -20,6 +20,9 @@ public class PatientCreateDto {
     @NotBlank(message = "Last name is mandatory")
     private String lastName;
 
+    @NotBlank(message = "Password is mandatory")
+    private String password;
+
     @NotBlank(message = "Mobile number is mandatory")
     @Pattern(regexp = "\\d{10}", message = "Mobile number must be exactly 10 digits")
     private String mobileNumber;
@@ -29,7 +32,7 @@ public class PatientCreateDto {
 
 
     @NotNull(message = "Date of birth is mandatory")
-    @Future(message = "Date of birth must be in the past")
+    @Past(message = "Date of birth must be in the past")
     private LocalDate dateOfBirth;
 
 

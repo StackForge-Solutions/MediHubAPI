@@ -19,9 +19,6 @@ import java.util.Optional;
     Optional<User> findByUsernameOrEmailWithRoles(@Param("value") String value);
     boolean existsByRoles_Name(ERole roleName);
 
-
-
-
-
-
+    // For hospitalId uniqueness during generation
+    boolean existsByHospitalId(String hospitalId);
 }

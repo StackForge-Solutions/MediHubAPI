@@ -3,7 +3,7 @@ package com.MediHubAPI.service;
 
 import com.MediHubAPI.dto.PatientCreateDto;
 import com.MediHubAPI.dto.PatientResponseDto;
-import com.MediHubAPI.model.Patient;
+import com.MediHubAPI.model.User;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface PatientService {
@@ -23,5 +23,5 @@ public interface PatientService {
     /** Get the stored photo’s content type, or null if none. */
     String getPatientPhotoContentType(Long id);
 
-    Patient findById(Long id);
+    User findById(Long id);
 }

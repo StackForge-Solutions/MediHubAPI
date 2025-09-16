@@ -4,7 +4,7 @@ import com.MediHubAPI.dto.*;
 import com.MediHubAPI.exception.HospitalAPIException;
 import com.MediHubAPI.exception.ResourceNotFoundException;
 import com.MediHubAPI.model.ERole;
-import com.MediHubAPI.model.Patient;
+import com.MediHubAPI.model.User;
 import com.MediHubAPI.service.PatientService;
 import com.MediHubAPI.service.UserService;
 import jakarta.validation.Valid;
@@ -159,7 +159,7 @@ public class UserController {
 
     @GetMapping("/{id}/photo")
     public ResponseEntity<byte[]> getPatientPhoto(@PathVariable Long id) {
-        Patient patient = patientService.findById(id);
+        User patient = patientService.findById(id);
 
         if (patient.getPhoto() == null) {
             return ResponseEntity.notFound().build();
