@@ -1,12 +1,20 @@
 package com.MediHubAPI.service;
 
-public interface SmsService {
-    void notifyAppointmentRescheduled(Long appointmentId, Long patientUserId,
-                                      java.time.LocalDate date, java.time.LocalTime newStart,
-                                      String reason);
+import java.time.LocalDate;
+import java.time.LocalTime;
 
-    static SmsService noop() {
-        return (a, b, c, d, e) -> {
-        };
-    }
+/**
+ * Contract for sending SMS notifications.
+ */
+public interface SmsService {
+
+    /**
+     * Notify patient that appointment has been rescheduled.
+     * Implementation should lookup patient contact or accept phone if you prefer.
+     */
+    void notifyAppointmentRescheduled(Long appointmentId,
+                                      Long patientUserId,
+                                      LocalDate date,
+                                      LocalTime newStart,
+                                      String reason);
 }

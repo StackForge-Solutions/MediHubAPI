@@ -5,7 +5,7 @@ import com.MediHubAPI.dto.PatientResponseDto;
 import com.MediHubAPI.exception.HospitalAPIException;
 import com.MediHubAPI.exception.ResourceNotFoundException;
 import com.MediHubAPI.model.*;
- import com.MediHubAPI.repository.SpecializationRepository;
+import com.MediHubAPI.repository.SpecializationRepository;
 import com.MediHubAPI.repository.UserRepository;
 import com.MediHubAPI.service.PatientService;
 import jakarta.transaction.Transactional;
@@ -181,7 +181,6 @@ public class PatientServiceImpl implements PatientService {
 //    }
 
 
-
     @Override
     @Transactional
     public void updatePatientPhoto(Long id, MultipartFile photo) {
@@ -218,7 +217,7 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-     public String getPatientPhotoContentType(Long id) {
+    public String getPatientPhotoContentType(Long id) {
         User p = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
         return p.getPhotoContentType();
@@ -239,7 +238,7 @@ public class PatientServiceImpl implements PatientService {
         if (p.getConsultingDoctor() != null) {
             User d = p.getConsultingDoctor();
             String fn = d.getFirstName() != null ? d.getFirstName() : "";
-            String ln = d.getLastName()  != null ? d.getLastName()  : "";
+            String ln = d.getLastName() != null ? d.getLastName() : "";
             doctorName = (fn + " " + ln).trim();
         }
 
@@ -288,10 +287,15 @@ public class PatientServiceImpl implements PatientService {
     private String normalizeUnit(String unit) {
         if (!StringUtils.hasText(unit)) return null;
         String u = unit.trim().toLowerCase(Locale.ROOT);
-        return switch (u) { case "kg", "g", "lb" -> u; default -> null; };
+        return switch (u) {
+            case "kg", "g", "lb" -> u;
+            default -> null;
+        };
     }
 
-    /** Create a unique hospital id like PAT-2025-1234 */
+    /**
+     * Create a unique hospital id like PAT-2025-1234
+     */
     private String generateUniqueHospitalId() {
         String year = String.valueOf(LocalDateTime.now().getYear());
         String hid;
@@ -299,7 +303,7 @@ public class PatientServiceImpl implements PatientService {
         int attempts = 0;
         do {
             String tail = String.format(Locale.ROOT, "%04d",
-                    Math.abs((int)(System.nanoTime() % 10000)));
+                    Math.abs((int) (System.nanoTime() % 10000)));
             hid = "PAT-" + year + "-" + tail;
             attempts++;
         } while (userRepository.existsByHospitalId(hid) && attempts < maxAttempts);

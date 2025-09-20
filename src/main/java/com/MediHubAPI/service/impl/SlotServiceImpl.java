@@ -33,9 +33,8 @@ public class SlotServiceImpl implements SlotService {
     private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
+    private final SmsService smsService;
 
-    // (Optional) wire an SmsService; you can stub now and implement later
-    private final SmsService smsService = SmsService.noop(); // replace with @Autowired when ready
 
     @Transactional
     public ShiftAppointmentsResult shiftSlots(Long doctorId, SlotShiftRequestDto request) {
@@ -55,8 +54,6 @@ public class SlotServiceImpl implements SlotService {
 
         List<Slot> candidates = all.stream()
                 .filter(s -> !s.getStartTime().isBefore(request.getStartingFrom()))
-//                .filter(s -> request.isIncludeBlocked() || s.getStatus() != SlotStatus.BLOCKED)
-//                .filter(s -> !request.isOnlyBooked() || s.getAppointment() != null)
                 .toList();
 
         // Windows occupied by non-candidates (real external conflicts)
