@@ -271,7 +271,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                             .id(doctor.getId())
                             .name("Dr. " + doctor.getFirstName() + " " + doctor.getLastName())
                             .specialization(doctor.getSpecialization() != null ? doctor.getSpecialization().getName() : "General")
-                            .departmentId(doctor.getSpecialization().getId() !=null ?doctor.getSpecialization().getId() : 0)
+                            .departmentId(doctor.getSpecialization().getId() != null ?doctor.getSpecialization().getId() : 0)
                             .avatarUrl("https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-" + (doctor.getId() % 6 + 1) + ".jpg")
                             .timeSlots(grouped)
                             .build();
