@@ -11,6 +11,7 @@ import com.MediHubAPI.service.PatientService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +25,7 @@ public class PatientServiceImpl implements PatientService {
 
     private final UserRepository userRepository;
     private final SpecializationRepository specializationRepository;
+    private final PasswordEncoder passwordEncoder;
 
 
     @Override
@@ -47,8 +49,7 @@ public class PatientServiceImpl implements PatientService {
         User patient = new User();
         patient.setUsername(generatePatientUsername(dto));
         patient.setEmail(dto.getEmail());
-        patient.setPassword(dto.getPassword()); // or a generated hash if you plan login
-//      patient.setPassword(passwordEncoder.encode(dto.getPassword())); // if applicable
+        patient.setPassword(passwordEncoder.encode(dto.getPassword())); // if applicable
 
         patient.setFirstName(dto.getFirstName());
         patient.setLastName(dto.getLastName());

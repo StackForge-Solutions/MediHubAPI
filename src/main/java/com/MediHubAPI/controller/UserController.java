@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -160,15 +161,36 @@ public class UserController {
     @GetMapping("/{id}/photo")
     public ResponseEntity<byte[]> getPatientPhoto(@PathVariable Long id) {
         User patient = patientService.findById(id);
-
-        if (patient.getPhoto() == null) {
+        byte[] photo = patient.getPhoto();
+        if (photo == null || photo.length == 0) {
             return ResponseEntity.notFound().build();
         }
 
+        // Try stored content type first; fall back to octet-stream if invalid/absent
+        MediaType mediaType = resolveMediaType(patient.getPhotoContentType());
+
+        // Nice-to-have: inline filename with proper extension
+        String ext = mediaType.getSubtype(); // e.g., "png", "jpeg", "webp"
+        String fileName = "patient-" + id + "." + (ext != null ? ext : "bin");
+
         return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_JPEG) // or detect dynamically
-                .body(patient.getPhoto());
+                .contentType(mediaType)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
+                .contentLength(photo.length)
+                .body(photo);
     }
+
+    private MediaType resolveMediaType(String stored) {
+        try {
+            if (stored != null && !stored.isBlank()) {
+                return MediaType.parseMediaType(stored); // e.g., "image/png"
+            }
+        } catch (org.springframework.http.InvalidMediaTypeException ignore) {
+            // fall through to default
+        }
+        return MediaType.APPLICATION_OCTET_STREAM; // safe fallback when unknown
+    }
+
 
 
 }

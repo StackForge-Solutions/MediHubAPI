@@ -85,9 +85,11 @@ public class SlotServiceImpl implements SlotService {
                 LocalTime newStart = slot.getStartTime().plusMinutes(delta);
                 LocalTime newEnd   = slot.getEndTime().plusMinutes(delta);
 
-                if (newStart.isBefore(LocalTime.MIN) || newEnd.isAfter(LocalTime.MAX) || !newEnd.isAfter(newStart)) {
+
+                if (!newEnd.isAfter(newStart)) {
                     addSkip(slot.getId(), "out_of_day_or_invalid", skippedReasons, skipReasonCounts, skippedIds);
-                    skipped++; continue;
+                    skipped++;
+                    continue;
                 }
 
                 Window target = new Window(newStart, newEnd);
