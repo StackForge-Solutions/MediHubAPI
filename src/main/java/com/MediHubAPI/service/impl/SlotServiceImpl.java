@@ -11,6 +11,7 @@ import com.MediHubAPI.repository.AppointmentRepository;
 import com.MediHubAPI.repository.SlotRepository;
 import com.MediHubAPI.repository.UserRepository;
 import com.MediHubAPI.service.SlotService;
+import com.MediHubAPI.service.SmsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -33,15 +34,149 @@ public class SlotServiceImpl implements SlotService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
 
+    // (Optional) wire an SmsService; you can stub now and implement later
+    private final SmsService smsService = SmsService.noop(); // replace with @Autowired when ready
+
     @Transactional
-    public void shiftSlots(Long doctorId, SlotShiftRequestDto request) {
-        List<Slot> slots = slotRepository.findByDoctorIdAndDate(doctorId, request.getDate());
-        for (Slot slot : slots) {
-            slot.setStartTime(slot.getStartTime().plusMinutes(request.getShiftByMinutes()));
-            slot.setEndTime(slot.getEndTime().plusMinutes(request.getShiftByMinutes()));
+    public ShiftAppointmentsResult shiftSlots(Long doctorId, SlotShiftRequestDto request) {
+        // 1) Role gate (only DOCTOR or STAFF)
+        switch (request.getInitiatedByRole()) {
+            case DOCTOR, STAFF -> {} // allowed
+            default -> throw new HospitalAPIException(HttpStatus.FORBIDDEN, "Only doctor or staff can shift appointments");
         }
-        slotRepository.saveAll(slots);
-        log.info("Doctor {} slots shifted by {} mins", doctorId, request.getShiftByMinutes());
+
+        // 2) Validate user exists (auditable initiator)
+        userRepository.findById(request.getInitiatedByUserId())
+                .orElseThrow(() -> new HospitalAPIException(HttpStatus.BAD_REQUEST, "Initiator not found"));
+
+        // 3) Load slots for the date, filter by startingFrom + scope flags
+        // ... (role checks + load all)
+        List<Slot> all = slotRepository.findByDoctorIdAndDate(doctorId, request.getDate());
+
+        List<Slot> candidates = all.stream()
+                .filter(s -> !s.getStartTime().isBefore(request.getStartingFrom()))
+//                .filter(s -> request.isIncludeBlocked() || s.getStatus() != SlotStatus.BLOCKED)
+//                .filter(s -> !request.isOnlyBooked() || s.getAppointment() != null)
+                .toList();
+
+        // Windows occupied by non-candidates (real external conflicts)
+        record Window(LocalTime start, LocalTime end) {}
+        java.util.Set<Long> candidateIds = candidates.stream().map(Slot::getId).collect(java.util.stream.Collectors.toSet());
+        java.util.Set<Window> occupiedByNonCandidates = all.stream()
+                .filter(s -> !candidateIds.contains(s.getId()))
+                .map(s -> new Window(s.getStartTime(), s.getEndTime()))
+                .collect(java.util.stream.Collectors.toSet());
+
+        int delta = request.effectiveShiftMinutes();
+
+        int matched = candidates.size();
+        int shifted = 0;
+        int skipped = 0;
+
+        java.util.List<Long> shiftedIds = new java.util.ArrayList<>();
+        java.util.List<Long> skippedIds = new java.util.ArrayList<>();
+        java.util.Map<Long,String> skippedReasons = new java.util.HashMap<>();
+        java.util.Map<String,Integer> skipReasonCounts = new java.util.HashMap<>();
+
+        // Track target windows inside this batch to avoid intra-batch duplicates
+        java.util.Set<Window> plannedTargets = new java.util.HashSet<>();
+
+        // First pass: PLAN (validate targets; don’t mutate yet)
+        java.util.Map<Long, Window> plan = new java.util.HashMap<>();
+        for (Slot slot : candidates) {
+            try {
+                LocalTime newStart = slot.getStartTime().plusMinutes(delta);
+                LocalTime newEnd   = slot.getEndTime().plusMinutes(delta);
+
+                if (newStart.isBefore(LocalTime.MIN) || newEnd.isAfter(LocalTime.MAX) || !newEnd.isAfter(newStart)) {
+                    addSkip(slot.getId(), "out_of_day_or_invalid", skippedReasons, skipReasonCounts, skippedIds);
+                    skipped++; continue;
+                }
+
+                Window target = new Window(newStart, newEnd);
+
+                // Real conflict only if occupied by NON-candidate window
+                if (occupiedByNonCandidates.contains(target)) {
+                    addSkip(slot.getId(), "conflict_with_non_candidate", skippedReasons, skipReasonCounts, skippedIds);
+                    skipped++; continue;
+                }
+
+                // Intra-batch duplicate target
+                if (!plannedTargets.add(target)) {
+                    addSkip(slot.getId(), "target_collision_within_batch", skippedReasons, skipReasonCounts, skippedIds);
+                    skipped++; continue;
+                }
+
+                // All good — add to plan
+                plan.put(slot.getId(), target);
+            } catch (Exception ex) {
+                addSkip(slot.getId(), "exception:" + ex.getClass().getSimpleName(), skippedReasons, skipReasonCounts, skippedIds);
+                skipped++;
+            }
+        }
+
+        // Second pass: APPLY (mutate in-memory)
+        for (Slot slot : candidates) {
+            Window target = plan.get(slot.getId());
+            if (target != null) {
+                slot.setStartTime(target.start());
+                slot.setEndTime(target.end());
+
+                //  Save reason in notes
+                String reason = request.getReason() != null ? request.getReason() : "No reason provided";
+                slot.setNotes("Shifted by " + delta + " mins. Reason: " + reason);
+                
+                shiftedIds.add(slot.getId());
+                shifted++;
+            }
+        }
+
+        // Persist unless dry-run
+        if (!request.isDryRun()) {
+            slotRepository.saveAll(candidates); // only changed ones will dirty-check
+            if (request.isSendSms()) {
+                notifySmsForShifted(candidates, shiftedIds, request);
+            }
+        }
+
+        String dirWord = request.getDirection().name().toLowerCase();
+        String msg = (request.isDryRun() ? "[DRY-RUN] " : "")
+                + "Attempted to " + dirWord + " " + matched + " slot(s) by "
+                + Math.abs(delta) + " minutes from " + request.getStartingFrom()
+                + " on " + request.getDate() + ". Shifted=" + shifted + ", Skipped=" + skipped + ".";
+
+        return ShiftAppointmentsResult.builder()
+                .totalMatched(matched).totalShifted(shifted).totalSkipped(skipped)
+                .shiftedIds(shiftedIds).skippedIds(skippedIds)
+                .message(msg).skippedReasons(skippedReasons).skipReasonCounts(skipReasonCounts)
+                .build();
+    }
+
+    private void notifySmsForShifted(List<Slot> candidates, java.util.List<Long> shiftedIds, SlotShiftRequestDto request) {
+        for (Slot s : candidates) {
+            if (shiftedIds.contains(s.getId()) && s.getAppointment() != null) {
+                try {
+                    smsService.notifyAppointmentRescheduled(
+                            s.getAppointment().getId(),
+                            s.getAppointment().getPatient().getId(),
+                            s.getDate(),
+                            s.getStartTime(),
+                            request.getReason()
+                    );
+                } catch (Exception e) {
+                    log.warn("SMS failed for appt {}: {}", s.getAppointment().getId(), e.getMessage());
+                }
+            }
+        }
+    }
+
+    private static void addSkip(Long id, String reason,
+                                java.util.Map<Long,String> perId,
+                                java.util.Map<String,Integer> counts,
+                                java.util.List<Long> ids) {
+        ids.add(id);
+        perId.put(id, reason);
+        counts.merge(reason, 1, Integer::sum);
     }
 
     @Transactional
