@@ -119,7 +119,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
-        // ✅ NEW: Handle invalid enum (like wrong role value)
+        //  NEW: Handle invalid enum (like wrong role value)
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleInvalidFormat(HttpMessageNotReadableException ex, WebRequest request) {
         Throwable cause = ex.getMostSpecificCause();
@@ -159,12 +159,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllExceptions(Exception ex, WebRequest request) {
         // 👇 Print error to logs for debugging
-        ex.printStackTrace();  // ✅ ADD THIS LINE TO LOG DETAILS
+        ex.printStackTrace();  //  ADD THIS LINE TO LOG DETAILS
 
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                ex.getMessage(), // ✅ USE ACTUAL ERROR MESSAGE INSTEAD OF GENERIC
+                ex.getMessage(), //  USE ACTUAL ERROR MESSAGE INSTEAD OF GENERIC
                 request.getDescription(false),
                 Instant.now()
         );
@@ -176,7 +176,8 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.CONFLICT.value(),
                 HttpStatus.CONFLICT.getReasonPhrase(),
-                "Slot conflict: Either the doctor or patient is already booked in this slot.", // ✅ User-friendly message
+                ex.getMessage(),
+//                "Slot conflict: Either the doctor or patient is already booked in this slot.", //  User-friendly message
                 request.getDescription(false),
                 Instant.now()
         );

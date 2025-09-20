@@ -1,17 +1,24 @@
 package com.MediHubAPI.controller;
 
-import com.MediHubAPI.dto.UserCreateDto;
-import com.MediHubAPI.dto.UserDto;
-import com.MediHubAPI.dto.UserStatusUpdateDto;
+import com.MediHubAPI.dto.*;
 import com.MediHubAPI.exception.HospitalAPIException;
 import com.MediHubAPI.exception.ResourceNotFoundException;
 import com.MediHubAPI.model.ERole;
+import com.MediHubAPI.model.User;
+import com.MediHubAPI.service.PatientService;
 import com.MediHubAPI.service.UserService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,9 +32,11 @@ public class UserController {
 
     private final UserService userService;
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+    private final PatientService patientService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, PatientService patientService) {
         this.userService = userService;
+        this.patientService = patientService;
     }
 
     @PostMapping
@@ -41,6 +50,17 @@ public class UserController {
             logger.error("Unexpected error creating user", e);
             throw new HospitalAPIException(HttpStatus.INTERNAL_SERVER_ERROR, "Error creating user");
         }
+    }
+
+
+    /** Create patient with JSON + photo in the same request */
+    @PostMapping(value = "/registerPatient", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PatientResponseDto> registerPatient(
+            @RequestPart("data") @Valid PatientCreateDto data,
+            @RequestPart(value = "photo", required = false) MultipartFile photo) {
+
+        PatientResponseDto saved = patientService.registerPatient(data, photo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
 
@@ -127,4 +147,50 @@ public class UserController {
         // List ko response mein OK status ke saath return karein
         return ResponseEntity.ok(roles);
     }
+    @GetMapping("/patients/search")
+    public ResponseEntity<Page<UserDto>> searchPatients(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String specialization,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(userService.searchPatients(keyword, specialization, pageable));
+    }
+
+    @GetMapping("/{id}/photo")
+    public ResponseEntity<byte[]> getPatientPhoto(@PathVariable Long id) {
+        User patient = patientService.findById(id);
+        byte[] photo = patient.getPhoto();
+        if (photo == null || photo.length == 0) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Try stored content type first; fall back to octet-stream if invalid/absent
+        MediaType mediaType = resolveMediaType(patient.getPhotoContentType());
+
+        // Nice-to-have: inline filename with proper extension
+        String ext = mediaType.getSubtype(); // e.g., "png", "jpeg", "webp"
+        String fileName = "patient-" + id + "." + (ext != null ? ext : "bin");
+
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
+                .contentLength(photo.length)
+                .body(photo);
+    }
+
+    private MediaType resolveMediaType(String stored) {
+        try {
+            if (stored != null && !stored.isBlank()) {
+                return MediaType.parseMediaType(stored); // e.g., "image/png"
+            }
+        } catch (org.springframework.http.InvalidMediaTypeException ignore) {
+            // fall through to default
+        }
+        return MediaType.APPLICATION_OCTET_STREAM; // safe fallback when unknown
+    }
+
+
+
 }

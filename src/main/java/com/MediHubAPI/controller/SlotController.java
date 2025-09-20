@@ -24,16 +24,20 @@ public class SlotController {
     private final SlotService slotService;
 
     @PutMapping("/slots/{doctorId}/shift")
-    public ResponseEntity<?> shiftSlots(@PathVariable Long doctorId,
-                                        @Valid @RequestBody SlotShiftRequestDto request) {
+    public ResponseEntity<ShiftAppointmentsResult> shiftSlots(@PathVariable Long doctorId,
+                                                              @Valid @RequestBody SlotShiftRequestDto request) {
         try {
-            slotService.shiftSlots(doctorId, request);
-            return ResponseEntity.ok("Slots shifted successfully");
+            ShiftAppointmentsResult result = slotService.shiftSlots(doctorId, request);
+            return ResponseEntity.ok(result);
+        } catch (HospitalAPIException e) {
+            log.error("Error shifting slots for doctor {}: {}", doctorId, e.getMessage());
+            throw e; // preserve status/message from domain exception
         } catch (Exception e) {
             log.error("Error shifting slots for doctor {}: {}", doctorId, e.getMessage());
             throw new HospitalAPIException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to shift slots");
         }
     }
+
 
     @PutMapping("/slots/{doctorId}/block")
     public ResponseEntity<?> blockSlots(@PathVariable Long doctorId,

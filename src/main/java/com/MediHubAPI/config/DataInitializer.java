@@ -32,6 +32,8 @@ public class DataInitializer implements CommandLineRunner {
         addSpecializationIfNotExists("PSYCHIATRIST", "Psychiatry", "Mental health specialist");
         addSpecializationIfNotExists("ENDOCRINOLOGIST", "Endocrinology", "Hormonal specialist");
         addSpecializationIfNotExists("PEDIATRICIAN", "Pediatrics", "Child specialist");
+        addSpecializationIfNotExists("GENERAL_MEDICINE", "General Medicine", "Primary care / OPD");
+        addSpecializationIfNotExists("PATIENT", "Patient", "End-user / patient account");
     }
 
     private void addSpecializationIfNotExists(String name, String department, String description) {

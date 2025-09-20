@@ -10,7 +10,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 public interface SlotService {
-    void shiftSlots(Long doctorId, SlotShiftRequestDto request);
+    ShiftAppointmentsResult shiftSlots(Long doctorId, SlotShiftRequestDto request) ;
     void blockSlots(Long doctorId, SlotBlockRequestDto request);
     void unblockSlots(Long doctorId, SlotUnblockRequestDto request);
     List<SlotStatusDto> getSlotStatuses(Long doctorId, LocalDate date);

@@ -1,19 +1,21 @@
 package com.MediHubAPI.dto;
 
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PatientResponseDto {
-
     private Long id;
+    private String hospitalId;
     private String firstName;
     private String lastName;
     private String mobileNumber;
-    private String fileNumber;
-    private String fatherName;
-    private String motherName;
-    private String hospitalId;
-    private String dateOfBirth;
     private String email;
-    private String gender;
+    private String specializationName; // from Specialization entity
+    private String consultingDoctorName;
+    private String photoContentType;
+    private boolean photoPresent;
 }
