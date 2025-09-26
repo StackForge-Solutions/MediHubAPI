@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
@@ -42,6 +43,13 @@ public class Appointment {
 
     @Column(name = "slot_time", nullable = false)
     private LocalTime slotTime; // denotes the time of the slot (usually slot.startTime)
+
+    // in Appointment.java
+    @Column(name = "created_by")
+    private String createdBy;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
 
 }
