@@ -1,10 +1,13 @@
 package com.MediHubAPI.service.impl;
 
 import com.MediHubAPI.dto.PatientCreateDto;
+import com.MediHubAPI.dto.PatientDetailsDto;
 import com.MediHubAPI.dto.PatientResponseDto;
 import com.MediHubAPI.exception.HospitalAPIException;
 import com.MediHubAPI.exception.ResourceNotFoundException;
 import com.MediHubAPI.model.*;
+import com.MediHubAPI.repository.AppointmentRepository;
+import com.MediHubAPI.repository.PatientRepository;
 import com.MediHubAPI.repository.SpecializationRepository;
 import com.MediHubAPI.repository.UserRepository;
 import com.MediHubAPI.service.PatientService;
@@ -16,8 +19,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjusters;
+import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +33,8 @@ public class PatientServiceImpl implements PatientService {
     private final UserRepository userRepository;
     private final SpecializationRepository specializationRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PatientRepository patientRepository;
+    private final AppointmentRepository appointmentRepository;
 
 
     @Override
@@ -229,6 +238,32 @@ public class PatientServiceImpl implements PatientService {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient", "id", id));
     }
+    @Override
+    public List<PatientDetailsDto> getPatientsByDate(LocalDate date) {
+        return appointmentRepository.findPatientsByDate(date);
+    }
+    @Override
+    public List<PatientDetailsDto> getPatientsByWeek(LocalDate date) {
+        LocalDate start = date.with(java.time.DayOfWeek.MONDAY);
+        LocalDate end = date.with(java.time.DayOfWeek.SUNDAY);
+        return appointmentRepository.findPatientsByDateRange(start, end);
+    }
+    @Override
+    public List<PatientDetailsDto> getPatientsByMonth(LocalDate date) {
+        LocalDate start = date.with(TemporalAdjusters.firstDayOfMonth());
+        LocalDate end = date.with(TemporalAdjusters.lastDayOfMonth());
+        return appointmentRepository.findPatientsByDateRange(start, end);
+    }
+    @Override
+    public List<PatientDetailsDto> getNextPatients() {
+        LocalDate today = LocalDate.now();
+        return appointmentRepository.findPatientsByDateRange(today.plusDays(1), today.plusDays(30));
+    }
+    @Override
+    public List<PatientDetailsDto> getPreviousPatients() {
+        LocalDate today = LocalDate.now();
+        return appointmentRepository.findPatientsByDateRange(today.minusDays(30), today.minusDays(1));
+    }
 
     // ------------------- helpers -------------------
 
@@ -321,4 +356,5 @@ public class PatientServiceImpl implements PatientService {
                 .toLowerCase(Locale.ROOT).replaceAll("\\s+", "");
         return base + "." + System.currentTimeMillis();
     }
+
 }

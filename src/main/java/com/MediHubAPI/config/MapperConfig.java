@@ -2,7 +2,6 @@ package com.MediHubAPI.config;
 
 import com.MediHubAPI.dto.*;
 import com.MediHubAPI.model.Appointment;
-import com.MediHubAPI.model.Patient;
 import com.MediHubAPI.model.User;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeMap;
@@ -23,9 +22,6 @@ public class MapperConfig {
                 .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE)
                 .setAmbiguityIgnored(true);
 
-        // ✅ PatientCreateDto → Patient (skip ID)
-        modelMapper.createTypeMap(PatientCreateDto.class, Patient.class)
-                .addMappings(mapper -> mapper.skip(Patient::setId));
 
         // ✅ User → DoctorProfileDto (skip ID)
         modelMapper.createTypeMap(User.class, DoctorProfileDto.class)

@@ -1,6 +1,8 @@
 package com.MediHubAPI.repository;
 
 
+import com.MediHubAPI.dto.PatientDetailsDto;
+import com.MediHubAPI.dto.PatientResponseDto;
 import com.MediHubAPI.model.Appointment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +44,52 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
             @Param("cursorId") Long cursorId,
             Pageable pageable
     );
+
+    // Get all patients from appointments
+    @Query("SELECT a.patient FROM Appointment a")
+    List<User> findAllPatients();
+
+    // By single date
+    @Query("""
+        SELECT new com.MediHubAPI.dto.PatientDetailsDto(
+            p.id,
+            CONCAT(p.firstName, ' ', p.lastName),
+            p.hospitalId,
+            p.mobileNumber,
+            a.type,
+            a.appointmentDate,
+            a.slotTime,
+            CONCAT(d.firstName, ' ', d.lastName),
+            a.slot.createdBy
+        )
+        FROM Appointment a
+        JOIN a.patient p
+        JOIN a.doctor d
+        WHERE a.appointmentDate = :date
+        ORDER BY a.slotTime
+    """)
+    List<PatientDetailsDto> findPatientsByDate(@Param("date") LocalDate date);
+
+    // By date range (week/month/next/previous)
+    @Query("""
+        SELECT new com.MediHubAPI.dto.PatientDetailsDto(
+            p.id,
+            CONCAT(p.firstName, ' ', p.lastName),
+            p.hospitalId,
+            p.mobileNumber,
+            a.type,
+            a.appointmentDate,
+            a.slotTime,
+            CONCAT(d.firstName, ' ', d.lastName),
+            a.slot.createdBy
+        )
+        FROM Appointment a
+        JOIN a.patient p
+        JOIN a.doctor d
+        WHERE a.appointmentDate BETWEEN :start AND :end
+        ORDER BY a.appointmentDate, a.slotTime
+    """)
+    List<PatientDetailsDto> findPatientsByDateRange(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
 
 }

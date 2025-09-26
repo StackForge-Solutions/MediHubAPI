@@ -1,17 +1,38 @@
 package com.MediHubAPI.dto;
 
-import lombok.Data;
+import com.MediHubAPI.model.enums.AppointmentType;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+@Getter
+@Setter
 public class PatientDetailsDto {
-    private String bloodGroup;
-    private String fatherName;
-    private String motherName;
-    private String spouseName;
-    private String alternateContact;
-    private String education;
-    private String occupation;
-    private String religion;
-    private String ivrLanguage;
-    private Double birthWeight;
+
+    private Long patientId;
+    private String patientName;
+    private String hospitalId;
+    private String phoneNumber;
+    private AppointmentType visitType; // matches the enum type in Appointment
+    private LocalDate appointmentDate;
+    private LocalTime slotTime;
+    private String doctorName;
+    private String bookedBy;
+
+    // Explicit constructor for JPA
+    public PatientDetailsDto(Long patientId, String patientName, String hospitalId, String phoneNumber,
+                             AppointmentType visitType, LocalDate appointmentDate, LocalTime slotTime,
+                             String doctorName, String bookedBy) {
+        this.patientId = patientId;
+        this.patientName = patientName;
+        this.hospitalId = hospitalId;
+        this.phoneNumber = phoneNumber;
+        this.visitType = visitType;
+        this.appointmentDate = appointmentDate;
+        this.slotTime = slotTime;
+        this.doctorName = doctorName;
+        this.bookedBy = bookedBy;
+    }
 }
