@@ -9,6 +9,8 @@ import com.MediHubAPI.repository.InvoiceRepository;
 import com.MediHubAPI.service.InvoiceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -95,6 +97,18 @@ public class InvoiceController {
             );
         });
     }
+    // src/main/java/com/MediHubAPI/billing/web/InvoiceController.java
+    @GetMapping("/{id}/payments")
+    public Page<InvoiceDtos.PaymentView> listPayments(
+            @PathVariable Long id,
+            @org.springframework.data.web.PageableDefault(
+                    size = 20, sort = "receivedAt",
+                    direction = org.springframework.data.domain.Sort.Direction.DESC
+            ) Pageable pageable
+    ) {
+        return service.listPayments(id, pageable);
+    }
+
 
 
 }

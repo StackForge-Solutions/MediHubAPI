@@ -78,4 +78,15 @@ public class InvoiceDtos {
             BigDecimal balanceDue,
             LocalDateTime issuedAt
     ) {}
+
+
+    public record PaymentView(
+            Long id,
+            String method,
+            BigDecimal amount,
+            String txnRef,
+            LocalDateTime receivedAt,
+            String receivedBy,
+            String notes
+    ) {}
 }

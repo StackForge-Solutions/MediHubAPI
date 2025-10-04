@@ -14,6 +14,8 @@ import com.MediHubAPI.repository.InvoiceRepository;
 import com.MediHubAPI.model.billing.InvoicePayment;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -178,4 +180,23 @@ public class InvoiceService {
         invoiceRepo.save(inv);
         // TODO: persist reason in audit table
     }
+
+    // src/main/java/com/MediHubAPI/billing/service/InvoiceService.java
+    @Transactional(readOnly = true)
+    public Page<InvoiceDtos.PaymentView> listPayments(Long invoiceId, Pageable pageable) {
+        // Optional: verify invoice exists (prevents leaking info if id is wrong)
+        invoiceRepo.findById(invoiceId).orElseThrow(() -> new EntityNotFoundException("Invoice not found"));
+
+        return payRepo.findByInvoiceId(invoiceId, pageable)
+                .map(p -> new InvoiceDtos.PaymentView(
+                        p.getId(),
+                        p.getMethod().name(),
+                        p.getAmount(),
+                        p.getTxnRef(),
+                        p.getReceivedAt(),
+                        p.getReceivedBy(),
+                        p.getNotes()
+                ));
+    }
+
 }
