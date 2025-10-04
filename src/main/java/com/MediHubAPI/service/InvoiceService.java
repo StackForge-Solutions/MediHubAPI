@@ -1,0 +1,181 @@
+// src/main/java/com/MediHubAPI/billing/service/InvoiceService.java
+package com.MediHubAPI.service;
+
+
+import com.MediHubAPI.dto.InvoiceDtos;
+import com.MediHubAPI.model.User;
+import com.MediHubAPI.model.billing.DoctorServiceItem;
+import com.MediHubAPI.model.billing.Invoice;
+import com.MediHubAPI.model.billing.InvoiceItem;
+import com.MediHubAPI.repository.DoctorServiceItemRepository;
+import com.MediHubAPI.repository.InvoiceItemRepository;
+import com.MediHubAPI.repository.InvoicePaymentRepository;
+import com.MediHubAPI.repository.InvoiceRepository;
+import com.MediHubAPI.model.billing.InvoicePayment;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.MediHubAPI.util.MoneyUtil.round;
+
+
+@Service
+@RequiredArgsConstructor
+public class InvoiceService {
+
+    private final InvoiceRepository invoiceRepo;
+    private final InvoiceItemRepository itemRepo;
+    private final InvoicePaymentRepository payRepo;
+    private final DoctorServiceItemRepository serviceRepo;
+    private final BillNumberSequenceService billSeq;
+
+    // TODO: inject real UserService to load User entities
+    private User loadUser(Long id) {
+        User u = new User(); u.setId(id); return u;
+    }
+
+    @Transactional
+    public Invoice createDraft(InvoiceDtos.CreateInvoiceReq req, String createdBy) {
+        // Construct invoice
+        Invoice inv = new Invoice();
+        inv.setDoctor(loadUser(req.doctorId()));
+        inv.setPatient(loadUser(req.patientId()));
+        inv.setAppointmentId(req.appointmentId());
+        inv.setClinicId(req.clinicId());
+        inv.setCurrency(req.currency());
+        inv.setToken(req.token());
+        inv.setQueue(req.queue());
+        inv.setRoom(req.room());
+        inv.setNotes(req.notes());
+        inv.setStatus(Invoice.Status.DRAFT);
+        inv.setCreatedBy(createdBy);
+
+        // Build items
+        List<InvoiceItem> items = new ArrayList<>();
+        int sl = 1;
+        BigDecimal subTotal = BigDecimal.ZERO;
+        BigDecimal discountTotal = BigDecimal.ZERO;
+        BigDecimal taxTotal = BigDecimal.ZERO;
+
+        for (InvoiceDtos.ItemReq it : req.items()) {
+            String name = it.name();
+            if (it.serviceItemId()!=null) {
+                DoctorServiceItem dsi = serviceRepo.findById(it.serviceItemId())
+                        .orElseThrow(() -> new EntityNotFoundException("Service not found"));
+                name = dsi.getName(); // prefer catalog name
+            }
+            BigDecimal qty = BigDecimal.valueOf(it.qty());
+            BigDecimal lineBase = it.unitPrice().multiply(qty);
+            BigDecimal disc = it.discountAmount();
+            BigDecimal taxable = lineBase.subtract(disc);
+            BigDecimal tax = taxable.multiply(it.taxPercent())
+                    .divide(BigDecimal.valueOf(100));
+            BigDecimal lineTotal = taxable.add(tax);
+
+            InvoiceItem item = InvoiceItem.builder()
+                    .invoice(inv)
+                    .serviceItemId(it.serviceItemId())
+                    .slNo(sl++)
+                    .name(name)
+                    .qty(it.qty())
+                    .unitPrice(it.unitPrice())
+                    .discountAmount(round(disc))
+                    .taxPercent(it.taxPercent())
+                    .taxAmount(round(tax))
+                    .lineTotal(round(lineTotal))
+                    .build();
+            items.add(item);
+
+            subTotal = subTotal.add(lineBase);
+            discountTotal = discountTotal.add(disc);
+            taxTotal = taxTotal.add(tax);
+        }
+
+        inv.setItems(items);
+        inv.setSubTotal(round(subTotal));
+        inv.setDiscountTotal(round(discountTotal));
+        inv.setTaxTotal(round(taxTotal));
+        inv.setRoundOff(BigDecimal.ZERO); // apply rounding policy here if needed
+        BigDecimal grand = subTotal.subtract(discountTotal).add(taxTotal);
+        inv.setGrandTotal(round(grand));
+        inv.setPaidAmount(BigDecimal.ZERO);
+        inv.setBalanceDue(inv.getGrandTotal());
+
+        return invoiceRepo.save(inv);
+    }
+
+    @Transactional
+    public Invoice finalizeInvoice(Long invoiceId) {
+        Invoice inv = invoiceRepo.findById(invoiceId)
+                .orElseThrow(() -> new EntityNotFoundException("Invoice not found"));
+        if (inv.getStatus() != Invoice.Status.DRAFT)
+            throw new IllegalStateException("Only DRAFT can be finalized");
+        inv.setBillNumber(billSeq.next(inv.getClinicId()));
+        inv.setIssuedAt(LocalDateTime.now());
+        if (inv.getPaidAmount().compareTo(inv.getGrandTotal()) >= 0) {
+            inv.setStatus(Invoice.Status.PAID);
+            inv.setBalanceDue(BigDecimal.ZERO);
+        } else {
+            inv.setStatus(Invoice.Status.ISSUED);
+            inv.setBalanceDue(inv.getGrandTotal().subtract(inv.getPaidAmount()));
+        }
+        return invoiceRepo.save(inv);
+    }
+
+    @Transactional
+    public InvoicePayment addPayment(Long invoiceId, InvoiceDtos.AddPaymentReq req) {
+        Invoice inv = invoiceRepo.findById(invoiceId)
+                .orElseThrow(() -> new EntityNotFoundException("Invoice not found"));
+        if (inv.getStatus() == Invoice.Status.VOID)
+            throw new IllegalStateException("Cannot pay a void invoice");
+
+        InvoicePayment.Method m = InvoicePayment.Method.valueOf(req.method());
+        InvoicePayment p = InvoicePayment.builder()
+                .invoice(inv)
+                .method(m)
+                .amount(req.amount())
+                .txnRef(req.txnRef())
+                .receivedAt(req.receivedAt() != null
+                        ? req.receivedAt().toLocalDateTime()
+                        : LocalDateTime.now())
+
+                .receivedBy(req.receivedBy())
+                .notes(req.notes())
+                .build();
+        payRepo.save(p);
+
+        inv.setPaidAmount(round(inv.getPaidAmount().add(p.getAmount())));
+        BigDecimal due = inv.getGrandTotal().subtract(inv.getPaidAmount());
+        if (due.signum() <= 0) {
+            inv.setStatus(Invoice.Status.PAID);
+            inv.setBalanceDue(BigDecimal.ZERO);
+        } else {
+            inv.setStatus(Invoice.Status.PARTIALLY_PAID);
+            inv.setBalanceDue(round(due));
+        }
+        invoiceRepo.save(inv);
+        return p;
+    }
+
+    @Transactional(readOnly = true)
+    public Invoice get(Long id) {
+        return invoiceRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Invoice not found"));
+    }
+
+    @Transactional
+    public void voidInvoice(Long id, String reason) {
+        Invoice inv = get(id);
+        if (inv.getStatus() == Invoice.Status.PAID)
+            throw new IllegalStateException("Use refund/credit note instead of void for PAID");
+        inv.setStatus(Invoice.Status.VOID);
+        invoiceRepo.save(inv);
+        // TODO: persist reason in audit table
+    }
+}
