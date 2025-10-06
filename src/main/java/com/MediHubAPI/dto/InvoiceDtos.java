@@ -1,6 +1,7 @@
 // src/main/java/com/MediHubAPI/billing/dto/InvoiceDtos.java
 package com.MediHubAPI.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -52,6 +53,10 @@ public class InvoiceDtos {
     ) {
     }
 
+
+    public record AddPaymentsReq(
+            @NotEmpty @Valid List<InvoiceDtos.AddPaymentReq> payments
+    ) {}
     // ---------- Finalize ----------
     public record FinalizeInvoiceRes(
             Long id, String billNumber, LocalDateTime issuedAt, String status
@@ -89,4 +94,28 @@ public class InvoiceDtos {
             String receivedBy,
             String notes
     ) {}
+
+    public record InvoiceDraftRes(
+            Long invoiceId,
+            Long doctorId,
+            Long patientId,
+            Long appointmentId,
+            String clinicId,
+            Integer token,
+            String queue,
+            String room,
+            String currency,
+            String notes,
+            List<Item> items
+    ) {
+        public record Item(
+                Long serviceItemId,
+                String name,
+                Integer qty,
+                BigDecimal unitPrice,
+                BigDecimal discountAmount,
+                BigDecimal taxPercent
+        ) {}
+    }
+
 }

@@ -199,4 +199,22 @@ public class InvoiceService {
                 ));
     }
 
+    @Transactional(readOnly = true)
+    public Invoice getDraftByAppointment(Long appointmentId) {
+        return invoiceRepo.findFirstByAppointmentIdAndStatus(appointmentId, Invoice.Status.DRAFT)
+                .orElseThrow(() -> new EntityNotFoundException("Draft invoice not found for appointmentId: " + appointmentId));
+    }
+
+    @Transactional
+    public List<InvoicePayment> addPayments(Long invoiceId, List<InvoiceDtos.AddPaymentReq> payments) {
+        List<InvoicePayment> addedPayments = new ArrayList<>();
+
+        for (InvoiceDtos.AddPaymentReq p : payments) {
+            InvoicePayment payment = addPayment(invoiceId, p); // reuse existing single payment logic
+            addedPayments.add(payment);
+        }
+
+        return addedPayments;
+    }
+
 }
