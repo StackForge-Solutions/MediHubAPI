@@ -1,11 +1,11 @@
 {
 	"info": {
-		"_postman_id": "5081879b-aa26-4215-bb7a-73e92b8c7efa",
+		"_postman_id": "cd1901bf-f105-4fb2-85e7-692e0999d56a",
 		"name": "MediHub - Auth & User APIs",
 		"description": "Postman collection for AuthController and UserController APIs in MediHub Hospital Management System.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "46586247",
-		"_collection_link": "https://test-6842547.postman.co/workspace/test's-Workspace~9f23d41a-bb9d-4011-80a2-3c15346769cb/collection/46586247-5081879b-aa26-4215-bb7a-73e92b8c7efa?action=share&source=collection_link&creator=46586247"
+		"_exporter_id": "46671077",
+		"_collection_link": "https://amit-7068717.postman.co/workspace/Amit's-Workspace~68814650-5925-4a70-837d-1024adc01412/collection/46671077-cd1901bf-f105-4fb2-85e7-692e0999d56a?action=share&source=collection_link&creator=46671077"
 	},
 	"item": [
 		{
@@ -126,6 +126,85 @@
 						"body": {
 							"mode": "raw",
 							"raw": "{\n    \"username\": \"sneha_patil\",\n    \"email\": \"sneha.patil@hospitalmarathi.com\",\n    \"password\": \"sneha@123\",\n    \"firstName\": \"Sneha\",\n    \"lastName\": \"Patil\",\n    \"roles\": [\"PATIENT\"]\n  }"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.Register Patient",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "data",
+									"value": "{\n    \"firstName\": \"Pankaj\",\n    \"lastName\": \"Kumar\",\n    \"mobileNumber\": \"9876501234\",\n    \"alternateContact\": \"9123405678\",\n    \"landlineNumber\": \"0612123456\",\n    \"dateOfBirth\": \"1995-08-20\",\n    \"ageYears\": 30,\n    \"ageMonths\": 0,\n    \"ageDays\": 20,\n    \"sex\": \"MALE\",\n    \"maritalStatus\": \"MARRIED\",\n    \"email\": \"pankaj.kumar@example.com\",\n    \"govtIdType\": \"AADHAAR\",\n    \"govtIdNumber\": \"4321-8765-2109\",\n    \"otherHospitalIds\": \"HOSP-BIH-02\",\n    \"motherTongue\": \"Bhojpuri\",\n    \"referrerType\": \"FRIEND_FAMILY\",\n    \"referrerName\": \"Dr. Rajesh Mishra\",\n    \"referrerNumber\": \"9123412345\",\n    \"referrerEmail\": \"rajesh.mishra@hospitalbihar.com\",\n    \"consultingDoctorId\": 7,\n    \"specializationId\": \"3\",\n    \"mainComplaint\": \"Back pain for 1 month\",\n    \"bloodGroup\": \"B_POS\",\n    \"fathersName\": \"Ram Lakhan Kumar\",\n    \"mothersName\": \"Sita Devi\",\n    \"spousesName\": \"Sunita Kumari\",\n    \"education\": \"SECONDARY\",\n    \"occupation\": \"FARMER\",\n    \"religion\": \"HINDUISM\",\n    \"birthWeightValue\": 3.0,\n    \"birthWeightUnit\": \"kg\"\n}\n",
+									"contentType": "application/json",
+									"type": "text"
+								},
+								{
+									"key": "photo",
+									"type": "file",
+									"src": "postman-cloud:///1f08d662-f0d5-4970-965f-71de6f141d17"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/registerPatient",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"registerPatient"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.2.Get profile pic",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "data",
+									"value": "{\n        \"firstName\": \"Ananya\",\n        \"lastName\": \"Das\",\n        \"mobileNumber\": \"9876543210\",\n        \"alternateContact\": \"9123456780\",\n        \"landlineNumber\": \"0331234567\",\n        \"dateOfBirth\": \"1998-05-12\",\n        \"ageYears\": 27,\n        \"ageMonths\": 4,\n        \"ageDays\": 10,\n        \"sex\": \"FEMALE\",\n        \"maritalStatus\": \"SINGLE\",\n        \"email\": \"ananya.das@example.com\",\n        \"govtIdType\": \"AADHAAR\",\n        \"govtIdNumber\": \"1234-5678-9012\",\n        \"otherHospitalIds\": \"HOSP-XYZ-01\",\n        \"motherTongue\": \"Bengali\",\n        \"referrerType\": \"FRIEND_FAMILY\",\n        \"referrerName\": \"Dr. Arindam Chatterjee\",\n        \"referrerNumber\": \"9123400000\",\n        \"referrerEmail\": \"arindam.chatterjee@hospital.com\",\n        \"consultingDoctorId\": 5,\n        \"department\": \"CARDIOLOGY\",\n        \"mainComplaint\": \"Chest pain for 2 weeks\",\n        \"bloodGroup\": \"A_POS\",\n        \"fathersName\": \"Ramesh Das\",\n        \"mothersName\": \"Kusum Das\",\n        \"spousesName\": null,\n        \"education\": \"HIGHER_SECONDARY\",\n        \"occupation\": \"HOMEMAKER\",\n        \"religion\": \"BUDDHISM\",\n        \"birthWeightValue\": 3.2,\n        \"birthWeightUnit\": \"kg\"\n      }",
+									"contentType": "application/json",
+									"type": "text"
+								},
+								{
+									"key": "photo",
+									"type": "file",
+									"src": "postman-cloud:///1f08d662-f0d5-4970-965f-71de6f141d17"
+								}
+							]
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/users",
@@ -353,6 +432,124 @@
 								"api",
 								"users",
 								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "9.1. সব patients (pagination সহ, default page=0, size=10)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/patients/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"patients",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "9.2. keyword দিয়ে search (typeahead)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/patients/search?specialization=cardiologist&page=0&size=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"patients",
+								"search"
+							],
+							"query": [
+								{
+									"key": "specialization",
+									"value": "cardiologist"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "9.3. keyword + specialization একসাথে",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/patients/search?keyword=pa&page=0&size=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"patients",
+								"search"
+							],
+							"query": [
+								{
+									"key": "keyword",
+									"value": "pa"
+								},
+								{
+									"key": "specialization",
+									"value": "ORTHOPEDIC",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
 							]
 						}
 					},
@@ -955,178 +1152,45 @@
 						}
 					},
 					"response": []
-				}
-			]
-		},
-		{
-			"name": "PatientController",
-			"item": [
+				},
 				{
-					"name": "12. Get Patient by ID",
+					"name": "LIST (filters + pagination + sort)",
 					"request": {
 						"method": "GET",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzdXBlcmFkbWluMSIsImlhdCI6MTc1MjkyNDgzMSwiZXhwIjoxNzUzNTI5NjMxfQ.UxnjzhBS3qswpqka5wGNfZ4ROHWbXrGfWbhVhb2HsLc54Ukdn7gOXSizq70v0LfjY9Fw3rdziNk_HaSR-ws2QA\","
+								"value": "Bearer {{token}}",
+								"type": "text"
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/patients/4",
+							"raw": "{{baseUrl}}/api/doctors/4/services?q=consult&status=ACTIVE&minPrice=1.00&maxPrice=9999&page=0&size=10&sort=updatedAt,DESC",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
-								"patients",
-								"4"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "13. Update Patient",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n  \"title\": \"Mr.\",\r\n  \"firstName\": \"Saif Ali\",\r\n  \"lastName\": \"Hussain\",\r\n  \"mobileNumber\": \"9876098760\",\r\n  \"landlineNumber\": \"\",\r\n  \"fileNumber\": \"F123472\",\r\n  \"dateOfBirth\": \"1993-04-14\",\r\n  \"ageYears\": 32,\r\n  \"ageMonths\": 3,\r\n  \"ageDays\": 5,\r\n  \"sex\": \"MALE\",\r\n  \"maritalStatus\": \"SINGLE\",\r\n  \"motherTongue\": \"Urdu\",\r\n  \"govtIdType\": \"Passport\",\r\n  \"govtIdNumber\": \"N9876543\",\r\n  \"otherHospitalIds\": \"HOSP-4337\",\r\n  \"email\": \"ali.hussain@example.com\",\r\n  \"referrer\": {\r\n    \"referrerType\": \"Doctor\",\r\n    \"referrerName\": \"Dr. Farooq\",\r\n    \"referrerNumber\": \"DR012\",\r\n    \"referrerEmail\": \"dr.farooq@hospital.com\",\r\n    \"consultingDept\": \"ENT\",\r\n    \"consultingDoctor\": \"Dr. Siddiqui\",\r\n    \"mainComplaint\": \"Nasal blockage and snoring\"\r\n  },\r\n  \"address\": {\r\n    \"address\": \"Flat 302, Olive Residency\",\r\n    \"area\": \"Park Street\",\r\n    \"city\": \"Kolkata\",\r\n    \"pinCode\": \"700016\",\r\n    \"state\": \"West Bengal\",\r\n    \"country\": \"India\",\r\n    \"nationality\": \"Indian\",\r\n    \"internationalPatient\": false\r\n  },\r\n  \"photo\": {\r\n    \"filePath\": \"/uploads/photos/patient139.jpg\"\r\n  },\r\n  \"details\": {\r\n    \"bloodGroup\": \"A+\",\r\n    \"fatherName\": \"Salim Hussain\",\r\n    \"motherName\": \"Nazia Hussain\",\r\n    \"spouseName\": \"\",\r\n    \"alternateContact\": \"9876001234\",\r\n    \"education\": \"M.Tech\",\r\n    \"occupation\": \"Civil Engineer\",\r\n    \"religion\": \"Muslim\",\r\n    \"ivrLanguage\": \"Urdu\",\r\n    \"birthWeight\": 3.4\r\n  },\r\n  \"notes\": {\r\n    \"needsAttention\": true,\r\n    \"notes\": \"Referred for possible septoplasty surgery.\"\r\n  }\r\n}\r\n",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/patients/19",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"patients",
-								"19"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "11.Search Patients (with pagination and filters)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var template = `\r",
-									"<style type=\"text/css\">\r",
-									"    .tftable {font-size:14px;color:#333333;width:100%;border-width: 1px;border-color: #87ceeb;border-collapse: collapse;}\r",
-									"    .tftable th {font-size:18px;background-color:#87ceeb;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;text-align:left;}\r",
-									"    .tftable tr {background-color:#ffffff;}\r",
-									"    .tftable td {font-size:14px;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;}\r",
-									"    .tftable tr:hover {background-color:#e0ffff;}\r",
-									"</style>\r",
-									"\r",
-									"<table class=\"tftable\" border=\"1\">\r",
-									"    <tr>\r",
-									"        <th>ID</th>\r",
-									"        <th>First Name</th>\r",
-									"        <th>Last Name</th>\r",
-									"        <th>Mobile Number</th>\r",
-									"        <th>File Number</th>\r",
-									"        <th>Father Name</th>\r",
-									"        <th>Mother Name</th>\r",
-									"        <th>Hospital ID</th>\r",
-									"        <th>Date of Birth</th>\r",
-									"        <th>Email</th>\r",
-									"        <th>Gender</th>\r",
-									"    </tr>\r",
-									"    \r",
-									"    {{#each response.content}}\r",
-									"        <tr id=row_{{@key}}>\r",
-									"            <td>{{id}}</td>\r",
-									"            <td>{{firstName}}</td>\r",
-									"            <td>{{lastName}}</td>\r",
-									"            <td>{{mobileNumber}}</td>\r",
-									"            <td>{{fileNumber}}</td>\r",
-									"            <td>{{fatherName}}</td>\r",
-									"            <td>{{motherName}}</td>\r",
-									"            <td>{{hospitalId}}</td>\r",
-									"            <td>{{dateOfBirth}}</td>\r",
-									"            <td>{{email}}</td>\r",
-									"            <td>{{gender}}</td>\r",
-									"        </tr>\r",
-									"    {{/each}}\r",
-									"</table>\r",
-									"`;\r",
-									"\r",
-									"function constructVisualizerPayload() {\r",
-									"    return {response: pm.response.json()};\r",
-									"}\r",
-									"\r",
-									"pm.visualizer.set(template, constructVisualizerPayload());"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzdXBlcmFkbWluMSIsImlhdCI6MTc1MjkyNDgzMSwiZXhwIjoxNzUzNTI5NjMxfQ.UxnjzhBS3qswpqka5wGNfZ4ROHWbXrGfWbhVhb2HsLc54Ukdn7gOXSizq70v0LfjY9Fw3rdziNk_HaSR-ws2QA\","
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/patients/search?name=i&page=0&size=10",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"patients",
-								"search"
+								"api",
+								"doctors",
+								"4",
+								"services"
 							],
 							"query": [
 								{
-									"key": "name",
-									"value": "i"
+									"key": "q",
+									"value": "consult"
 								},
 								{
-									"key": "phone",
-									"value": "9823456789",
-									"disabled": true
+									"key": "status",
+									"value": "ACTIVE"
 								},
 								{
-									"key": "fileNumber",
-									"value": "F12345",
-									"disabled": true
+									"key": "minPrice",
+									"value": "1.00"
 								},
 								{
-									"key": "fatherName",
-									"value": "shyam",
-									"disabled": true
-								},
-								{
-									"key": "motherName",
-									"value": "rekha",
-									"disabled": true
-								},
-								{
-									"key": "dob",
-									"value": "1990-05-10",
-									"disabled": true
-								},
-								{
-									"key": "hospitalId",
-									"value": "HOSP001",
-									"disabled": true
+									"key": "maxPrice",
+									"value": "9999"
 								},
 								{
 									"key": "page",
@@ -1135,6 +1199,259 @@
 								{
 									"key": "size",
 									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "updatedAt,DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Consultation (E-Consultation – Rs.2.0)\",\r\n    \"price\": 2.00,\r\n    \"code\": \"CONSULT_E\",\r\n    \"description\": \"Video consult\",\r\n    \"status\": \"ACTIVE\"\r\n}\r\n// {\r\n//     \"name\": \"Consultation (Video – International Patients – Rs.700.0)\",\r\n//     \"price\": 700.00,\r\n//     \"code\": \"CONSULT_INTL\",\r\n//     \"description\": \"Video consultation for international patients\",\r\n//     \"status\": \"ACTIVE\"\r\n//   }\r\n//   {\r\n//     \"name\": \"Consultation (Follow-up with Reports – Rs.150.0)\",\r\n//     \"price\": 150.00,\r\n//     \"code\": \"CONSULT_FU\",\r\n//     \"description\": \"Follow-up consultation with reports\",\r\n//     \"status\": \"ACTIVE\"\r\n//   }\r\n//   {\r\n//     \"name\": \"Consultation (First Time – Rs.600.0)\",\r\n//     \"price\": 600.00,\r\n//     \"code\": \"CONSULT_FIRST\",\r\n//     \"description\": \"First time consultation\",\r\n//     \"status\": \"ACTIVE\"\r\n//   }\r\n//   {\r\n//     \"name\": \"Consultation (Online – Rs.100.0)\",\r\n//     \"price\": 100.00,\r\n//     \"code\": \"CONSULT_ONLINE\",\r\n//     \"description\": \"Online consultation\",\r\n//     \"status\": \"ACTIVE\"\r\n//   }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/doctors/{{doctorId}}/services",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"doctors",
+								"{{doctorId}}",
+								"services"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Consultation (Follow-up)\",\r\n    \"price\": 3.50,\r\n    \"status\": \"ACTIVE\",\r\n    \"code\": \"CONSULT_FU\",\r\n    \"description\": \"Follow-up within 7 days\"\r\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}} /api/doctors/3/services/1",
+							"host": [
+								"{{baseUrl}} "
+							],
+							"path": [
+								"api",
+								"doctors",
+								"3",
+								"services",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "BULK: ACTIVATE/INACTIVATE",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"ids\": [1,2,3],\r\n    \"op\": \"ACTIVATE\"\r\n        // \"op\": \"INACTIVATE\"\r\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/doctors/3/services/bulk",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"doctors",
+								"3",
+								"services",
+								"bulk"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "BULK: PERCENT (increase 5%, negative value would decrease)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"ids\": [\r\n        1,\r\n        2,\r\n        3\r\n    ],\r\n    \"op\": \"PERCENT\",\r\n    \"percent\": 5.0\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/doctors/3/services/bulk",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"doctors",
+								"3",
+								"services",
+								"bulk"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "BULK: ABSOLUTE (set exact price)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"ids\": [\r\n        1,\r\n        2\r\n    ],\r\n    \"op\": \"ABSOLUTE\",\r\n    \"absolute\": 499.00\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/doctors/3/services/bulk",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"doctors",
+								"3",
+								"services",
+								"bulk"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "PatientController",
+			"item": [
+				{
+					"name": "Filter by Date",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Previous Patients (before today)",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Filter by Week",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Get all patients (with pagination)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/visits?period=DAY&date=2025-10-02&page=0&size=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"visits"
+							],
+							"query": [
+								{
+									"key": "period",
+									"value": "DAY"
+								},
+								{
+									"key": "date",
+									"value": "2025-10-02"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
 								}
 							]
 						}
@@ -1772,6 +2089,264 @@
 								}
 							]
 						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "OPD Invoice",
+			"item": [
+				{
+					"name": "1. Create Invoice (Draft)",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "2. Finalize Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/{{invoiceId}}/finalize",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"{{invoiceId}}",
+								"finalize"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Add Payment to Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"payments\": [\n        {\n            \"method\": \"CASH\",\n            \"amount\": 100.00,\n            \"txnRef\": null,\n            \"receivedBy\": \"frontdesk@clinic\",\n            \"notes\": \"Cash payment at POS\"\n        },\n        {\n            \"method\": \"CARD\",\n            \"amount\": 57.00,\n            \"txnRef\": \"VISA ****4421\",\n            \"receivedBy\": \"frontdesk@clinic\",\n            \"notes\": \"Card payment\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/{{invoiceId}}/payments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"{{invoiceId}}",
+								"payments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Get Invoice by ID",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "4.1.Get Draft Invoice by Appointment",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/draft?appointmentId={{appointmentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"draft"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointmentId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6. Search / List Invoices",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices?status=ISSUED&doctorId=4&patientId=15&page=0&size=10&sort=createdAt,DESC",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "ISSUED"
+								},
+								{
+									"key": "doctorId",
+									"value": "4"
+								},
+								{
+									"key": "patientId",
+									"value": "15"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "createdAt,DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "7. List All Payments for an Invoice",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/1/payments?page=0&size=10&sort=receivedAt,DESC",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"1",
+								"payments"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "receivedAt,DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "8. Get Printable Invoice (Future Extension) pdf",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "8. Get Printable Invoice (Future Extension) html",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/1/print?format=html",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"1",
+								"print"
+							],
+							"query": [
+								{
+									"key": "format",
+									"value": "html"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "9. Delete / Refund (Future extension)",
+					"request": {
+						"method": "GET",
+						"header": []
 					},
 					"response": []
 				}
