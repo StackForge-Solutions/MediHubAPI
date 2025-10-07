@@ -26,4 +26,7 @@ public class VisitRowDTO {
     // Optional extras you may want to return:
     LocalTime slotStartTime;
     LocalTime slotEndTime;
+
+    Long invoiceId;
+    boolean paid; // true if invoice is fully paid
 }
