@@ -59,6 +59,13 @@ public class MapperConfig {
             }).map(src -> src, AppointmentResponseDto::setPatientName);
         });
 
+
+        //  Universal configuration for all mappings
+        modelMapper.getConfiguration()
+                .setFieldMatchingEnabled(true)
+                .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE)
+                .setAmbiguityIgnored(true);
+
         return modelMapper;
     }
 }
