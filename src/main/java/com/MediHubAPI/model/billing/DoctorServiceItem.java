@@ -7,6 +7,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 @Getter @Setter
 @Builder
@@ -53,21 +54,23 @@ public class DoctorServiceItem {
     @Column(length = 1024)
     private String description;
 
-    @Column(nullable = false, columnDefinition = "timestamp with time zone")
+    @Convert(converter = com.MediHubAPI.config.OffsetDateTimeUtcConverter.class)
+    @Column(nullable = false)
     private OffsetDateTime createdAt;
 
-    @Column(nullable = false, columnDefinition = "timestamp with time zone")
+    @Convert(converter = com.MediHubAPI.config.OffsetDateTimeUtcConverter.class)
+    @Column(nullable = false)
     private OffsetDateTime updatedAt;
 
     @PrePersist
     void onCreate() {
-        createdAt = OffsetDateTime.now();
+        createdAt = OffsetDateTime.now(ZoneOffset.UTC);
         updatedAt = createdAt;
     }
 
     @PreUpdate
     void onUpdate() {
-        updatedAt = OffsetDateTime.now();
+        updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
     }
 
     @Column(nullable = false)
