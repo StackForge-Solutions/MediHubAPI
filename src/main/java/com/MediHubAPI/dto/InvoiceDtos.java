@@ -118,4 +118,19 @@ public class InvoiceDtos {
         ) {}
     }
 
+    public record InvoiceResp(
+            Long id,
+            String status,
+            String billNumber,
+            BigDecimal subTotal,
+            BigDecimal discountTotal,
+            BigDecimal taxTotal,
+            BigDecimal roundOff,
+            BigDecimal grandTotal,
+            BigDecimal paidAmount,
+            BigDecimal balanceDue,
+            LocalDateTime createdAt,
+            LocalDateTime issuedAt
+    ) { }
+
 }

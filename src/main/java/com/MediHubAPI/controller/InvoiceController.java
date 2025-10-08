@@ -2,15 +2,19 @@
 package com.MediHubAPI.controller;
 
 
+import com.MediHubAPI.dto.ApiResponse;
 import com.MediHubAPI.dto.InvoiceDtos;
 import com.MediHubAPI.model.billing.Invoice;
 import com.MediHubAPI.model.billing.InvoicePayment;
 import com.MediHubAPI.repository.InvoiceRepository;
 import com.MediHubAPI.service.InvoiceService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,13 +27,21 @@ public class InvoiceController {
     private final InvoiceService service;
     private final InvoiceRepository invoiceRepo;
 
+    // Controller
+
     @PostMapping
-    public Invoice create(@Valid @RequestBody InvoiceDtos.CreateInvoiceReq req, @RequestHeader(name = "X-User", required = false) String createdBy) {
-        return service.createDraft(req, createdBy != null ? createdBy : "system");
+    public ResponseEntity<ApiResponse<Void>> createInvoiceDraft(
+            @Valid @RequestBody InvoiceDtos.CreateInvoiceReq req,
+            @RequestHeader(name = "X-User", required = false) String createdBy,
+            HttpServletRequest request) {
+
+        service.createDraft(req, createdBy != null ? createdBy : "system");
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created(null, request.getRequestURI(), "createInvoiceDraft successful"));
     }
 
     @PostMapping("/{id}/finalize")
-    public InvoiceDtos.FinalizeInvoiceRes finalize(@PathVariable Long id) {
+    public InvoiceDtos.FinalizeInvoiceRes finalizeDraftInvoice(@PathVariable Long id) {
         Invoice inv = service.finalizeInvoice(id);
         return new InvoiceDtos.FinalizeInvoiceRes(inv.getId(), inv.getBillNumber(), inv.getIssuedAt(), inv.getStatus().name());
     }
