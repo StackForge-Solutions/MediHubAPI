@@ -2100,8 +2100,36 @@
 				{
 					"name": "1. Create Invoice (Draft)",
 					"request": {
-						"method": "GET",
-						"header": []
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"doctorId\": 4,// Dr. Mita Sen - 4 \n    \"patientId\": 15,//Debashis Banerjee 15 \n    \"appointmentId\": 27,\n    \"clinicId\": \"CLINIC-001\",//Dynamiac genration \n    \"token\": 1,//Dynamiac genration \n    \"queue\": \"Dr. Mita Sen\",\n    \"room\": \"100\",//Dynamiac genration \n    \"currency\": \"INR\",\n    \"notes\": \"OPD Consultation Bill\",\n    \"items\": [\n        {\n            \"serviceItemId\": 2,\n            \"name\": \"Consultation (Video – International Patients – Rs.700.0)\",\n            \"qty\": 1,\n            \"unitPrice\": 499.00,\n            \"discountAmount\": 0.00,\n            \"taxPercent\": 0.00\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices"
+							]
+						}
 					},
 					"response": []
 				},
@@ -2347,6 +2375,84 @@
 					"request": {
 						"method": "GET",
 						"header": []
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "EMR",
+			"item": [
+				{
+					"name": "1.Bulk Import (Hierarchical JSON)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"categories\": {\r\n        \"DentalOral\": {\r\n            \"ToothAndGum\": [\r\n                \"Toothache\",\r\n                \"Bleeding gums\",\r\n                \"Swollen gums\",\r\n                \"Tooth sensitivity\"\r\n            ],\r\n            \"MouthAndLips\": [\r\n                \"Mouth ulcers\",\r\n                \"Dry mouth\",\r\n                \"Cracked lips\",\r\n                \"Bad breath\",\r\n                \"Difficulty chewing\"\r\n            ],\r\n            \"JawRelated\": [\r\n                \"Jaw pain\"\r\n            ]\r\n        },\r\n        \"ENT\": {\r\n            \"Ear\": [\r\n                \"Ear pain\",\r\n                \"Hearing loss\",\r\n                \"Ringing in ears (tinnitus)\"\r\n            ],\r\n            \"Nose\": [\r\n                \"Blocked nose\",\r\n                \"Nasal discharge\",\r\n                \"Sinus pressure\"\r\n            ],\r\n            \"Throat\": [\r\n                \"Sore throat\",\r\n                \"Voice hoarseness\",\r\n                \"Facial pain\",\r\n                \"Difficulty swallowing\"\r\n            ]\r\n        },\r\n        \"Reproductive\": {\r\n            \"Menstrual\": [\r\n                \"Irregular periods\",\r\n                \"Heavy periods\",\r\n                \"Missed periods\"\r\n            ],\r\n            \"Vaginal\": [\r\n                \"White discharge\",\r\n                \"Itching in private parts\",\r\n                \"Pain during intercourse\"\r\n            ],\r\n            \"Sexual\": [\r\n                \"Loss of libido\",\r\n                \"Erectile dysfunction\",\r\n                \"Infertility\"\r\n            ],\r\n            \"PelvicPain\": [\r\n                \"Lower abdominal cramps\"\r\n            ]\r\n        },\r\n        \"Obstetric\": {\r\n            \"PregnancyEarly\": [\r\n                \"Morning sickness\",\r\n                \"Nausea in early pregnancy\",\r\n                \"Spotting during pregnancy\"\r\n            ],\r\n            \"PregnancyLate\": [\r\n                \"Back pain\",\r\n                \"Swelling of legs\",\r\n                \"Abdominal cramps\",\r\n                \"High blood pressure in pregnancy\",\r\n                \"Loss of fetal movement\",\r\n                \"Preterm contractions\"\r\n            ],\r\n            \"GeneralPregnancy\": [\r\n                \"Fatigue during pregnancy\"\r\n            ]\r\n        },\r\n        \"SleepDisorders\": {\r\n            \"InsomniaRelated\": [\r\n                \"Insomnia\",\r\n                \"Difficulty staying asleep\",\r\n                \"Early morning awakening\"\r\n            ],\r\n            \"MovementRelated\": [\r\n                \"Restless legs\",\r\n                \"Sleep talking\",\r\n                \"Sleep paralysis\"\r\n            ],\r\n            \"BreathingRelated\": [\r\n                \"Snoring\",\r\n                \"Sleep apnea\"\r\n            ],\r\n            \"DreamRelated\": [\r\n                \"Nightmares\"\r\n            ]\r\n        },\r\n        \"NutritionalDeficiency\": {\r\n            \"VitaminDeficiency\": [\r\n                \"Hair loss\",\r\n                \"Brittle nails\",\r\n                \"Pale skin\",\r\n                \"Cracked lips\"\r\n            ],\r\n            \"MineralDeficiency\": [\r\n                \"Muscle cramps\",\r\n                \"Weakness\",\r\n                \"Fatigue\"\r\n            ],\r\n            \"ProteinDeficiency\": [\r\n                \"Poor wound healing\",\r\n                \"Loss of appetite\"\r\n            ],\r\n            \"General\": [\r\n                \"Mouth ulcers\"\r\n            ]\r\n        },\r\n        \"EnvironmentalToxic\": {\r\n            \"ChemicalExposure\": [\r\n                \"Headache after chemical exposure\",\r\n                \"Skin rash from chemicals\",\r\n                \"Eye irritation from smoke\"\r\n            ],\r\n            \"AirPollution\": [\r\n                \"Breathing difficulty after pollution exposure\",\r\n                \"Cough after dust exposure\",\r\n                \"Throat irritation\"\r\n            ],\r\n            \"PesticideOrMetal\": [\r\n                \"Nausea after pesticide exposure\",\r\n                \"Allergic reaction to metal\"\r\n            ],\r\n            \"Workplace\": [\r\n                \"Fatigue after workplace fumes\",\r\n                \"Dizziness after fumes\"\r\n            ]\r\n        },\r\n        \"Pediatric\": {\r\n            \"GrowthAndFeeding\": [\r\n                \"Poor feeding\",\r\n                \"Delayed growth\"\r\n            ],\r\n            \"Infectious\": [\r\n                \"Recurrent infections\",\r\n                \"Fever in infants\",\r\n                \"Cold and cough frequently\"\r\n            ],\r\n            \"Behavioral\": [\r\n                \"Crying excessively\",\r\n                \"Irritability in child\"\r\n            ],\r\n            \"Other\": [\r\n                \"Rash in diaper area\",\r\n                \"Bedwetting\"\r\n            ]\r\n        },\r\n        \"Geriatric\": {\r\n            \"Cognitive\": [\r\n                \"Memory loss\",\r\n                \"Depression\"\r\n            ],\r\n            \"Musculoskeletal\": [\r\n                \"Joint stiffness\",\r\n                \"Weakness in legs\"\r\n            ],\r\n            \"Sensory\": [\r\n                \"Hearing loss\",\r\n                \"Vision problems\",\r\n                \"Balance issues\"\r\n            ],\r\n            \"Metabolic\": [\r\n                \"Constipation\",\r\n                \"Frequent urination at night\",\r\n                \"Fatigue\"\r\n            ]\r\n        },\r\n        \"Oncologic\": {\r\n            \"GeneralCancerSigns\": [\r\n                \"Unexplained weight loss\",\r\n                \"Fatigue\",\r\n                \"Loss of appetite\",\r\n                \"Night sweats\"\r\n            ],\r\n            \"LocalizedSymptoms\": [\r\n                \"Lump in breast or neck\",\r\n                \"Persistent cough\",\r\n                \"Blood in stool\",\r\n                \"Non-healing wound\",\r\n                \"Bone pain\",\r\n                \"Persistent hoarseness\"\r\n            ]\r\n        },\r\n        \"Gynecological\": {\r\n            \"Menstrual\": [\r\n                \"Irregular periods\",\r\n                \"Heavy periods (menorrhagia)\",\r\n                \"Scanty periods (oligomenorrhea)\",\r\n                \"Missed periods (amenorrhea)\",\r\n                \"Painful periods (dysmenorrhea)\",\r\n                \"Pre-menstrual bloating\",\r\n                \"Pre-menstrual mood swings\",\r\n                \"Spotting between periods\"\r\n            ],\r\n            \"Vaginal\": [\r\n                \"White discharge (leucorrhea)\",\r\n                \"Foul-smelling discharge\",\r\n                \"Itching in private parts\",\r\n                \"Burning sensation in vagina\",\r\n                \"Vaginal dryness\",\r\n                \"Vaginal bleeding after intercourse\",\r\n                \"Pain during intercourse (dyspareunia)\",\r\n                \"Vaginal swelling or redness\"\r\n            ],\r\n            \"Pelvic and Uterine\": [\r\n                \"Lower abdominal cramps\",\r\n                \"Pelvic pain\",\r\n                \"Painful urination during menstruation\",\r\n                \"Painful bowel movement during periods\",\r\n                \"Lower back pain before menstruation\",\r\n                \"Abdominal heaviness\",\r\n                \"Uterine fibroid-related pain\"\r\n            ],\r\n            \"Hormonal / Endocrine\": [\r\n                \"Excessive hair growth (hirsutism)\",\r\n                \"Acne related to cycle\",\r\n                \"Unexplained weight gain\",\r\n                \"Breast tenderness\",\r\n                \"Hot flashes\",\r\n                \"Mood swings during cycle\"\r\n            ],\r\n            \"Pregnancy-related\": [\r\n                \"Morning sickness\",\r\n                \"Missed period with positive pregnancy test\",\r\n                \"Spotting during early pregnancy\",\r\n                \"Abdominal cramps during pregnancy\",\r\n                \"Swelling of feet during pregnancy\",\r\n                \"High blood pressure during pregnancy\",\r\n                \"Loss of fetal movement\",\r\n                \"Preterm contractions\"\r\n            ],\r\n            \"Postpartum\": [\r\n                \"Post-delivery bleeding (lochia)\",\r\n                \"Breast engorgement\",\r\n                \"Pain during breastfeeding\",\r\n                \"Mood changes after delivery (postpartum blues)\",\r\n                \"Lower back pain post-delivery\",\r\n                \"Delayed return of menstruation\"\r\n            ]\r\n        }\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/symptoms/import",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"symptoms",
+								"import"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2.Typeahed symptoms search",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/symptoms/search?category=&q=pain",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"symptoms",
+								"search"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": ""
+								},
+								{
+									"key": "q",
+									"value": "pain"
+								}
+							]
+						}
 					},
 					"response": []
 				}
