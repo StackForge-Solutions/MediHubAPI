@@ -1,11 +1,10 @@
 package com.MediHubAPI.config;
 
 import com.MediHubAPI.dto.*;
-import com.MediHubAPI.model.Appointment;
-import com.MediHubAPI.model.ChiefComplaint;
-import com.MediHubAPI.model.Patient;
-import com.MediHubAPI.model.User;
-import com.MediHubAPI.model.VisitSummary;
+import com.MediHubAPI.model.*;
+import org.hibernate.Hibernate;
+import org.hibernate.proxy.HibernateProxy;
+import org.modelmapper.AbstractConverter;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeMap;
 import org.modelmapper.spi.MappingContext;
@@ -21,11 +20,24 @@ public class MapperConfig {
     public ModelMapper modelMapper() {
         ModelMapper modelMapper = new ModelMapper();
 
-        // ----------------- Global Configuration -----------------
+        // ----------------- 🌐 Global Configuration -----------------
         modelMapper.getConfiguration()
                 .setFieldMatchingEnabled(true)
                 .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE)
-                .setAmbiguityIgnored(true);
+                .setAmbiguityIgnored(true)
+                .setSkipNullEnabled(true)
+                .setPropertyCondition(ctx -> ctx.getSource() != null);
+
+        // ----------------- 🧩 Global Converter to unwrap Hibernate proxies -----------------
+        modelMapper.addConverter(new AbstractConverter<Object, Object>() {
+            @Override
+            protected Object convert(Object source) {
+                if (source instanceof HibernateProxy) {
+                    return Hibernate.unproxy(source);
+                }
+                return source;
+            }
+        });
 
         // ----------------- Patient Mapping -----------------
         modelMapper.createTypeMap(PatientCreateDto.class, Patient.class)
@@ -35,10 +47,7 @@ public class MapperConfig {
         modelMapper.createTypeMap(User.class, DoctorProfileDto.class)
                 .addMappings(mapper -> mapper.skip(DoctorProfileDto::setId));
 
-        // ----------------- Appointment Mappings -----------------
-        modelMapper.createTypeMap(Appointment.class, WalkInAppointmentDto.class)
-                .addMappings(mapper -> mapper.skip(WalkInAppointmentDto::setTime));
-
+        // ----------------- Appointment → AppointmentResponseDto -----------------
         TypeMap<Appointment, AppointmentResponseDto> appointmentMap =
                 modelMapper.createTypeMap(Appointment.class, AppointmentResponseDto.class);
 
@@ -47,7 +56,7 @@ public class MapperConfig {
             mapper.using((MappingContext<Appointment, String> ctx) -> {
                 Appointment src = ctx.getSource();
                 if (src != null && src.getDoctor() != null) {
-                    User doc = src.getDoctor();
+                    User doc = unwrapProxy(src.getDoctor());
                     String first = doc.getFirstName() != null ? doc.getFirstName() : "";
                     String last = doc.getLastName() != null ? doc.getLastName() : "";
                     return (first + " " + last).trim();
@@ -59,7 +68,7 @@ public class MapperConfig {
             mapper.using((MappingContext<Appointment, String> ctx) -> {
                 Appointment src = ctx.getSource();
                 if (src != null && src.getPatient() != null) {
-                    User p = src.getPatient();
+                    User p = unwrapProxy(src.getPatient());
                     String first = p.getFirstName() != null ? p.getFirstName() : "";
                     String last = p.getLastName() != null ? p.getLastName() : "";
                     return (first + " " + last).trim();
@@ -77,14 +86,16 @@ public class MapperConfig {
 
         visitSummaryMap.addMappings(mapper -> {
             // Doctor ID
-            mapper.map(src -> src.getDoctor() != null ? src.getDoctor().getId() : null,
-                    VisitSummaryDTO::setDoctorId);
+            mapper.map(src -> {
+                User doctor = unwrapProxy(src.getDoctor());
+                return doctor != null ? doctor.getId() : null;
+            }, VisitSummaryDTO::setDoctorId);
 
             // Doctor Name
             mapper.using((MappingContext<VisitSummary, String> ctx) -> {
                 VisitSummary src = ctx.getSource();
-                if (src.getDoctor() != null) {
-                    User doc = src.getDoctor();
+                if (src != null && src.getDoctor() != null) {
+                    User doc = unwrapProxy(src.getDoctor());
                     String first = doc.getFirstName() != null ? doc.getFirstName() : "";
                     String last = doc.getLastName() != null ? doc.getLastName() : "";
                     return (first + " " + last).trim();
@@ -93,14 +104,16 @@ public class MapperConfig {
             }).map(src -> src, VisitSummaryDTO::setDoctorName);
 
             // Patient ID
-            mapper.map(src -> src.getPatient() != null ? src.getPatient().getId() : null,
-                    VisitSummaryDTO::setPatientId);
+            mapper.map(src -> {
+                User patient = unwrapProxy(src.getPatient());
+                return patient != null ? patient.getId() : null;
+            }, VisitSummaryDTO::setPatientId);
 
             // Patient Name
             mapper.using((MappingContext<VisitSummary, String> ctx) -> {
                 VisitSummary src = ctx.getSource();
-                if (src.getPatient() != null) {
-                    User p = src.getPatient();
+                if (src != null && src.getPatient() != null) {
+                    User p = unwrapProxy(src.getPatient());
                     String first = p.getFirstName() != null ? p.getFirstName() : "";
                     String last = p.getLastName() != null ? p.getLastName() : "";
                     return (first + " " + last).trim();
@@ -108,10 +121,12 @@ public class MapperConfig {
                 return "Unknown Patient";
             }).map(src -> src, VisitSummaryDTO::setPatientName);
 
-            // Chief complaints
+            // Chief Complaints
             mapper.using((MappingContext<VisitSummary, java.util.List<ChiefComplaintDTO>> ctx) -> {
                 VisitSummary src = ctx.getSource();
-                if (src.getChiefComplaints() == null) return java.util.List.of();
+                if (src == null || src.getChiefComplaints() == null)
+                    return java.util.List.of();
+
                 return src.getChiefComplaints().stream()
                         .map(c -> new ChiefComplaintDTO(
                                 c.getComplaint(),
@@ -127,5 +142,13 @@ public class MapperConfig {
         });
 
         return modelMapper;
+    }
+
+    // ----------------- 🔧 Utility: Hibernate Proxy Unwrapper -----------------
+    private static <T> T unwrapProxy(T entity) {
+        if (entity instanceof HibernateProxy) {
+            return (T) Hibernate.unproxy(entity);
+        }
+        return entity;
     }
 }
