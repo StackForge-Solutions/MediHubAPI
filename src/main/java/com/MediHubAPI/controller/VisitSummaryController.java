@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/visit-summary")
@@ -32,13 +34,31 @@ public class VisitSummaryController {
     }
 
     /** ------------------- Get VisitSummary by ID ------------------- */
-    @GetMapping("/{id}")
-    public ApiResponse<VisitSummaryDTO> getVisitSummaryById(@PathVariable Long id) {
-        log.info("API call: getVisitSummaryById id={}", id);
+    /**
+     * Fetch Visit Summary
+     * Either by visitSummaryId (path variable) OR by patientId / doctorId / appointmentId (query params)
+     */
+    @GetMapping
+    public ApiResponse<?> getVisitSummary(
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) Long patientId,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(required = false) Long appointmentId
+    ) {
+        log.info("API call: getVisitSummary id={}, patientId={}, doctorId={}, appointmentId={}",
+                id, patientId, doctorId, appointmentId);
 
-        VisitSummaryDTO visitSummaryDTO = visitSummaryService.getVisitSummaryById(id);
+        // Fetch by visit summary ID
+        if (id != null) {
+            VisitSummaryDTO visitSummaryDTO = visitSummaryService.getVisitSummaryById(id);
+            return ApiResponse.success(visitSummaryDTO, "/api/visit-summary?id=" + id,
+                    "Visit Summary fetched successfully");
+        }
 
-        return ApiResponse.success(visitSummaryDTO, "/api/visit-summary/" + id, "Visit Summary fetched successfully");
+        // Search by patientId / doctorId / appointmentId
+        List<VisitSummaryDTO> results = visitSummaryService.searchVisitSummaries(patientId, doctorId, appointmentId);
+        return ApiResponse.success(results, "/api/visit-summary",
+                "Visit Summaries fetched successfully");
     }
 
     /** ------------------- Update VisitSummary ------------------- */

@@ -14,6 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -61,16 +64,7 @@ public class VisitSummaryService {
         return modelMapper.map(saved, VisitSummaryDTO.class);
     }
 
-    @Transactional(readOnly = true)
-    public VisitSummaryDTO getVisitSummaryById(Long id) {
-        VisitSummary visit = visitSummaryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("VisitSummary not found"));
 
-        // force initialize associations before mapping
-        entityManager.refresh(visit);
-
-        return modelMapper.map(visit, VisitSummaryDTO.class);
-    }
 
     @Transactional
     public VisitSummaryDTO updateVisitSummary(Long id, VisitSummary visitSummary) {
@@ -89,5 +83,22 @@ public class VisitSummaryService {
 
         entityManager.refresh(updated);
         return modelMapper.map(updated, VisitSummaryDTO.class);
+    }
+
+    public VisitSummaryDTO getVisitSummaryById(Long id) {
+        VisitSummary visitSummary = visitSummaryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Visit Summary not found for id: " + id));
+
+        // ✅ Use ModelMapper instead of manual mapping
+        return modelMapper.map(visitSummary, VisitSummaryDTO.class);
+    }
+
+    public List<VisitSummaryDTO> searchVisitSummaries(Long patientId, Long doctorId, Long appointmentId) {
+        List<VisitSummary> results = visitSummaryRepository.findByFilters(patientId, doctorId, appointmentId);
+
+        // ✅ Map all entities to DTOs using ModelMapper
+        return results.stream()
+                .map(v -> modelMapper.map(v, VisitSummaryDTO.class))
+                .collect(Collectors.toList());
     }
 }
