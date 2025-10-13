@@ -1,6 +1,7 @@
 package com.MediHubAPI.service;
 
 import com.MediHubAPI.dto.VisitSummaryDTO;
+import com.MediHubAPI.model.Appointment;
 import com.MediHubAPI.model.User;
 import com.MediHubAPI.model.VisitSummary;
 import com.MediHubAPI.repository.UserRepository;
@@ -29,61 +30,10 @@ public class VisitSummaryService {
     @PersistenceContext
     private EntityManager entityManager; // ✅ needed to initialize proxies
 
-    @Transactional
-    public VisitSummaryDTO saveVisitSummary(Long doctorId, Long patientId, VisitSummary visitSummary) {
-        log.info("Saving VisitSummary for patientId: {} and doctorId: {}", patientId, doctorId);
-
-        User doctor = userRepository.findById(doctorId)
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
-        User patient = userRepository.findById(patientId)
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
-
-        // ✅ Attach relationships
-        visitSummary.setDoctor(doctor);
-        visitSummary.setPatient(patient);
-
-        if (visitSummary.getChiefComplaints() != null) {
-            visitSummary.getChiefComplaints().forEach(c -> c.setVisitSummary(visitSummary));
-        }
-
-        VisitSummary saved = visitSummaryRepository.saveAndFlush(visitSummary);
-
-        // ✅ Force initialize lazy associations to prevent proxy reflection error
-        entityManager.refresh(saved); // ensures the entity and relations are fully managed
-        saved.setDoctor(doctor);
-        saved.setPatient(patient);
-
-        // ✅ Optionally detach from persistence context to avoid further proxy wrapping
-        entityManager.detach(saved);
-        entityManager.detach(doctor);
-        entityManager.detach(patient);
-
-        log.info("Saved VisitSummary with ID: {}", saved.getId());
-
-        // ✅ Now safe to map
-        return modelMapper.map(saved, VisitSummaryDTO.class);
-    }
 
 
 
-    @Transactional
-    public VisitSummaryDTO updateVisitSummary(Long id, VisitSummary visitSummary) {
-        VisitSummary updated = visitSummaryRepository.findById(id).map(existing -> {
-            existing.setVisitDate(visitSummary.getVisitDate());
-            existing.setVisitTime(visitSummary.getVisitTime());
 
-            if (visitSummary.getChiefComplaints() != null) {
-                existing.getChiefComplaints().clear();
-                visitSummary.getChiefComplaints().forEach(c -> c.setVisitSummary(existing));
-                existing.getChiefComplaints().addAll(visitSummary.getChiefComplaints());
-            }
-
-            return visitSummaryRepository.saveAndFlush(existing);
-        }).orElseThrow(() -> new RuntimeException("VisitSummary not found"));
-
-        entityManager.refresh(updated);
-        return modelMapper.map(updated, VisitSummaryDTO.class);
-    }
 
     public VisitSummaryDTO getVisitSummaryById(Long id) {
         VisitSummary visitSummary = visitSummaryRepository.findById(id)
@@ -101,4 +51,74 @@ public class VisitSummaryService {
                 .map(v -> modelMapper.map(v, VisitSummaryDTO.class))
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Save or Update VisitSummary in one method
+     */
+    @Transactional
+    public VisitSummaryDTO saveOrUpdateVisitSummary(Long doctorId, Long patientId, Long appointmentId, VisitSummary visitSummary) {
+        log.info("saveOrUpdateVisitSummary() called for doctorId={}, patientId={}, appointmentId={}", doctorId, patientId, appointmentId);
+
+        // ✅ Fetch Doctor
+        User doctor = userRepository.findById(doctorId)
+                .orElseThrow(() -> new RuntimeException("Doctor not found with ID " + doctorId));
+
+        // ✅ Fetch Patient
+        User patient = userRepository.findById(patientId)
+                .orElseThrow(() -> new RuntimeException("Patient not found with ID " + patientId));
+
+        // ✅ Fetch Appointment
+        Appointment appointment = entityManager.find(Appointment.class, appointmentId);
+        if (appointment == null) {
+            throw new RuntimeException("Appointment not found with ID " + appointmentId);
+        }
+
+        // ✅ Try to find existing VisitSummary
+        VisitSummary existing = visitSummaryRepository
+                .findFirstByDoctorIdAndPatientIdAndAppointmentId(doctorId, patientId, appointmentId)
+                .orElse(null);
+
+        if (existing != null) {
+            log.info("Updating existing VisitSummary id={}", existing.getId());
+            existing.setVisitDate(visitSummary.getVisitDate());
+            existing.setVisitTime(visitSummary.getVisitTime());
+
+            if (visitSummary.getChiefComplaints() != null) {
+                existing.getChiefComplaints().clear();
+                visitSummary.getChiefComplaints().forEach(c -> c.setVisitSummary(existing));
+                existing.getChiefComplaints().addAll(visitSummary.getChiefComplaints());
+            }
+
+            VisitSummary updated = visitSummaryRepository.saveAndFlush(existing);
+            entityManager.refresh(updated);
+            VisitSummaryDTO dto = modelMapper.map(updated, VisitSummaryDTO.class);
+            dto.setDoctorId(doctorId);
+            dto.setPatientId(patientId);
+            dto.setDoctorName(doctor.getFirstName() + " " + doctor.getLastName());
+            dto.setPatientName(patient.getFirstName() + " " + patient.getLastName());
+            return dto;
+        }
+
+        // ✅ Else create new
+        log.info("Creating new VisitSummary record");
+        visitSummary.setDoctor(doctor);
+        visitSummary.setPatient(patient);
+        visitSummary.setAppointment(appointment);
+
+        if (visitSummary.getChiefComplaints() != null) {
+            visitSummary.getChiefComplaints().forEach(c -> c.setVisitSummary(visitSummary));
+        }
+
+        VisitSummary saved = visitSummaryRepository.saveAndFlush(visitSummary);
+        entityManager.refresh(saved);
+
+        VisitSummaryDTO dto = modelMapper.map(saved, VisitSummaryDTO.class);
+        dto.setDoctorId(doctorId);
+        dto.setPatientId(patientId);
+        dto.setDoctorName(doctor.getFirstName() + " " + doctor.getLastName());
+        dto.setPatientName(patient.getFirstName() + " " + patient.getLastName());
+
+        return dto;
+    }
+
 }

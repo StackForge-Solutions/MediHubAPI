@@ -34,9 +34,16 @@ public class VisitSummary {
     @OneToMany(mappedBy = "visitSummary", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChiefComplaint> chiefComplaints;
 
+    @OneToOne(mappedBy = "visitSummary", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Vitals vitals;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "appointment_id")
     private Appointment appointment;
+
+    @OneToOne(mappedBy = "visitSummary", cascade = CascadeType.ALL, orphanRemoval = true)
+    private MedicalHistory medicalHistory;
+
 
 }
 

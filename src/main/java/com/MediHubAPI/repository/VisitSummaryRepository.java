@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface VisitSummaryRepository extends JpaRepository<VisitSummary, Long> {
 
@@ -21,4 +22,14 @@ public interface VisitSummaryRepository extends JpaRepository<VisitSummary, Long
     List<VisitSummary> findByFilters(@Param("patientId") Long patientId,
                                      @Param("doctorId") Long doctorId,
                                      @Param("appointmentId") Long appointmentId);
+
+    @Query("SELECT v FROM VisitSummary v WHERE v.appointment.id = :appointmentId")
+    Optional<VisitSummary> findByAppointmentId(@Param("appointmentId") Long appointmentId);
+
+
+    @Query("SELECT v FROM VisitSummary v WHERE v.doctor.id = :doctorId AND v.patient.id = :patientId AND v.appointment.id = :appointmentId")
+    Optional<VisitSummary> findFirstByDoctorIdAndPatientIdAndAppointmentId(Long doctorId, Long patientId, Long appointmentId);
+
+
+
 }

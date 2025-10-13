@@ -18,19 +18,27 @@ import java.util.List;
 public class VisitSummaryController {
 
     private final VisitSummaryService visitSummaryService;
-
-    /** ------------------- Create VisitSummary ------------------- */
+    /**
+     * ------------------- Create or Update VisitSummary -------------------
+     * If an existing record is found for doctorId + patientId + appointmentId,
+     * it will be updated. Otherwise, a new record will be created.
+     */
     @PostMapping
-    public ApiResponse<VisitSummaryDTO> saveVisitSummary(
+    public ApiResponse<VisitSummaryDTO> saveOrUpdateVisitSummary(
             @RequestParam Long doctorId,
             @RequestParam Long patientId,
+            @RequestParam Long appointmentId,
             @RequestBody VisitSummary visitSummary
     ) {
-        log.info("API call: saveVisitSummary doctorId={}, patientId={}", doctorId, patientId);
+        log.info("API call: saveOrUpdateVisitSummary doctorId={}, patientId={}, appointmentId={}", doctorId, patientId, appointmentId);
 
-        VisitSummaryDTO saved = visitSummaryService.saveVisitSummary(doctorId, patientId, visitSummary);
+        VisitSummaryDTO saved = visitSummaryService.saveOrUpdateVisitSummary(doctorId, patientId, appointmentId, visitSummary);
 
-        return ApiResponse.created(saved, "/api/visit-summary", "Visit Summary saved successfully");
+        String message = (visitSummary.getId() != null)
+                ? "Visit Summary updated successfully"
+                : "Visit Summary saved successfully";
+
+        return ApiResponse.success(saved, "/api/visit-summary", message);
     }
 
     /** ------------------- Get VisitSummary by ID ------------------- */
@@ -61,16 +69,4 @@ public class VisitSummaryController {
                 "Visit Summaries fetched successfully");
     }
 
-    /** ------------------- Update VisitSummary ------------------- */
-    @PutMapping("/{id}")
-    public ApiResponse<VisitSummaryDTO> updateVisitSummary(
-            @PathVariable Long id,
-            @RequestBody VisitSummary visitSummary
-    ) {
-        log.info("API call: updateVisitSummary id={}", id);
-
-        VisitSummaryDTO updated = visitSummaryService.updateVisitSummary(id, visitSummary);
-
-        return ApiResponse.success(updated, "/api/visit-summary/" + id, "Visit Summary updated successfully");
-    }
 }
