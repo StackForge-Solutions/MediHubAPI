@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChiefComplaintDTO {
+    private Long id;
     private String complaint;
     private int years;
     private int months;

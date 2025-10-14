@@ -129,6 +129,7 @@ public class MapperConfig {
 
                 return src.getChiefComplaints().stream()
                         .map(c -> new ChiefComplaintDTO(
+                                c.getId(),
                                 c.getComplaint(),
                                 c.getYears(),
                                 c.getMonths(),

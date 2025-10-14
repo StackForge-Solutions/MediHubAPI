@@ -1,11 +1,10 @@
 {
 	"info": {
-		"_postman_id": "cd1901bf-f105-4fb2-85e7-692e0999d56a",
+		"_postman_id": "4ad08b63-3a25-401b-b6f7-96fa6e6bebd6",
 		"name": "MediHub - Auth & User APIs",
 		"description": "Postman collection for AuthController and UserController APIs in MediHub Hospital Management System.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "46671077",
-		"_collection_link": "https://amit-7068717.postman.co/workspace/Amit's-Workspace~68814650-5925-4a70-837d-1024adc01412/collection/46671077-cd1901bf-f105-4fb2-85e7-692e0999d56a?action=share&source=collection_link&creator=46671077"
+		"_exporter_id": "1459418"
 	},
 	"item": [
 		{
@@ -522,7 +521,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/api/users/patients/search?keyword=pa&page=0&size=10",
+							"raw": "{{baseUrl}}/api/users/patients/search?appointmentDate=2025-10-11&consultationFeesPaid=true&page=0&size=10",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -535,12 +534,16 @@
 							"query": [
 								{
 									"key": "keyword",
-									"value": "pa"
+									"value": "pa",
+									"disabled": true
 								},
 								{
-									"key": "specialization",
-									"value": "ORTHOPEDIC",
-									"disabled": true
+									"key": "appointmentDate",
+									"value": "2025-10-11"
+								},
+								{
+									"key": "consultationFeesPaid",
+									"value": "true"
 								},
 								{
 									"key": "page",
@@ -549,6 +552,11 @@
 								{
 									"key": "size",
 									"value": "10"
+								},
+								{
+									"key": "specialization",
+									"value": "ORTHOPEDIC",
+									"disabled": true
 								}
 							]
 						}
@@ -1391,76 +1399,6 @@
 			]
 		},
 		{
-			"name": "PatientController",
-			"item": [
-				{
-					"name": "Filter by Date",
-					"request": {
-						"method": "GET",
-						"header": []
-					},
-					"response": []
-				},
-				{
-					"name": "Previous Patients (before today)",
-					"request": {
-						"method": "GET",
-						"header": []
-					},
-					"response": []
-				},
-				{
-					"name": "Filter by Week",
-					"request": {
-						"method": "GET",
-						"header": []
-					},
-					"response": []
-				},
-				{
-					"name": "Get all patients (with pagination)",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/api/visits?period=DAY&date=2025-10-02&page=0&size=20",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"visits"
-							],
-							"query": [
-								{
-									"key": "period",
-									"value": "DAY"
-								},
-								{
-									"key": "date",
-									"value": "2025-10-02"
-								},
-								{
-									"key": "page",
-									"value": "0"
-								},
-								{
-									"key": "size",
-									"value": "20"
-								}
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
 			"name": "AppointmentController",
 			"item": [
 				{
@@ -2204,7 +2142,10 @@
 					"name": "4. Get Invoice by ID",
 					"request": {
 						"method": "GET",
-						"header": []
+						"header": [],
+						"url": {
+							"raw": ""
+						}
 					},
 					"response": []
 				},
@@ -2335,7 +2276,10 @@
 					"name": "8. Get Printable Invoice (Future Extension) pdf",
 					"request": {
 						"method": "GET",
-						"header": []
+						"header": [],
+						"url": {
+							"raw": ""
+						}
 					},
 					"response": []
 				},
@@ -2374,7 +2318,10 @@
 					"name": "9. Delete / Refund (Future extension)",
 					"request": {
 						"method": "GET",
-						"header": []
+						"header": [],
+						"url": {
+							"raw": ""
+						}
 					},
 					"response": []
 				}
@@ -2450,6 +2397,333 @@
 								{
 									"key": "q",
 									"value": "pain"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. getVisits list",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/symptoms/search?category=&q=pain",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"symptoms",
+								"search"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": ""
+								},
+								{
+									"key": "q",
+									"value": "pain"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4.Save Chief Complaint",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"visitDate\": \"2025-10-11\",\n    \"visitTime\": \"01:40\",\n    \"chiefComplaints\": [\n        {\n            \"complaint\": \"test\",\n            \"years\": 1,\n            \"months\": 1,\n            \"weeks\": 1,\n            \"days\": 1,\n            \"sinceYear\": 2025,\n            \"bodyPart\": \"head\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/visit-summary?doctorId={{doctorId}}&patientId={{patientId}}&appointmentId={{appointment-id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"visit-summary"
+							],
+							"query": [
+								{
+									"key": "doctorId",
+									"value": "{{doctorId}}"
+								},
+								{
+									"key": "patientId",
+									"value": "{{patientId}}"
+								},
+								{
+									"key": "appointmentId",
+									"value": "{{appointment-id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5.Search Chief Complaint",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/visit-summary?doctorId={{doctor-id}}&patientId={{patient-id}}&appointmentId={{appointment-id}}&id={{visit-summary-id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"visit-summary"
+							],
+							"query": [
+								{
+									"key": "doctorId",
+									"value": "{{doctor-id}}"
+								},
+								{
+									"key": "patientId",
+									"value": "{{patient-id}}"
+								},
+								{
+									"key": "appointmentId",
+									"value": "{{appointment-id}}"
+								},
+								{
+									"key": "id",
+									"value": "{{visit-summary-id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6.Create / Update Vitals",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n           \"height\": 1,\n           \"weight\": 2,\n           \"bmi\": 20000,\n           \"waist\": 32,\n           \"bpSystolic\": 60,\n           \"bpDiastolic\": 60,\n           \"pulse\": 60,\n           \"hc\": 2,\n           \"temperature\": 40,\n           \"respiratory\": 23\n         }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/vitals?visitSummaryId={{visit-summary-id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"vitals"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointment-id}}",
+									"disabled": true
+								},
+								{
+									"key": "visitSummaryId",
+									"value": "{{visit-summary-id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "7.Get Vitals",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/vitals?appointmentId={{appointment-id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"vitals"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointment-id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "8.Save or Update Medical History",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n           \"personalHistory\": {\n             \"Smoking\": \"yes\",\n             \"SmokingComment\": \"Test Smoking\",\n             \"Alcohol\": \"yes\",\n             \"AlcoholComment\": \"Test Alcohol\",\n             \"DrugAbuse\": \"yes\",\n             \"DrugAbuseComment\": \"Test Drug Abuse\",\n             \"TattooMarks\": \"no\",\n             \"TattooMarksComment\": \"Test Tattoo Marks\",\n             \"Exercise\": \"yes\",\n             \"ExerciseComment\": \"Test Exercise\",\n             \"Diet\": true,\n             \"Children\": 2\n           },\n           \"renalHistory\": {\n             \"CKDStage\": \"egfr\",\n             \"Proteinuria\": \"magnitude\",\n             \"UrineOutput\": 3,\n             \"DialysisHistory\": \"NA\",\n             \"NephrotoxicDrugs\": \"NA\",\n             \"UTIHistory\": \"NA\"\n           },\n           \"diabetesHistory\": {\n             \"DurationOfDM\": \"12\",\n             \"GlycemicControl\": \"NA\",\n             \"HyperglycemicEpisodes\": \"post meal\"\n           },\n           \"pastHistory\": {\n             \"Jaundice\": \"\",\n             \"BloodTransfusions\": \"\",\n             \"AsthmaCOPD\": \"\",\n             \"Tuberculosis\": \"\",\n             \"ThyroidProblem\": \"\"\n           },\n           \"otherHistories\": {\n             \"HPINotes\": \"HPI\",\n             \"TOINotes\": \"Involvement\",\n             \"FamilyHistory\": \"Family History\"\n           }\n         }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/medical-history?appointmentId={{appointment-id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"medical-history"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointment-id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "9.Get Medical History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/medical-history?appointmentId={{appointment-id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"medical-history"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointment-id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "10.Create / Update Prescribed Tests (Upsert)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/medical-history?appointmentId={{appointment-id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"medical-history"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointment-id}}"
 								}
 							]
 						}
