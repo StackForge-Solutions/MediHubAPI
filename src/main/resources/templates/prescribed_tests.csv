@@ -1,0 +1,4 @@
+name,price,tat,quantity,notes,isCustom
+TSH,300,6,1,,false
+FBS,150,4,1,Fasting,true
+Lipid Profile,500,12,1,Complete panel,false
