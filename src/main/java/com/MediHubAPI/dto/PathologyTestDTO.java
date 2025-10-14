@@ -3,16 +3,15 @@ package com.MediHubAPI.dto;
 import lombok.*;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class PrescribedTestDTO {
+public class PathologyTestDTO {
     private Long id;
-    private Long masterTestId;    // Reference to MasterTest (optional)
     private String name;
     private Double price;
     private Integer tat;
-    private Integer quantity;
+    private String category;
     private String notes;
-    private Boolean isCustom;
+    private Boolean isActive;
 }

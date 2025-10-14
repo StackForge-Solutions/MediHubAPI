@@ -4,6 +4,7 @@ import com.MediHubAPI.dto.PrescribedTestDTO;
 import com.MediHubAPI.model.Appointment;
 import com.MediHubAPI.model.PrescribedTest;
 import com.MediHubAPI.model.VisitSummary;
+import com.MediHubAPI.model.mdm.PathologyTestMaster;
 import com.MediHubAPI.repository.AppointmentRepository;
 import com.MediHubAPI.repository.PrescribedTestRepository;
 import com.MediHubAPI.repository.VisitSummaryRepository;
@@ -31,8 +32,8 @@ public class PrescribedTestServiceImpl implements PrescribedTestService {
     @PersistenceContext
     private EntityManager entityManager; // needed to initialize proxies
 
-    @Transactional
     @Override
+    @Transactional
     public List<PrescribedTestDTO> saveOrUpdateTests(Long appointmentId, List<PrescribedTestDTO> testDTOs) {
         log.info("Upserting PrescribedTests for appointmentId={}", appointmentId);
 
@@ -42,32 +43,45 @@ public class PrescribedTestServiceImpl implements PrescribedTestService {
         VisitSummary visitSummary = visitSummaryRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(() -> new RuntimeException("VisitSummary not found for appointmentId: " + appointmentId));
 
-        // 1️⃣ Delete existing tests first
+        // 1️⃣ Delete existing first (if any)
         List<PrescribedTest> existing = prescribedTestRepository.findByVisitSummary_Id(visitSummary.getId());
-        if (!existing.isEmpty()) {
-            log.info("Deleting {} existing PrescribedTests for visitSummaryId={}", existing.size(), visitSummary.getId());
-            prescribedTestRepository.deleteAllInBatch(existing); // ✅ Faster + consistent
-            prescribedTestRepository.flush();                   // ✅ Force deletion to DB immediately
-            entityManager.clear();                              // ✅ Clear persistence context
-        }
+        prescribedTestRepository.deleteAllInBatch(existing);
+        prescribedTestRepository.flush();
+        entityManager.clear();
 
-        // 2️⃣ Insert new tests
+        // 2️⃣ Map new tests
         List<PrescribedTest> newTests = testDTOs.stream()
                 .map(dto -> {
-                    PrescribedTest test = modelMapper.map(dto, PrescribedTest.class);
-                    test.setId(null);                           // ✅ Ensure treated as new entity
-                    test.setVisitSummary(visitSummary);
-                    return test;
+                    PrescribedTest entity = new PrescribedTest();
+                    entity.setVisitSummary(visitSummary);
+
+                    if (dto.getMasterTestId() != null) {
+                        PathologyTestMaster master = entityManager.find(PathologyTestMaster.class, dto.getMasterTestId());
+                        if (master != null) {
+                            entity.setPathologyTestMaster(master);
+                            entity.setName(master.getName());
+                            entity.setPrice(master.getPrice());
+                            entity.setTat(master.getTat());
+//                            entity.setIsCustom(false);
+                        }
+                    } else {
+                        // Custom test
+                        entity.setName(dto.getName());
+                        entity.setPrice(dto.getPrice());
+                        entity.setTat(dto.getTat());
+//                        entity.setIsCustom(true);
+                    }
+
+                    entity.setQuantity(dto.getQuantity());
+                    entity.setNotes(dto.getNotes());
+                    return entity;
                 })
                 .collect(Collectors.toList());
 
-        List<PrescribedTest> saved = prescribedTestRepository.saveAll(newTests);
-        prescribedTestRepository.flush();
-
-        log.info("Saved {} new PrescribedTests for appointmentId={}", saved.size(), appointmentId);
+        List<PrescribedTest> saved = prescribedTestRepository.saveAllAndFlush(newTests);
 
         return saved.stream()
-                .map(t -> modelMapper.map(t, PrescribedTestDTO.class))
+                .map(test -> modelMapper.map(test, PrescribedTestDTO.class))
                 .collect(Collectors.toList());
     }
 
