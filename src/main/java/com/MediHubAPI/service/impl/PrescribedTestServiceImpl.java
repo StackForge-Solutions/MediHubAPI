@@ -8,6 +8,8 @@ import com.MediHubAPI.repository.AppointmentRepository;
 import com.MediHubAPI.repository.PrescribedTestRepository;
 import com.MediHubAPI.repository.VisitSummaryRepository;
 import com.MediHubAPI.service.PrescribedTestService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -26,11 +28,13 @@ public class PrescribedTestServiceImpl implements PrescribedTestService {
     private final VisitSummaryRepository visitSummaryRepository;
     private final AppointmentRepository appointmentRepository;
     private final ModelMapper modelMapper;
+    @PersistenceContext
+    private EntityManager entityManager; // needed to initialize proxies
 
     @Transactional
     @Override
     public List<PrescribedTestDTO> saveOrUpdateTests(Long appointmentId, List<PrescribedTestDTO> testDTOs) {
-        log.info("Saving or updating PrescribedTests for appointmentId={}", appointmentId);
+        log.info("Upserting PrescribedTests for appointmentId={}", appointmentId);
 
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new RuntimeException("Appointment not found with ID: " + appointmentId));
@@ -38,24 +42,35 @@ public class PrescribedTestServiceImpl implements PrescribedTestService {
         VisitSummary visitSummary = visitSummaryRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(() -> new RuntimeException("VisitSummary not found for appointmentId: " + appointmentId));
 
-        // Delete existing tests (upsert behavior)
-        prescribedTestRepository.findByVisitSummary_Id(visitSummary.getId())
-                .forEach(existing -> prescribedTestRepository.delete(existing));
+        // 1️⃣ Delete existing tests first
+        List<PrescribedTest> existing = prescribedTestRepository.findByVisitSummary_Id(visitSummary.getId());
+        if (!existing.isEmpty()) {
+            log.info("Deleting {} existing PrescribedTests for visitSummaryId={}", existing.size(), visitSummary.getId());
+            prescribedTestRepository.deleteAllInBatch(existing); // ✅ Faster + consistent
+            prescribedTestRepository.flush();                   // ✅ Force deletion to DB immediately
+            entityManager.clear();                              // ✅ Clear persistence context
+        }
 
-        // Save new tests
-        List<PrescribedTest> savedTests = testDTOs.stream()
+        // 2️⃣ Insert new tests
+        List<PrescribedTest> newTests = testDTOs.stream()
                 .map(dto -> {
                     PrescribedTest test = modelMapper.map(dto, PrescribedTest.class);
+                    test.setId(null);                           // ✅ Ensure treated as new entity
                     test.setVisitSummary(visitSummary);
-                    return prescribedTestRepository.save(test);
+                    return test;
                 })
                 .collect(Collectors.toList());
 
-        log.info("Saved {} prescribed tests for appointmentId={}", savedTests.size(), appointmentId);
-        return savedTests.stream()
-                .map(test -> modelMapper.map(test, PrescribedTestDTO.class))
+        List<PrescribedTest> saved = prescribedTestRepository.saveAll(newTests);
+        prescribedTestRepository.flush();
+
+        log.info("Saved {} new PrescribedTests for appointmentId={}", saved.size(), appointmentId);
+
+        return saved.stream()
+                .map(t -> modelMapper.map(t, PrescribedTestDTO.class))
                 .collect(Collectors.toList());
     }
+
 
     @Override
     public List<PrescribedTestDTO> getTestsByAppointmentId(Long appointmentId) {
