@@ -1,6 +1,7 @@
 package com.MediHubAPI.repository;
 
 
+import com.MediHubAPI.model.Appointment;
 import com.MediHubAPI.model.VisitSummary;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -29,7 +30,6 @@ public interface VisitSummaryRepository extends JpaRepository<VisitSummary, Long
 
     @Query("SELECT v FROM VisitSummary v WHERE v.doctor.id = :doctorId AND v.patient.id = :patientId AND v.appointment.id = :appointmentId")
     Optional<VisitSummary> findFirstByDoctorIdAndPatientIdAndAppointmentId(Long doctorId, Long patientId, Long appointmentId);
-
 
 
 }
