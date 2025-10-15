@@ -30,20 +30,22 @@ public class InvoiceController {
     // Controller
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Long>> createInvoiceDraft(
+    public ResponseEntity<ApiResponse<Long>> upsertInvoiceDraft(
             @Valid @RequestBody InvoiceDtos.CreateInvoiceReq req,
             @RequestHeader(name = "X-User", required = false) String createdBy,
             HttpServletRequest request) {
 
-        // Save draft and capture created entity
-        Invoice invoice = service.createDraft(req, createdBy != null ? createdBy : "system");
+        Invoice invoice = service.upsertDraft(req, createdBy != null ? createdBy : "system");
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(
-                        invoice.getId(),
+                         invoice.getId(), // ✅ Convert Long → String
                         request.getRequestURI(),
                         "createInvoiceDraft successful"
                 ));
+
     }
+
 
     @PostMapping("/{id}/finalize")
     public InvoiceDtos.FinalizeInvoiceRes finalizeDraftInvoice(@PathVariable Long id) {

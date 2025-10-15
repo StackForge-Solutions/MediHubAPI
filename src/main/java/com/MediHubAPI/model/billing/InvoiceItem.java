@@ -54,6 +54,8 @@ public class InvoiceItem {
     @Column(name = "line_total", precision = 14, scale = 2, nullable = false)
     private BigDecimal lineTotal; // computed
 
+
+
     // ✅ Optional: Auto-calculate lineTotal before persist
     @PrePersist
     @PreUpdate

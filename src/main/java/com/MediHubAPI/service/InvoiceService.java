@@ -42,24 +42,56 @@ public class InvoiceService {
         User u = new User(); u.setId(id); return u;
     }
 
-    @Transactional
-    public Invoice createDraft(InvoiceDtos.CreateInvoiceReq req, String createdBy) {
-        // Construct invoice
-        Invoice inv = new Invoice();
-        inv.setDoctor(loadUser(req.doctorId()));
-        inv.setPatient(loadUser(req.patientId()));
-        inv.setAppointmentId(req.appointmentId());
-        inv.setClinicId(req.clinicId());
-        inv.setCurrency(req.currency());
-        inv.setToken(req.token());
-        inv.setQueue(req.queue());
-        inv.setRoom(req.room());
-        inv.setNotes(req.notes());
-        inv.setStatus(Invoice.Status.DRAFT);
-        inv.setCreatedBy(createdBy);
 
-        // Build items
-        List<InvoiceItem> items = new ArrayList<>();
+    /**
+     * 🧾 Create or update (upsert) a draft invoice.
+     * If a draft already exists for the same appointment, it will be updated.
+     */
+    /**
+     * 🧾 Create or update (upsert) a draft invoice.
+     *  - Creates a new draft if none exists for the appointment.
+     *  - Updates existing draft items & totals otherwise.
+     */
+    @Transactional
+    public Invoice upsertDraft(InvoiceDtos.CreateInvoiceReq req, String createdBy) {
+
+        // 1️⃣ Try to find existing draft for same appointment (managed entity)
+        Invoice inv = invoiceRepo.findFirstByAppointmentIdAndStatus(
+                req.appointmentId(), Invoice.Status.DRAFT
+        ).orElse(null);
+
+        boolean isNew = (inv == null);
+
+        if (isNew) {
+            // 🆕 New invoice (no conflict)
+            inv = new Invoice();
+            inv.setDoctor(loadUser(req.doctorId()));
+            inv.setPatient(loadUser(req.patientId()));
+            inv.setAppointmentId(req.appointmentId());
+            inv.setClinicId(req.clinicId());
+            inv.setCurrency(req.currency());
+            inv.setToken(req.token());
+            inv.setQueue(req.queue());
+            inv.setRoom(req.room());
+            inv.setNotes(req.notes());
+            inv.setStatus(Invoice.Status.DRAFT);
+            inv.setCreatedBy(createdBy);
+            inv.setCreatedAt(LocalDateTime.now());
+        } else {
+            // ✏️ Existing draft — ensure it’s managed
+            inv = invoiceRepo.findById(inv.getId())
+                    .orElseThrow(() -> new EntityNotFoundException("Invoice not found for update"));
+
+            inv.setNotes(req.notes());
+//            inv.setUpdatedBy(createdBy);
+//            inv.setUpdatedAt(LocalDateTime.now());
+
+            // ✅ Hibernate will auto-delete old items (orphanRemoval)
+            inv.getItems().clear();
+        }
+
+        // 2️⃣ Build new items list
+        List<InvoiceItem> newItems = new ArrayList<>();
         int sl = 1;
         BigDecimal subTotal = BigDecimal.ZERO;
         BigDecimal discountTotal = BigDecimal.ZERO;
@@ -67,17 +99,17 @@ public class InvoiceService {
 
         for (InvoiceDtos.ItemReq it : req.items()) {
             String name = it.name();
-            if (it.serviceItemId()!=null) {
+            if (it.serviceItemId() != null) {
                 DoctorServiceItem dsi = serviceRepo.findById(it.serviceItemId())
                         .orElseThrow(() -> new EntityNotFoundException("Service not found"));
-                name = dsi.getName(); // prefer catalog name
+                name = dsi.getName();
             }
+
             BigDecimal qty = BigDecimal.valueOf(it.qty());
             BigDecimal lineBase = it.unitPrice().multiply(qty);
             BigDecimal disc = it.discountAmount();
             BigDecimal taxable = lineBase.subtract(disc);
-            BigDecimal tax = taxable.multiply(it.taxPercent())
-                    .divide(BigDecimal.valueOf(100));
+            BigDecimal tax = taxable.multiply(it.taxPercent()).divide(BigDecimal.valueOf(100));
             BigDecimal lineTotal = taxable.add(tax);
 
             InvoiceItem item = InvoiceItem.builder()
@@ -92,25 +124,41 @@ public class InvoiceService {
                     .taxAmount(round(tax))
                     .lineTotal(round(lineTotal))
                     .build();
-            items.add(item);
 
+            newItems.add(item);
             subTotal = subTotal.add(lineBase);
             discountTotal = discountTotal.add(disc);
             taxTotal = taxTotal.add(tax);
         }
 
-        inv.setItems(items);
+        // 3️⃣ Assign items and totals
+        inv.getItems().addAll(newItems);
         inv.setSubTotal(round(subTotal));
         inv.setDiscountTotal(round(discountTotal));
         inv.setTaxTotal(round(taxTotal));
-        inv.setRoundOff(BigDecimal.ZERO); // apply rounding policy here if needed
+        inv.setRoundOff(BigDecimal.ZERO);
+
         BigDecimal grand = subTotal.subtract(discountTotal).add(taxTotal);
         inv.setGrandTotal(round(grand));
-        inv.setPaidAmount(BigDecimal.ZERO);
-        inv.setBalanceDue(inv.getGrandTotal());
 
-        return invoiceRepo.save(inv);
+        if (isNew) {
+            inv.setPaidAmount(BigDecimal.ZERO);
+            inv.setBalanceDue(inv.getGrandTotal());
+        } else {
+            BigDecimal alreadyPaid = inv.getPaidAmount() == null ? BigDecimal.ZERO : inv.getPaidAmount();
+            inv.setBalanceDue(inv.getGrandTotal().subtract(alreadyPaid));
+        }
+
+        // 4️⃣ Save (UPDATE if existing, INSERT if new)
+        if (isNew) {
+            return invoiceRepo.save(inv); // insert
+        } else {
+            // ✅ ensure Hibernate treats this as update
+            return invoiceRepo.saveAndFlush(inv); // update managed entity
+        }
     }
+
+
 
     @Transactional
     public Invoice finalizeInvoice(Long invoiceId) {
