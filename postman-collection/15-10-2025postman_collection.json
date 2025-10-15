@@ -2700,6 +2700,52 @@
 				{
 					"name": "10.Create / Update Prescribed Tests (Upsert)",
 					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    {\n        \"name\": \"TSH\",\n        \"price\": 300,\n        \"tat\": 6,\n        \"quantity\": 1,\n        \"notes\": \"\"\n    },\n    {\n        \"name\": \"Blood Sugar (Fasting)\",\n        \"price\": 120,\n        \"tat\": 4,\n        \"quantity\": 1,\n        \"notes\": \"Fasting sample required\"\n    }\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/prescribed-tests?appointmentId=60",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"prescribed-tests"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "60"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "11.Fetch Prescribed Tests by Appointment ID",
+					"request": {
 						"method": "GET",
 						"header": [
 							{
@@ -2712,19 +2758,186 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/api/medical-history?appointmentId={{appointment-id}}",
+							"raw": "{{baseUrl}}/api/prescribed-tests?appointmentId={{appointment-id}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
-								"medical-history"
+								"prescribed-tests"
 							],
 							"query": [
 								{
 									"key": "appointmentId",
 									"value": "{{appointment-id}}"
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "12.Upsert / Auto-Create Visit Summary",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/visit-summary/upsert-by-appointment?appointmentId={{appointmentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"visit-summary",
+								"upsert-by-appointment"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointmentId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Master Data Management (MDM)",
+			"item": [
+				{
+					"name": "Bulk Upload API (for Master Tests — MDM Catalog)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/Users/meghnadsaha/Downloads/prescribed_tests.csv"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/master-tests/upload",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"master-tests",
+								"upload"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2.Upsert Prescribed Tests API (Linked to Appointment/Visit)",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/Users/meghnadsaha/Downloads/prescribed_tests.csv"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/master-tests/search?q=blood",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"master-tests",
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "blood"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Pathology Invoice",
+			"item": [
+				{
+					"name": "1.Create / Update Prescribed Test Invoice Draft",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"appointmentId\": {{appointmentId}},\n    \"clinicId\": {{clinicId}},\n    \"currency\": \"INR\",\n    \"notes\": \"Draft invoice for prescribed lab tests\",\n    \"token\": 1,\n    \"queue\": \"A12\",\n    \"room\": \"LAB-2\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/prescribed-tests/invoices/draft",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"prescribed-tests",
+								"invoices",
+								"draft"
 							]
 						}
 					},
