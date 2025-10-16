@@ -171,44 +171,51 @@ public class PrescribedTestInvoiceService {
         if (inv.getStatus() == Invoice.Status.VOID)
             throw new IllegalStateException("Cannot make payment for a VOID invoice");
 
-        if (req.amount() == null || req.amount().compareTo(BigDecimal.ZERO) <= 0) {
+        if (req.amount() == null || req.amount().compareTo(BigDecimal.ZERO) <= 0)
             throw new IllegalArgumentException("Payment amount must be greater than zero");
-        }
 
-        // 1️⃣ Prevent duplicate payments (same txnRef)
-        if (req.txnRef() != null &&
-                paymentRepo.existsByTxnRefAndInvoiceId(req.txnRef(), invoiceId)) {
+        // ✅ Duplicate txn check
+        if (req.txnRef() != null && paymentRepo.existsByTxnRefAndInvoiceId(req.txnRef(), invoiceId))
             throw new IllegalStateException("Duplicate payment detected: same transaction reference already exists");
-        }
 
-        // 2️⃣ Prevent overpayment
+        // ✅ Overpayment check
         BigDecimal dueBefore = inv.getGrandTotal().subtract(inv.getPaidAmount());
-        if (req.amount().compareTo(dueBefore) > 0) {
-            throw new IllegalArgumentException(
-                    String.format("Payment amount %.2f exceeds remaining balance %.2f",
-                            req.amount(), dueBefore));
-        }
+        if (req.amount().compareTo(dueBefore) > 0)
+            throw new IllegalArgumentException(String.format("Payment %.2f exceeds balance %.2f",
+                    req.amount(), dueBefore));
 
         InvoicePayment.Method method = InvoicePayment.Method.valueOf(req.method());
+
+        // ✅ Card type validation
+        String cardType = null;
+        if (method.name().contains("CARD")) {
+            if (req.cardType() == null || req.cardType().isBlank()) {
+                throw new IllegalArgumentException("cardType is required for card payments");
+            }
+            cardType = req.cardType().toUpperCase(); // e.g., VISA, MASTER, RUPAY
+        }
+
+        // ✅ Determine payment date
+        LocalDateTime paymentDate = (req.receivedAt() != null)
+                ? req.receivedAt().toLocalDateTime()
+                : LocalDateTime.now();
+
+        // ✅ Build payment record
         InvoicePayment payment = InvoicePayment.builder()
                 .invoice(inv)
                 .method(method)
                 .amount(req.amount())
                 .txnRef(req.txnRef())
-                .receivedAt(req.receivedAt() != null
-                        ? req.receivedAt().toLocalDateTime()
-                        : LocalDateTime.now())
-                .paymentDate(req.paymentDate() != null
-                        ? req.paymentDate()
-                        : LocalDateTime.now()) // 🆕 Default current time
-                .cardType(req.cardType())      // 🆕 Optional
+                .receivedAt(LocalDateTime.now())
+                .paymentDate(paymentDate)
                 .receivedBy(receivedBy != null ? receivedBy : req.receivedBy())
+                .cardType(cardType)
                 .notes(req.notes())
                 .build();
 
         paymentRepo.save(payment);
 
-        // 3️⃣ Update totals safely
+        // ✅ Update invoice totals
         BigDecimal updatedPaid = inv.getPaidAmount().add(payment.getAmount());
         inv.setPaidAmount(round(updatedPaid));
 
@@ -223,11 +230,12 @@ public class PrescribedTestInvoiceService {
 
         invoiceRepo.save(inv);
 
-        log.info("✅ Payment of {} recorded for invoice={}, method={}, balanceDue={}",
-                payment.getAmount(), invoiceId, payment.getMethod(), inv.getBalanceDue());
+        log.info("✅ Payment {} added for invoice={}, method={}, cardType={}, balanceDue={}",
+                payment.getAmount(), invoiceId, method, cardType, inv.getBalanceDue());
 
         return payment;
     }
+
 
 
     /**
