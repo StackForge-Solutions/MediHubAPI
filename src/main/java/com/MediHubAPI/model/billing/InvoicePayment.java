@@ -51,6 +51,14 @@ public class InvoicePayment {
     @Column(name = "notes", length = 512)
     private String notes;
 
+
+    @Column(name = "payment_date")
+    private LocalDateTime paymentDate;
+
+    @Column(name = "card_type", length = 32)
+    private String cardType;
+
+
     @PrePersist
     void onCreate() {
         if (receivedAt == null) receivedAt = LocalDateTime.now();

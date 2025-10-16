@@ -49,7 +49,12 @@ public class InvoiceDtos {
             String txnRef,
             OffsetDateTime receivedAt,
             String receivedBy,
-            String notes
+            String notes,
+
+
+
+            LocalDateTime paymentDate,   // 🆕 payment date/time
+            String cardType              // 🆕 e.g. "VISA", "MASTERCARD", "RUPAY"
     ) {
     }
 

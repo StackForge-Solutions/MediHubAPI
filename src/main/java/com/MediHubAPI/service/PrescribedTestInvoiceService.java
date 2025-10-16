@@ -198,6 +198,10 @@ public class PrescribedTestInvoiceService {
                 .receivedAt(req.receivedAt() != null
                         ? req.receivedAt().toLocalDateTime()
                         : LocalDateTime.now())
+                .paymentDate(req.paymentDate() != null
+                        ? req.paymentDate()
+                        : LocalDateTime.now()) // 🆕 Default current time
+                .cardType(req.cardType())      // 🆕 Optional
                 .receivedBy(receivedBy != null ? receivedBy : req.receivedBy())
                 .notes(req.notes())
                 .build();
