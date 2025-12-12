@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.MediHubAPI.util.MoneyUtil.round;
@@ -56,8 +57,8 @@ public class InvoiceService {
     public Invoice upsertDraft(InvoiceDtos.CreateInvoiceReq req, String createdBy) {
 
         // 1️⃣ Try to find existing draft for same appointment (managed entity)
-        Invoice inv = invoiceRepo.findFirstByAppointmentIdAndStatus(
-                req.appointmentId(), Invoice.Status.DRAFT
+        Invoice inv = invoiceRepo.findFirstByAppointmentIdAndStatusIn(
+                req.appointmentId(), Collections.singleton(Invoice.Status.DRAFT)
         ).orElse(null);
 
         boolean isNew = (inv == null);

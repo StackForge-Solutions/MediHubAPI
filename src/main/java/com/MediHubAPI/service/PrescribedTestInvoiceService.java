@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,7 +56,7 @@ public class PrescribedTestInvoiceService {
 
         // Step 2️⃣: Check for existing DRAFT invoice (managed entity)
         Optional<Invoice> existingOpt =
-                invoiceRepo.findFirstByAppointmentIdAndStatus(req.appointmentId(), Invoice.Status.DRAFT);
+                invoiceRepo.findFirstByAppointmentIdAndStatusIn(req.appointmentId(), Collections.singleton(Invoice.Status.DRAFT));
 
         Invoice inv;
         boolean isNew = existingOpt.isEmpty();
