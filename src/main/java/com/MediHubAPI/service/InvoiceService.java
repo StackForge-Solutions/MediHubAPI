@@ -249,8 +249,12 @@ public class InvoiceService {
 
     @Transactional(readOnly = true)
     public Invoice getDraftByAppointment(Long appointmentId) {
-        return invoiceRepo.findFirstByAppointmentIdAndStatus(appointmentId, Invoice.Status.DRAFT)
-                .orElseThrow(() -> new EntityNotFoundException("Draft invoice not found for appointmentId: " + appointmentId));
+        return invoiceRepo.findFirstByAppointmentIdAndStatusIn(
+                appointmentId,
+                java.util.List.of(Invoice.Status.DRAFT, Invoice.Status.PAID)
+        ).orElseThrow(() ->
+                new EntityNotFoundException("Invoice not found (DRAFT/PAID) for appointmentId: " + appointmentId)
+        );
     }
 
     @Transactional

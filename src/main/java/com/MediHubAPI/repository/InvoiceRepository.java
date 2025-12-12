@@ -6,7 +6,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
- import java.util.Optional;
+import java.util.Collection;
+import java.util.Optional;
 
 public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpecificationExecutor<Invoice> {
     Optional<Invoice> findByBillNumber(String billNumber);
@@ -21,5 +22,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpec
     )
     Optional<Invoice> fetchForPrintWithItems(@Param("id") Long id);
 
-    Optional<Invoice> findFirstByAppointmentIdAndStatus(Long appointmentId, Invoice.Status status);
+
+    Optional<Invoice> findFirstByAppointmentIdAndStatusIn(Long appointmentId,
+                                                          Collection<Invoice.Status> statuses);
+
 }
