@@ -1,0 +1,42 @@
+# Hematology,,,,,
+name,price,tat,quantity,notes,isCustom
+CBC (Complete Blood Count),350,6,1,,FALSE
+Hemoglobin (Hb),150,4,1,,FALSE
+RBC Count,150,4,1,,FALSE
+WBC Count,150,4,1,,FALSE
+Platelet Count,200,4,1,,FALSE
+ESR (Erythrocyte Sedimentation Rate),200,4,1,,FALSE
+Peripheral Smear,300,6,1,,FALSE
+Reticulocyte Count,250,6,1,,FALSE
+Hematocrit (PCV),200,4,1,,FALSE
+BT (Bleeding Time),150,3,1,,FALSE
+CT (Clotting Time),150,3,1,,FALSE
+FBS (Fasting Blood Sugar),150,4,1,Fasting required,FALSE
+PPBS (Post-Prandial Blood Sugar),150,4,1,After 2 hours meal,FALSE
+RBS (Random Blood Sugar),120,4,1,,FALSE
+HbA1c (Glycosylated Hemoglobin),400,8,1,Average 3 months sugar,FALSE
+Lipid Profile,500,12,1,Complete panel,FALSE
+LFT (Liver Function Test),600,8,1,Includes SGOT, SGPT
+KFT (Kidney Function Test),550,8,1,Urea, Creatinine
+Calcium,250,4,1,Serum calcium,FALSE
+Phosphorus,250,4,1,Serum phosphorus,FALSE
+Magnesium,300,4,1,,FALSE
+Uric Acid,250,4,1,,FALSE
+Creatinine,200,4,1,,FALSE
+Bilirubin Total,250,4,1,,FALSE
+SGOT (AST),250,4,1,,FALSE
+SGPT (ALT),250,4,1,,FALSE
+Alkaline Phosphatase,250,4,1,,FALSE
+LDH (Lactate Dehydrogenase),400,6,1,,FALSE
+Widal Test,250,4,1,Typhoid detection,FALSE
+CRP (C-Reactive Protein),450,6,1,Inflammation marker,FALSE
+ASO Titre,400,6,1,Streptococcal infection,FALSE
+RA Factor,400,6,1,Rheumatoid arthritis,FALSE
+VDRL,250,4,1,Syphilis,FALSE
+HbsAg,400,8,1,Hepatitis B,FALSE
+HCV,500,12,1,Hepatitis C,FALSE
+HIV I & II (ELISA),500,12,1,,FALSE
+Dengue NS1 Antigen,600,8,1,,FALSE
+Dengue IgG/IgM,700,12,1,,FALSE
+Typhidot IgM,600,8,1,,FALSE
+Leptospira IgM,700,12,1,,FALSE

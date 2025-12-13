@@ -1,0 +1,2971 @@
+{
+	"info": {
+		"_postman_id": "4ad08b63-3a25-401b-b6f7-96fa6e6bebd6",
+		"name": "MediHub - Auth & User APIs",
+		"description": "Postman collection for AuthController and UserController APIs in MediHub Hospital Management System.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "1459418"
+	},
+	"item": [
+		{
+			"name": "AuthController",
+			"item": [
+				{
+					"name": "1.Register Super Admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"superadmin1\",\n  \"email\": \"superadmin@hospital.com\",\n  \"password\": \"supersecurepassword\",\n  \"firstName\": \"Super\",\n  \"lastName\": \"Admin\",\n  \"roles\": [\"SUPER_ADMIN\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/register-superadmin",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"register-superadmin"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2.Login (Super Admin or Nurse)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Ensure we can parse the response",
+									"let response = {};",
+									"",
+									"try {",
+									"    response = pm.response.json();",
+									"} catch (e) {",
+									"    console.error(\"❌ Response is not valid JSON\");",
+									"    pm.environment.unset(\"token\");",
+									"    return;",
+									"}",
+									"",
+									"// Check and set token",
+									"if (response.accessToken) {",
+									"    const token = response.accessToken;",
+									"    pm.environment.set(\"token\", token);",
+									"    console.log(\"✅ Token saved to environment:\", token);",
+									"} else {",
+									"    pm.environment.unset(\"token\");",
+									"    console.warn(\"⚠️ No accessToken found. Token variable removed.\");",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"superadmin1\",\n    \"password\": \"supersecurepassword\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.Register New User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"sneha_patil\",\n    \"email\": \"sneha.patil@hospitalmarathi.com\",\n    \"password\": \"sneha@123\",\n    \"firstName\": \"Sneha\",\n    \"lastName\": \"Patil\",\n    \"roles\": [\"PATIENT\"]\n  }"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.Register Patient",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "data",
+									"value": "{\n    \"firstName\": \"Pankaj\",\n    \"lastName\": \"Kumar\",\n    \"mobileNumber\": \"9876501234\",\n    \"alternateContact\": \"9123405678\",\n    \"landlineNumber\": \"0612123456\",\n    \"dateOfBirth\": \"1995-08-20\",\n    \"ageYears\": 30,\n    \"ageMonths\": 0,\n    \"ageDays\": 20,\n    \"sex\": \"MALE\",\n    \"maritalStatus\": \"MARRIED\",\n    \"email\": \"pankaj.kumar@example.com\",\n    \"govtIdType\": \"AADHAAR\",\n    \"govtIdNumber\": \"4321-8765-2109\",\n    \"otherHospitalIds\": \"HOSP-BIH-02\",\n    \"motherTongue\": \"Bhojpuri\",\n    \"referrerType\": \"FRIEND_FAMILY\",\n    \"referrerName\": \"Dr. Rajesh Mishra\",\n    \"referrerNumber\": \"9123412345\",\n    \"referrerEmail\": \"rajesh.mishra@hospitalbihar.com\",\n    \"consultingDoctorId\": 7,\n    \"specializationId\": \"3\",\n    \"mainComplaint\": \"Back pain for 1 month\",\n    \"bloodGroup\": \"B_POS\",\n    \"fathersName\": \"Ram Lakhan Kumar\",\n    \"mothersName\": \"Sita Devi\",\n    \"spousesName\": \"Sunita Kumari\",\n    \"education\": \"SECONDARY\",\n    \"occupation\": \"FARMER\",\n    \"religion\": \"HINDUISM\",\n    \"birthWeightValue\": 3.0,\n    \"birthWeightUnit\": \"kg\"\n}\n",
+									"contentType": "application/json",
+									"type": "text"
+								},
+								{
+									"key": "photo",
+									"type": "file",
+									"src": "postman-cloud:///1f08d662-f0d5-4970-965f-71de6f141d17"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/registerPatient",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"registerPatient"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.2.Get profile pic",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "data",
+									"value": "{\n        \"firstName\": \"Ananya\",\n        \"lastName\": \"Das\",\n        \"mobileNumber\": \"9876543210\",\n        \"alternateContact\": \"9123456780\",\n        \"landlineNumber\": \"0331234567\",\n        \"dateOfBirth\": \"1998-05-12\",\n        \"ageYears\": 27,\n        \"ageMonths\": 4,\n        \"ageDays\": 10,\n        \"sex\": \"FEMALE\",\n        \"maritalStatus\": \"SINGLE\",\n        \"email\": \"ananya.das@example.com\",\n        \"govtIdType\": \"AADHAAR\",\n        \"govtIdNumber\": \"1234-5678-9012\",\n        \"otherHospitalIds\": \"HOSP-XYZ-01\",\n        \"motherTongue\": \"Bengali\",\n        \"referrerType\": \"FRIEND_FAMILY\",\n        \"referrerName\": \"Dr. Arindam Chatterjee\",\n        \"referrerNumber\": \"9123400000\",\n        \"referrerEmail\": \"arindam.chatterjee@hospital.com\",\n        \"consultingDoctorId\": 5,\n        \"department\": \"CARDIOLOGY\",\n        \"mainComplaint\": \"Chest pain for 2 weeks\",\n        \"bloodGroup\": \"A_POS\",\n        \"fathersName\": \"Ramesh Das\",\n        \"mothersName\": \"Kusum Das\",\n        \"spousesName\": null,\n        \"education\": \"HIGHER_SECONDARY\",\n        \"occupation\": \"HOMEMAKER\",\n        \"religion\": \"BUDDHISM\",\n        \"birthWeightValue\": 3.2,\n        \"birthWeightUnit\": \"kg\"\n      }",
+									"contentType": "application/json",
+									"type": "text"
+								},
+								{
+									"key": "photo",
+									"type": "file",
+									"src": "postman-cloud:///1f08d662-f0d5-4970-965f-71de6f141d17"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.1.Login (Super Admin or Nurse)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"sneha_patil_9876\",\n  \"password\": \"nurse123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "UserController",
+			"item": [
+				{
+					"name": "4.Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5.Get All Users with Roles",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/users-with-roles",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"users-with-roles"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6.Get User By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "7.Update User Status (Enable/Disable)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"enabled\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/users/1/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"users",
+								"1",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "8.Update Roles By Username",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"DOCTOR\", \"RECEPTIONIST\"]"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/username/sneha_patil_9876/roles",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"username",
+								"sneha_patil_9876",
+								"roles"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "9.Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "9.1. সব patients (pagination সহ, default page=0, size=10)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/patients/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"patients",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "9.2. keyword দিয়ে search (typeahead)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/patients/search?specialization=cardiologist&page=0&size=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"patients",
+								"search"
+							],
+							"query": [
+								{
+									"key": "specialization",
+									"value": "cardiologist"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "9.3. keyword + specialization একসাথে",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/patients/search?appointmentDate=2025-10-11&consultationFeesPaid=true&page=0&size=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"patients",
+								"search"
+							],
+							"query": [
+								{
+									"key": "keyword",
+									"value": "pa",
+									"disabled": true
+								},
+								{
+									"key": "appointmentDate",
+									"value": "2025-10-11"
+								},
+								{
+									"key": "consultationFeesPaid",
+									"value": "true"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "specialization",
+									"value": "ORTHOPEDIC",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "DoctorController",
+			"item": [
+				{
+					"name": "14.List All Doctors with Pagination & Filtering",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var template = `",
+									"<style type=\"text/css\">",
+									"    .tftable {font-size:14px;color:#333333;width:100%;border-width: 1px;border-color: #87ceeb;border-collapse: collapse;}",
+									"    .tftable th {font-size:18px;background-color:#87ceeb;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;text-align:left;}",
+									"    .tftable tr {background-color:#ffffff;}",
+									"    .tftable td {font-size:14px;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;}",
+									"    .tftable tr:hover {background-color:#e0ffff;}",
+									"</style>",
+									"",
+									"<table class=\"tftable\" border=\"1\">",
+									"    <tr>",
+									"        <th>ID</th>",
+									"        <th>Username</th>",
+									"        <th>Email</th>",
+									"        <th>First Name</th>",
+									"        <th>Last Name</th>",
+									"        <th>Full Name</th>",
+									"        <th>Mobile</th>",
+									"        <th>Gender</th>",
+									"        <th>Date of Birth</th>",
+									"        <th>Specialization</th>",
+									"    </tr>",
+									"    ",
+									"    {{#each response.content}}",
+									"        <tr>",
+									"            <td>{{id}}</td>",
+									"            <td>{{username}}</td>",
+									"            <td>{{email}}</td>",
+									"            <td>{{firstName}}</td>",
+									"            <td>{{lastName}}</td>",
+									"            <td>{{fullName}}</td>",
+									"            <td>{{mobile}}</td>",
+									"            <td>{{gender}}</td>",
+									"            <td>{{dateOfBirth}}</td>",
+									"            <td>{{specialization}}</td>",
+									"        </tr>",
+									"    {{/each}}",
+									"</table>",
+									"`;",
+									"",
+									"function constructVisualizerPayload() {",
+									"    return { response: pm.response.json() };",
+									"}",
+									"",
+									"pm.visualizer.set(template, constructVisualizerPayload());"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/doctors?page=0&size=10&name=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"doctors"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "name",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "15.Get Doctor Profile by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var template = `",
+									"<style type=\"text/css\">",
+									"    .tftable {font-size:14px;color:#333333;width:100%;border-width: 1px;border-color: #87ceeb;border-collapse: collapse;}",
+									"    .tftable th {font-size:18px;background-color:#87ceeb;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;text-align:left;}",
+									"    .tftable tr {background-color:#ffffff;}",
+									"    .tftable td {font-size:14px;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;}",
+									"    .tftable tr:hover {background-color:#e0ffff;}",
+									"</style>",
+									"",
+									"<table class=\"tftable\" border=\"1\">",
+									"    <tr>",
+									"        <th>ID</th>",
+									"        <th>Username</th>",
+									"        <th>Email</th>",
+									"        <th>First Name</th>",
+									"        <th>Last Name</th>",
+									"        <th>Full Name</th>",
+									"        <th>Mobile</th>",
+									"        <th>Gender</th>",
+									"        <th>Date of Birth</th>",
+									"        <th>Specialization</th>",
+									"    </tr>",
+									"    ",
+									"    {{#each response.content}}",
+									"        <tr>",
+									"            <td>{{id}}</td>",
+									"            <td>{{username}}</td>",
+									"            <td>{{email}}</td>",
+									"            <td>{{firstName}}</td>",
+									"            <td>{{lastName}}</td>",
+									"            <td>{{fullName}}</td>",
+									"            <td>{{mobile}}</td>",
+									"            <td>{{gender}}</td>",
+									"            <td>{{dateOfBirth}}</td>",
+									"            <td>{{specialization}}</td>",
+									"        </tr>",
+									"    {{/each}}",
+									"</table>",
+									"`;",
+									"",
+									"function constructVisualizerPayload() {",
+									"    return { response: pm.response.json() };",
+									"}",
+									"",
+									"pm.visualizer.set(template, constructVisualizerPayload());"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/doctors/13",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"doctors",
+								"13"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "16.Define Weekly Working Hours (Availability)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var template = `",
+									"<style type=\"text/css\">",
+									"    .tftable {font-size:14px;color:#333333;width:100%;border-width: 1px;border-color: #87ceeb;border-collapse: collapse;}",
+									"    .tftable th {font-size:18px;background-color:#87ceeb;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;text-align:left;}",
+									"    .tftable tr {background-color:#ffffff;}",
+									"    .tftable td {font-size:14px;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;}",
+									"    .tftable tr:hover {background-color:#e0ffff;}",
+									"</style>",
+									"",
+									"<table class=\"tftable\" border=\"1\">",
+									"    <tr>",
+									"        <th>ID</th>",
+									"        <th>Username</th>",
+									"        <th>Email</th>",
+									"        <th>First Name</th>",
+									"        <th>Last Name</th>",
+									"        <th>Full Name</th>",
+									"        <th>Mobile</th>",
+									"        <th>Gender</th>",
+									"        <th>Date of Birth</th>",
+									"        <th>Specialization</th>",
+									"    </tr>",
+									"    ",
+									"    {{#each response.content}}",
+									"        <tr>",
+									"            <td>{{id}}</td>",
+									"            <td>{{username}}</td>",
+									"            <td>{{email}}</td>",
+									"            <td>{{firstName}}</td>",
+									"            <td>{{lastName}}</td>",
+									"            <td>{{fullName}}</td>",
+									"            <td>{{mobile}}</td>",
+									"            <td>{{gender}}</td>",
+									"            <td>{{dateOfBirth}}</td>",
+									"            <td>{{specialization}}</td>",
+									"        </tr>",
+									"    {{/each}}",
+									"</table>",
+									"`;",
+									"",
+									"function constructVisualizerPayload() {",
+									"    return { response: pm.response.json() };",
+									"}",
+									"",
+									"pm.visualizer.set(template, constructVisualizerPayload());"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"slotDurationInMinutes\": 10,\n  \"weeklyAvailability\": {\n    \"MONDAY\": [\n      { \"start\": \"09:00\", \"end\": \"12:00\" },\n      { \"start\": \"14:00\", \"end\": \"17:00\" }\n    ],\n    \"WEDNESDAY\": [\n      { \"start\": \"10:00\", \"end\": \"13:00\" }\n    ]\n  },\n  \"dateWiseAvailability\": {\n    \"2025-07-30\": [\n      { \"start\": \"08:00\", \"end\": \"21:00\" }\n    ]\n  }\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/doctors/14/availability",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"doctors",
+								"14",
+								"availability"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "17.Update Availability",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var template = `",
+									"<style type=\"text/css\">",
+									"    .tftable {font-size:14px;color:#333333;width:100%;border-width: 1px;border-color: #87ceeb;border-collapse: collapse;}",
+									"    .tftable th {font-size:18px;background-color:#87ceeb;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;text-align:left;}",
+									"    .tftable tr {background-color:#ffffff;}",
+									"    .tftable td {font-size:14px;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;}",
+									"    .tftable tr:hover {background-color:#e0ffff;}",
+									"</style>",
+									"",
+									"<table class=\"tftable\" border=\"1\">",
+									"    <tr>",
+									"        <th>ID</th>",
+									"        <th>Username</th>",
+									"        <th>Email</th>",
+									"        <th>First Name</th>",
+									"        <th>Last Name</th>",
+									"        <th>Full Name</th>",
+									"        <th>Mobile</th>",
+									"        <th>Gender</th>",
+									"        <th>Date of Birth</th>",
+									"        <th>Specialization</th>",
+									"    </tr>",
+									"    ",
+									"    {{#each response.content}}",
+									"        <tr>",
+									"            <td>{{id}}</td>",
+									"            <td>{{username}}</td>",
+									"            <td>{{email}}</td>",
+									"            <td>{{firstName}}</td>",
+									"            <td>{{lastName}}</td>",
+									"            <td>{{fullName}}</td>",
+									"            <td>{{mobile}}</td>",
+									"            <td>{{gender}}</td>",
+									"            <td>{{dateOfBirth}}</td>",
+									"            <td>{{specialization}}</td>",
+									"        </tr>",
+									"    {{/each}}",
+									"</table>",
+									"`;",
+									"",
+									"function constructVisualizerPayload() {",
+									"    return { response: pm.response.json() };",
+									"}",
+									"",
+									"pm.visualizer.set(template, constructVisualizerPayload());"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"slotDurationInMinutes\": 45,\n    \"weeklyAvailability\": {\n        \"MONDAY\": [\n            {\n                \"start\": \"09:30\",\n                \"end\": \"12:30\"\n            }\n        ],\n        \"WEDNESDAY\": [\n            {\n                \"start\": \"15:00\",\n                \"end\": \"17:00\"\n            }\n        ]\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/doctors/5/availability",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"doctors",
+								"5",
+								"availability"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "18.Get Slots for a Specific Date",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var template = `",
+									"<style type=\"text/css\">",
+									"    .tftable {font-size:14px;color:#333333;width:100%;border-width: 1px;border-color: #87ceeb;border-collapse: collapse;}",
+									"    .tftable th {font-size:18px;background-color:#87ceeb;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;text-align:left;}",
+									"    .tftable tr {background-color:#ffffff;}",
+									"    .tftable td {font-size:14px;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;}",
+									"    .tftable tr:hover {background-color:#e0ffff;}",
+									"</style>",
+									"",
+									"<table class=\"tftable\" border=\"1\">",
+									"    <tr>",
+									"        <th>ID</th>",
+									"        <th>Username</th>",
+									"        <th>Email</th>",
+									"        <th>First Name</th>",
+									"        <th>Last Name</th>",
+									"        <th>Full Name</th>",
+									"        <th>Mobile</th>",
+									"        <th>Gender</th>",
+									"        <th>Date of Birth</th>",
+									"        <th>Specialization</th>",
+									"    </tr>",
+									"    ",
+									"    {{#each response.content}}",
+									"        <tr>",
+									"            <td>{{id}}</td>",
+									"            <td>{{username}}</td>",
+									"            <td>{{email}}</td>",
+									"            <td>{{firstName}}</td>",
+									"            <td>{{lastName}}</td>",
+									"            <td>{{fullName}}</td>",
+									"            <td>{{mobile}}</td>",
+									"            <td>{{gender}}</td>",
+									"            <td>{{dateOfBirth}}</td>",
+									"            <td>{{specialization}}</td>",
+									"        </tr>",
+									"    {{/each}}",
+									"</table>",
+									"`;",
+									"",
+									"function constructVisualizerPayload() {",
+									"    return { response: pm.response.json() };",
+									"}",
+									"",
+									"pm.visualizer.set(template, constructVisualizerPayload());"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"slotDurationInMinutes\": 30,\n    \"weeklyAvailability\": {\n      \"MONDAY\": [\n        { \"start\": \"09:00\", \"end\": \"11:00\" },\n        { \"start\": \"14:00\", \"end\": \"16:00\" }\n      ],\n      \"WEDNESDAY\": [\n        { \"start\": \"10:00\", \"end\": \"12:00\" }\n      ]\n    }\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/doctors/5/slots?date=2025-08-11",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"doctors",
+								"5",
+								"slots"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2025-08-11"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "19.Deactivate Doctor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/doctors/5/deactivate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"doctors",
+								"5",
+								"deactivate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "20.Delete Doctor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/doctors/5/deactivate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"doctors",
+								"5",
+								"deactivate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "LIST (filters + pagination + sort)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/doctors/4/services?q=consult&status=ACTIVE&minPrice=1.00&maxPrice=9999&page=0&size=10&sort=updatedAt,DESC",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"doctors",
+								"4",
+								"services"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "consult"
+								},
+								{
+									"key": "status",
+									"value": "ACTIVE"
+								},
+								{
+									"key": "minPrice",
+									"value": "1.00"
+								},
+								{
+									"key": "maxPrice",
+									"value": "9999"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "updatedAt,DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Consultation (E-Consultation – Rs.2.0)\",\r\n    \"price\": 2.00,\r\n    \"code\": \"CONSULT_E\",\r\n    \"description\": \"Video consult\",\r\n    \"status\": \"ACTIVE\"\r\n}\r\n// {\r\n//     \"name\": \"Consultation (Video – International Patients – Rs.700.0)\",\r\n//     \"price\": 700.00,\r\n//     \"code\": \"CONSULT_INTL\",\r\n//     \"description\": \"Video consultation for international patients\",\r\n//     \"status\": \"ACTIVE\"\r\n//   }\r\n//   {\r\n//     \"name\": \"Consultation (Follow-up with Reports – Rs.150.0)\",\r\n//     \"price\": 150.00,\r\n//     \"code\": \"CONSULT_FU\",\r\n//     \"description\": \"Follow-up consultation with reports\",\r\n//     \"status\": \"ACTIVE\"\r\n//   }\r\n//   {\r\n//     \"name\": \"Consultation (First Time – Rs.600.0)\",\r\n//     \"price\": 600.00,\r\n//     \"code\": \"CONSULT_FIRST\",\r\n//     \"description\": \"First time consultation\",\r\n//     \"status\": \"ACTIVE\"\r\n//   }\r\n//   {\r\n//     \"name\": \"Consultation (Online – Rs.100.0)\",\r\n//     \"price\": 100.00,\r\n//     \"code\": \"CONSULT_ONLINE\",\r\n//     \"description\": \"Online consultation\",\r\n//     \"status\": \"ACTIVE\"\r\n//   }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/doctors/{{doctorId}}/services",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"doctors",
+								"{{doctorId}}",
+								"services"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Consultation (Follow-up)\",\r\n    \"price\": 3.50,\r\n    \"status\": \"ACTIVE\",\r\n    \"code\": \"CONSULT_FU\",\r\n    \"description\": \"Follow-up within 7 days\"\r\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}} /api/doctors/3/services/1",
+							"host": [
+								"{{baseUrl}} "
+							],
+							"path": [
+								"api",
+								"doctors",
+								"3",
+								"services",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "BULK: ACTIVATE/INACTIVATE",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"ids\": [1,2,3],\r\n    \"op\": \"ACTIVATE\"\r\n        // \"op\": \"INACTIVATE\"\r\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/doctors/3/services/bulk",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"doctors",
+								"3",
+								"services",
+								"bulk"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "BULK: PERCENT (increase 5%, negative value would decrease)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"ids\": [\r\n        1,\r\n        2,\r\n        3\r\n    ],\r\n    \"op\": \"PERCENT\",\r\n    \"percent\": 5.0\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/doctors/3/services/bulk",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"doctors",
+								"3",
+								"services",
+								"bulk"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "BULK: ABSOLUTE (set exact price)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"ids\": [\r\n        1,\r\n        2\r\n    ],\r\n    \"op\": \"ABSOLUTE\",\r\n    \"absolute\": 499.00\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/doctors/3/services/bulk",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"doctors",
+								"3",
+								"services",
+								"bulk"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "AppointmentController",
+			"item": [
+				{
+					"name": "21.Book Appointment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"doctorId\": 13,\n    \"patientId\": 11,\n    \"appointmentDate\": \"2025-07-25\",\n    \"slotTime\": \"14:00\",\n    \"appointmentType\": \"IN_PERSON\"\n}\n\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/appointments/book",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"appointments",
+								"book"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "22.Appointments for Doctor on Date",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/appointments/13?date=2025-07-26",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"appointments",
+								"13"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2025-07-26"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "22.1.All Doctor Schedules",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/appointments/doctor-schedules/paged?date=2025-07-23&page=0&size=5",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"appointments",
+								"doctor-schedules",
+								"paged"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2025-07-23"
+								},
+								{
+									"key": "doctorName",
+									"value": "Sarah",
+									"disabled": true
+								},
+								{
+									"key": "specialization",
+									"value": "Neurology",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "23.Patient's Appointment History",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/appointments/patient/11?page=0&size=5&sort=appointmentDate,desc",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"appointments",
+								"patient",
+								"11"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "5"
+								},
+								{
+									"key": "sort",
+									"value": "appointmentDate,desc"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "24.Cancel Appointment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/appointments/patient/11",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"appointments",
+								"patient",
+								"11"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "24.Reschedule Appointment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"doctorId\": 13,\n    \"patientId\": 11,\n    // \"date\": \"2025-12-03\",\n    // \"slotStartTime\": \"10:00\",\n    // \"slotEndTime\": \"10:10\",\n    \"appointmentDate\": \"2025-12-03\",\n    \"slotTime\": \"10:00\",\n    \"appointmentType\": \"IN_PERSON\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/appointments/7/reschedule",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"appointments",
+								"7",
+								"reschedule"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "SlotController",
+			"item": [
+				{
+					"name": "25.Shift Slots",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"date\": \"2025-07-21\",\n    \"shiftByMinutes\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/slots/13/shift",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"slots",
+								"13",
+								"shift"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "26.Block Slots",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"date\": \"2025-07-21\",\n    \"startTime\": \"11:30\",\n    \"endTime\": \"12:00\",\n    \"cancelExisting\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/slots/13/block",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"slots",
+								"13",
+								"block"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "27.Unblock Slots",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"date\": \"2025-07-21\",\n    \"startTime\": \"11:30\",\n    \"endTime\": \"12:00\",\n    \"cancelExisting\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/slots/13/unblock",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"slots",
+								"13",
+								"unblock"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "28.Get Slot Statuses",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/slots/status?doctorId=14&date=2025-07-21",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"slots",
+								"status"
+							],
+							"query": [
+								{
+									"key": "doctorId",
+									"value": "14"
+								},
+								{
+									"key": "date",
+									"value": "2025-07-21"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "29.Get Emergency Slots",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/slots/emergency?doctorId=14&date=2025-07-21",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"slots",
+								"emergency"
+							],
+							"query": [
+								{
+									"key": "doctorId",
+									"value": "14"
+								},
+								{
+									"key": "date",
+									"value": "2025-07-21"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "OPD Invoice",
+			"item": [
+				{
+					"name": "1. Create Invoice (Draft)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"doctorId\": 4,// Dr. Mita Sen - 4 \n    \"patientId\": 15,//Debashis Banerjee 15 \n    \"appointmentId\": 27,\n    \"clinicId\": \"CLINIC-001\",//Dynamiac genration \n    \"token\": 1,//Dynamiac genration \n    \"queue\": \"Dr. Mita Sen\",\n    \"room\": \"100\",//Dynamiac genration \n    \"currency\": \"INR\",\n    \"notes\": \"OPD Consultation Bill\",\n    \"items\": [\n        {\n            \"serviceItemId\": 2,\n            \"name\": \"Consultation (Video – International Patients – Rs.700.0)\",\n            \"qty\": 1,\n            \"unitPrice\": 499.00,\n            \"discountAmount\": 0.00,\n            \"taxPercent\": 0.00\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2. Finalize Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/{{invoiceId}}/finalize",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"{{invoiceId}}",
+								"finalize"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Add Payment to Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"payments\": [\n        {\n            \"method\": \"CASH\",\n            \"amount\": 100.00,\n            \"txnRef\": null,\n            \"receivedBy\": \"frontdesk@clinic\",\n            \"notes\": \"Cash payment at POS\"\n        },\n        {\n            \"method\": \"CARD\",\n            \"amount\": 57.00,\n            \"txnRef\": \"VISA ****4421\",\n            \"receivedBy\": \"frontdesk@clinic\",\n            \"notes\": \"Card payment\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/{{invoiceId}}/payments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"{{invoiceId}}",
+								"payments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Get Invoice by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4.1.Get Draft Invoice by Appointment",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/draft?appointmentId={{appointmentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"draft"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointmentId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6. Search / List Invoices",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices?status=ISSUED&doctorId=4&patientId=15&page=0&size=10&sort=createdAt,DESC",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "ISSUED"
+								},
+								{
+									"key": "doctorId",
+									"value": "4"
+								},
+								{
+									"key": "patientId",
+									"value": "15"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "createdAt,DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "7. List All Payments for an Invoice",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/1/payments?page=0&size=10&sort=receivedAt,DESC",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"1",
+								"payments"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "receivedAt,DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "8. Get Printable Invoice (Future Extension) pdf",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "8. Get Printable Invoice (Future Extension) html",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/1/print?format=html",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"1",
+								"print"
+							],
+							"query": [
+								{
+									"key": "format",
+									"value": "html"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "9. Delete / Refund (Future extension)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "EMR",
+			"item": [
+				{
+					"name": "1.Bulk Import (Hierarchical JSON)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"categories\": {\r\n        \"DentalOral\": {\r\n            \"ToothAndGum\": [\r\n                \"Toothache\",\r\n                \"Bleeding gums\",\r\n                \"Swollen gums\",\r\n                \"Tooth sensitivity\"\r\n            ],\r\n            \"MouthAndLips\": [\r\n                \"Mouth ulcers\",\r\n                \"Dry mouth\",\r\n                \"Cracked lips\",\r\n                \"Bad breath\",\r\n                \"Difficulty chewing\"\r\n            ],\r\n            \"JawRelated\": [\r\n                \"Jaw pain\"\r\n            ]\r\n        },\r\n        \"ENT\": {\r\n            \"Ear\": [\r\n                \"Ear pain\",\r\n                \"Hearing loss\",\r\n                \"Ringing in ears (tinnitus)\"\r\n            ],\r\n            \"Nose\": [\r\n                \"Blocked nose\",\r\n                \"Nasal discharge\",\r\n                \"Sinus pressure\"\r\n            ],\r\n            \"Throat\": [\r\n                \"Sore throat\",\r\n                \"Voice hoarseness\",\r\n                \"Facial pain\",\r\n                \"Difficulty swallowing\"\r\n            ]\r\n        },\r\n        \"Reproductive\": {\r\n            \"Menstrual\": [\r\n                \"Irregular periods\",\r\n                \"Heavy periods\",\r\n                \"Missed periods\"\r\n            ],\r\n            \"Vaginal\": [\r\n                \"White discharge\",\r\n                \"Itching in private parts\",\r\n                \"Pain during intercourse\"\r\n            ],\r\n            \"Sexual\": [\r\n                \"Loss of libido\",\r\n                \"Erectile dysfunction\",\r\n                \"Infertility\"\r\n            ],\r\n            \"PelvicPain\": [\r\n                \"Lower abdominal cramps\"\r\n            ]\r\n        },\r\n        \"Obstetric\": {\r\n            \"PregnancyEarly\": [\r\n                \"Morning sickness\",\r\n                \"Nausea in early pregnancy\",\r\n                \"Spotting during pregnancy\"\r\n            ],\r\n            \"PregnancyLate\": [\r\n                \"Back pain\",\r\n                \"Swelling of legs\",\r\n                \"Abdominal cramps\",\r\n                \"High blood pressure in pregnancy\",\r\n                \"Loss of fetal movement\",\r\n                \"Preterm contractions\"\r\n            ],\r\n            \"GeneralPregnancy\": [\r\n                \"Fatigue during pregnancy\"\r\n            ]\r\n        },\r\n        \"SleepDisorders\": {\r\n            \"InsomniaRelated\": [\r\n                \"Insomnia\",\r\n                \"Difficulty staying asleep\",\r\n                \"Early morning awakening\"\r\n            ],\r\n            \"MovementRelated\": [\r\n                \"Restless legs\",\r\n                \"Sleep talking\",\r\n                \"Sleep paralysis\"\r\n            ],\r\n            \"BreathingRelated\": [\r\n                \"Snoring\",\r\n                \"Sleep apnea\"\r\n            ],\r\n            \"DreamRelated\": [\r\n                \"Nightmares\"\r\n            ]\r\n        },\r\n        \"NutritionalDeficiency\": {\r\n            \"VitaminDeficiency\": [\r\n                \"Hair loss\",\r\n                \"Brittle nails\",\r\n                \"Pale skin\",\r\n                \"Cracked lips\"\r\n            ],\r\n            \"MineralDeficiency\": [\r\n                \"Muscle cramps\",\r\n                \"Weakness\",\r\n                \"Fatigue\"\r\n            ],\r\n            \"ProteinDeficiency\": [\r\n                \"Poor wound healing\",\r\n                \"Loss of appetite\"\r\n            ],\r\n            \"General\": [\r\n                \"Mouth ulcers\"\r\n            ]\r\n        },\r\n        \"EnvironmentalToxic\": {\r\n            \"ChemicalExposure\": [\r\n                \"Headache after chemical exposure\",\r\n                \"Skin rash from chemicals\",\r\n                \"Eye irritation from smoke\"\r\n            ],\r\n            \"AirPollution\": [\r\n                \"Breathing difficulty after pollution exposure\",\r\n                \"Cough after dust exposure\",\r\n                \"Throat irritation\"\r\n            ],\r\n            \"PesticideOrMetal\": [\r\n                \"Nausea after pesticide exposure\",\r\n                \"Allergic reaction to metal\"\r\n            ],\r\n            \"Workplace\": [\r\n                \"Fatigue after workplace fumes\",\r\n                \"Dizziness after fumes\"\r\n            ]\r\n        },\r\n        \"Pediatric\": {\r\n            \"GrowthAndFeeding\": [\r\n                \"Poor feeding\",\r\n                \"Delayed growth\"\r\n            ],\r\n            \"Infectious\": [\r\n                \"Recurrent infections\",\r\n                \"Fever in infants\",\r\n                \"Cold and cough frequently\"\r\n            ],\r\n            \"Behavioral\": [\r\n                \"Crying excessively\",\r\n                \"Irritability in child\"\r\n            ],\r\n            \"Other\": [\r\n                \"Rash in diaper area\",\r\n                \"Bedwetting\"\r\n            ]\r\n        },\r\n        \"Geriatric\": {\r\n            \"Cognitive\": [\r\n                \"Memory loss\",\r\n                \"Depression\"\r\n            ],\r\n            \"Musculoskeletal\": [\r\n                \"Joint stiffness\",\r\n                \"Weakness in legs\"\r\n            ],\r\n            \"Sensory\": [\r\n                \"Hearing loss\",\r\n                \"Vision problems\",\r\n                \"Balance issues\"\r\n            ],\r\n            \"Metabolic\": [\r\n                \"Constipation\",\r\n                \"Frequent urination at night\",\r\n                \"Fatigue\"\r\n            ]\r\n        },\r\n        \"Oncologic\": {\r\n            \"GeneralCancerSigns\": [\r\n                \"Unexplained weight loss\",\r\n                \"Fatigue\",\r\n                \"Loss of appetite\",\r\n                \"Night sweats\"\r\n            ],\r\n            \"LocalizedSymptoms\": [\r\n                \"Lump in breast or neck\",\r\n                \"Persistent cough\",\r\n                \"Blood in stool\",\r\n                \"Non-healing wound\",\r\n                \"Bone pain\",\r\n                \"Persistent hoarseness\"\r\n            ]\r\n        },\r\n        \"Gynecological\": {\r\n            \"Menstrual\": [\r\n                \"Irregular periods\",\r\n                \"Heavy periods (menorrhagia)\",\r\n                \"Scanty periods (oligomenorrhea)\",\r\n                \"Missed periods (amenorrhea)\",\r\n                \"Painful periods (dysmenorrhea)\",\r\n                \"Pre-menstrual bloating\",\r\n                \"Pre-menstrual mood swings\",\r\n                \"Spotting between periods\"\r\n            ],\r\n            \"Vaginal\": [\r\n                \"White discharge (leucorrhea)\",\r\n                \"Foul-smelling discharge\",\r\n                \"Itching in private parts\",\r\n                \"Burning sensation in vagina\",\r\n                \"Vaginal dryness\",\r\n                \"Vaginal bleeding after intercourse\",\r\n                \"Pain during intercourse (dyspareunia)\",\r\n                \"Vaginal swelling or redness\"\r\n            ],\r\n            \"Pelvic and Uterine\": [\r\n                \"Lower abdominal cramps\",\r\n                \"Pelvic pain\",\r\n                \"Painful urination during menstruation\",\r\n                \"Painful bowel movement during periods\",\r\n                \"Lower back pain before menstruation\",\r\n                \"Abdominal heaviness\",\r\n                \"Uterine fibroid-related pain\"\r\n            ],\r\n            \"Hormonal / Endocrine\": [\r\n                \"Excessive hair growth (hirsutism)\",\r\n                \"Acne related to cycle\",\r\n                \"Unexplained weight gain\",\r\n                \"Breast tenderness\",\r\n                \"Hot flashes\",\r\n                \"Mood swings during cycle\"\r\n            ],\r\n            \"Pregnancy-related\": [\r\n                \"Morning sickness\",\r\n                \"Missed period with positive pregnancy test\",\r\n                \"Spotting during early pregnancy\",\r\n                \"Abdominal cramps during pregnancy\",\r\n                \"Swelling of feet during pregnancy\",\r\n                \"High blood pressure during pregnancy\",\r\n                \"Loss of fetal movement\",\r\n                \"Preterm contractions\"\r\n            ],\r\n            \"Postpartum\": [\r\n                \"Post-delivery bleeding (lochia)\",\r\n                \"Breast engorgement\",\r\n                \"Pain during breastfeeding\",\r\n                \"Mood changes after delivery (postpartum blues)\",\r\n                \"Lower back pain post-delivery\",\r\n                \"Delayed return of menstruation\"\r\n            ]\r\n        }\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/symptoms/import",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"symptoms",
+								"import"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2.Typeahed symptoms search",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/symptoms/search?category=&q=pain",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"symptoms",
+								"search"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": ""
+								},
+								{
+									"key": "q",
+									"value": "pain"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. getVisits list",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/symptoms/search?category=&q=pain",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"symptoms",
+								"search"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": ""
+								},
+								{
+									"key": "q",
+									"value": "pain"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4.Save Chief Complaint",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"visitDate\": \"2025-10-11\",\n    \"visitTime\": \"01:40\",\n    \"chiefComplaints\": [\n        {\n            \"complaint\": \"test\",\n            \"years\": 1,\n            \"months\": 1,\n            \"weeks\": 1,\n            \"days\": 1,\n            \"sinceYear\": 2025,\n            \"bodyPart\": \"head\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/visit-summary?doctorId={{doctorId}}&patientId={{patientId}}&appointmentId={{appointment-id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"visit-summary"
+							],
+							"query": [
+								{
+									"key": "doctorId",
+									"value": "{{doctorId}}"
+								},
+								{
+									"key": "patientId",
+									"value": "{{patientId}}"
+								},
+								{
+									"key": "appointmentId",
+									"value": "{{appointment-id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5.Search Chief Complaint",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/visit-summary?doctorId={{doctor-id}}&patientId={{patient-id}}&appointmentId={{appointment-id}}&id={{visit-summary-id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"visit-summary"
+							],
+							"query": [
+								{
+									"key": "doctorId",
+									"value": "{{doctor-id}}"
+								},
+								{
+									"key": "patientId",
+									"value": "{{patient-id}}"
+								},
+								{
+									"key": "appointmentId",
+									"value": "{{appointment-id}}"
+								},
+								{
+									"key": "id",
+									"value": "{{visit-summary-id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6.Create / Update Vitals",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n           \"height\": 1,\n           \"weight\": 2,\n           \"bmi\": 20000,\n           \"waist\": 32,\n           \"bpSystolic\": 60,\n           \"bpDiastolic\": 60,\n           \"pulse\": 60,\n           \"hc\": 2,\n           \"temperature\": 40,\n           \"respiratory\": 23\n         }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/vitals?visitSummaryId={{visit-summary-id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"vitals"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointment-id}}",
+									"disabled": true
+								},
+								{
+									"key": "visitSummaryId",
+									"value": "{{visit-summary-id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "7.Get Vitals",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/vitals?appointmentId={{appointment-id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"vitals"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointment-id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "8.Save or Update Medical History",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n           \"personalHistory\": {\n             \"Smoking\": \"yes\",\n             \"SmokingComment\": \"Test Smoking\",\n             \"Alcohol\": \"yes\",\n             \"AlcoholComment\": \"Test Alcohol\",\n             \"DrugAbuse\": \"yes\",\n             \"DrugAbuseComment\": \"Test Drug Abuse\",\n             \"TattooMarks\": \"no\",\n             \"TattooMarksComment\": \"Test Tattoo Marks\",\n             \"Exercise\": \"yes\",\n             \"ExerciseComment\": \"Test Exercise\",\n             \"Diet\": true,\n             \"Children\": 2\n           },\n           \"renalHistory\": {\n             \"CKDStage\": \"egfr\",\n             \"Proteinuria\": \"magnitude\",\n             \"UrineOutput\": 3,\n             \"DialysisHistory\": \"NA\",\n             \"NephrotoxicDrugs\": \"NA\",\n             \"UTIHistory\": \"NA\"\n           },\n           \"diabetesHistory\": {\n             \"DurationOfDM\": \"12\",\n             \"GlycemicControl\": \"NA\",\n             \"HyperglycemicEpisodes\": \"post meal\"\n           },\n           \"pastHistory\": {\n             \"Jaundice\": \"\",\n             \"BloodTransfusions\": \"\",\n             \"AsthmaCOPD\": \"\",\n             \"Tuberculosis\": \"\",\n             \"ThyroidProblem\": \"\"\n           },\n           \"otherHistories\": {\n             \"HPINotes\": \"HPI\",\n             \"TOINotes\": \"Involvement\",\n             \"FamilyHistory\": \"Family History\"\n           }\n         }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/medical-history?appointmentId={{appointment-id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"medical-history"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointment-id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "9.Get Medical History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/medical-history?appointmentId={{appointment-id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"medical-history"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointment-id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "10.Create / Update Prescribed Tests (Upsert)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    {\n        \"name\": \"TSH\",\n        \"price\": 300,\n        \"tat\": 6,\n        \"quantity\": 1,\n        \"notes\": \"\"\n    },\n    {\n        \"name\": \"Blood Sugar (Fasting)\",\n        \"price\": 120,\n        \"tat\": 4,\n        \"quantity\": 1,\n        \"notes\": \"Fasting sample required\"\n    }\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/prescribed-tests?appointmentId=60",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"prescribed-tests"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "60"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "11.Fetch Prescribed Tests by Appointment ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/prescribed-tests?appointmentId={{appointment-id}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"prescribed-tests"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointment-id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "12.Upsert / Auto-Create Visit Summary",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/visit-summary/upsert-by-appointment?appointmentId={{appointmentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"visit-summary",
+								"upsert-by-appointment"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointmentId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Master Data Management (MDM)",
+			"item": [
+				{
+					"name": "Bulk Upload API (for Master Tests — MDM Catalog)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/Users/meghnadsaha/Downloads/prescribed_tests.csv"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/master-tests/upload",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"master-tests",
+								"upload"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2.Upsert Prescribed Tests API (Linked to Appointment/Visit)",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/Users/meghnadsaha/Downloads/prescribed_tests.csv"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/master-tests/search?q=blood",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"master-tests",
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "blood"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Pathology Invoice",
+			"item": [
+				{
+					"name": "1.Create / Update Prescribed Test Invoice Draft",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"appointmentId\": {{appointmentId}},\n    \"clinicId\": {{clinicId}},\n    \"currency\": \"INR\",\n    \"notes\": \"Draft invoice for prescribed lab tests\",\n    \"token\": 1,\n    \"queue\": \"A12\",\n    \"room\": \"LAB-2\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/prescribed-tests/invoices/draft",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"prescribed-tests",
+								"invoices",
+								"draft"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

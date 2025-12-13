@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+        * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
+        body { margin: 16px; font-size: 12px; color:#000; }
+        .header { display:flex; align-items:center; border:1px solid #000; padding:8px; }
+        .logo { width:70px; height:70px; border:1px solid #999; margin-right:10px; text-align:center; line-height:70px; font-size:10px;}
+        .htext { font-weight:bold; }
+        .addr { font-size:11px; line-height:1.2; }
+        .title { text-align:center; font-weight:bold; border:1px solid #000; border-top:none; padding:4px; }
+        table.meta, table.items { width:100%; border-collapse:collapse; border:1px solid #000; }
+        table.meta td, table.meta th, table.items td, table.items th { border:1px solid #000; padding:6px; }
+        .right { text-align:right; }
+        .bold { font-weight:bold; }
+        .muted { color:#333; }
+        .footer { border:1px solid #000; border-top:none; padding:6px; }
+        .sign { text-align:right; margin-top:30px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+<!--    <div class="logo">LOGO</div>-->
+<!--    <div class="logo">-->
+<!--        &lt;!&ndash; Prefer dynamic logo when available; fallback to your static URL &ndash;&gt;-->
+<!--        <img th:if="${pi.clinic.logoUrl != null and !#strings.isEmpty(pi.clinic.logoUrl)}"-->
+<!--             th:src="${pi.clinic.logoUrl}"-->
+<!--             alt="Clinic Logo" style="width:68px;height:68px;object-fit:contain;"/>-->
+<!--        <img th:if="${pi.clinic.logoUrl == null or #strings.isEmpty(pi.clinic.logoUrl)}"-->
+<!--             src="https://cdn-icons-png.freepik.com/256/12120/12120890.png?semt=ais_white_label"-->
+<!--             alt="Clinic Logo" style="width:68px;height:68px;object-fit:contain;"/>-->
+<!--    </div>-->
+
+<!--    <div>-->
+<!--        <div class="htext" th:text="${pi.clinic.name}">Nirmal Clinic</div>-->
+<!--        <div class="addr" th:text="${pi.clinic.address}">Address</div>-->
+<!--        <div class="addr">-->
+<!--            Phone: <span th:text="${pi.clinic.phone}">-</span> |-->
+<!--            Email: <span th:text="${pi.clinic.email}">-</span><br/>-->
+<!--            Website: <span th:text="${pi.clinic.website}">-</span> |-->
+<!--            IVRS: <span th:text="${pi.clinic.ivrs}">-</span>-->
+<!--        </div>-->
+<!--    </div>-->
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <!-- Left: Logo -->
+            <td style="width: 70px; vertical-align: top;">
+                <img th:if="${pi.clinic.logoUrl != null and !#strings.isEmpty(pi.clinic.logoUrl)}"
+                     th:src="${pi.clinic.logoUrl}"
+                     alt="Clinic Logo" style="width:68px;height:68px;object-fit:contain;"/>
+                <img th:if="${pi.clinic.logoUrl == null or #strings.isEmpty(pi.clinic.logoUrl)}"
+                     src="https://cdn-icons-png.freepik.com/256/12120/12120890.png?semt=ais_white_label"
+                     alt="Clinic Logo" style="width:68px;height:68px;object-fit:contain;"/>
+            </td>
+
+            <!-- Right: Clinic Info -->
+            <td style="vertical-align: top; padding-left: 15px;">
+                <div class="htext" th:text="${pi.clinic.name}" style="font-weight: bold; font-size: 18px;">Nirmal Clinic</div>
+                <div class="addr" th:text="${pi.clinic.address}">Address</div>
+                <div class="addr">
+                    Phone: <span th:text="${pi.clinic.phone}">-</span> |
+                    Email: <span th:text="${pi.clinic.email}">-</span><br/>
+                    Website: <span th:text="${pi.clinic.website}">-</span> |
+                    IVRS: <span th:text="${pi.clinic.ivrs}">-</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+</div>
+
+<div class="title" th:text="${pi.title}">OP Bill</div>
+
+<table class="meta">
+    <tr>
+        <td class="bold">Name/Contact:</td>
+        <td th:text="${pi.patient.name}">Manish Kumar / 09470...</td>
+        <td class="bold">ID:</td>
+        <td th:text="${pi.patient.idDisplay}">1143</td>
+        <td class="bold">Age/Sex:</td>
+        <td th:text="${pi.patient.ageSex}">2 YRS 2 MTHS 24 DAYS/Male</td>
+    </tr>
+    <tr>
+        <td class="bold">Date:</td>
+        <td th:text="${pi.dateTime}">25/05/2022 03:15 PM</td>
+        <td class="bold">Bill #:</td>
+        <td th:text="${pi.billNo}">12220</td>
+        <td class="bold">Dr/Ref.By:</td>
+        <td th:text="${pi.doctor.name}">Dr. Kailash Gokral</td>
+    </tr>
+</table>
+
+<table class="items" style="margin-top:-1px;">
+    <thead>
+    <tr>
+        <th style="width:8%;">Sl.No</th>
+        <th>Particulars</th>
+        <th class="right" style="width:18%;">Charges</th>
+        <th class="right" style="width:10%;">Quantity</th>
+        <th class="right" style="width:18%;">Amount</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="it: ${pi.items}">
+        <td th:text="${it.slNo}">1</td>
+        <td th:text="${it.particulars}">Consultation – Dr. Kailash Gokral</td>
+        <td class="right" th:text="${#numbers.formatDecimal(it.charges,1,2)}">150.00</td>
+        <td class="right" th:text="${it.qty}">1</td>
+        <td class="right" th:text="${#numbers.formatDecimal(it.amount,1,2)}">150.00</td>
+    </tr>
+    <tr>
+        <td colspan="4" class="right bold">Total Billed</td>
+        <td class="right bold" th:text="${#numbers.formatDecimal(pi.totals.totalBilled,1,2)}">150.00</td>
+    </tr>
+    <tr>
+        <td colspan="4" class="right bold">Paid</td>
+        <td class="right bold" th:text="${#numbers.formatDecimal(pi.totals.paid,1,2)}">150.00</td>
+    </tr>
+    </tbody>
+</table>
+
+<div class="footer">
+    <div class="muted">One Hundred Fifty Only</div>
+    <div class="muted" th:text="'Amount in Words: ' + ${pi.totals.amountInWords}">Amount in Words</div>
+    <div class="muted" style="margin-top:8px;" th:text="${pi.receipt.line}">
+        Receipt #OP-12220-1 | 25/05/2022 03:15 PM | Received Rs. 150.00 (by Credit Card) as Payment
+    </div>
+    <div class="muted" style="margin-top:8px;" th:text="${pi.receipt.tokenQueueRoom}">
+        Token: 7, Queue: Kailash Gokral, Room: 105
+    </div>
+</div>
+
+<div class="sign">
+    <div class="muted">Authorized Signatory</div>
+    <div class="bold" th:text="${pi.signatory}">Kailash Gokral</div>
+</div>
+
+<div class="muted" style="margin-top:10px;">Powered by DocPulse Software</div>
+
+</body>
+</html>
