@@ -26,4 +26,9 @@ public class PharmacyStock {
 
     @Column(name = "available_qty", nullable = false)
     private Integer availableQty = 0;
+
+    @Column(name = "updated_at", insertable = false, updatable = false)
+    private java.time.LocalDateTime updatedAt;
+
+
 }

@@ -1,27 +1,42 @@
-package com.MediHubAPI.service.pharmacy;
+package com.MediHubAPI.service.pharmacy.impl;
 
 import com.MediHubAPI.dto.pharmacy.MedicineSearchItemDto;
 import com.MediHubAPI.dto.pharmacy.MedicineSearchMeta;
 import com.MediHubAPI.dto.pharmacy.MedicineSearchResponse;
+import com.MediHubAPI.dto.pharmacy.MedicineStockDto;
 import com.MediHubAPI.enums.pharmacy.MedicineForm;
 import com.MediHubAPI.enums.pharmacy.MedicineSearchMode;
-import com.MediHubAPI.repository.pharmacy.MedicineSearchRepository;
+import com.MediHubAPI.repository.pharmacy.MdmMedicineRepository;
+import com.MediHubAPI.repository.pharmacy.PharmacyStockRepository;
 import com.MediHubAPI.repository.projection.MedicineSearchRowProjection;
+import com.MediHubAPI.service.pharmacy.MedicineStockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+
+import com.MediHubAPI.exception.pharmacy.MedicineNotFoundException;
+import com.MediHubAPI.model.mdm.MdmMedicine;
+import com.MediHubAPI.model.pharmacy.PharmacyStock;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.time.ZoneOffset;
+
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class MedicineSearchService {
+public class MedicineStockServiceImpl implements MedicineStockService {
 
-    private final MedicineSearchRepository medicineSearchRepository;
+    private final MdmMedicineRepository medicineSearchRepository;
+    private final PharmacyStockRepository pharmacyStockRepository;
 
+    @Override
     public MedicineSearchResponse search(MedicineSearchMode mode,
                                          MedicineForm form,
                                          String q,
@@ -70,6 +85,36 @@ public class MedicineSearchService {
         return MedicineSearchResponse.builder()
                 .data(data)
                 .meta(meta)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MedicineStockDto getStock(Long medicineId) {
+
+        // Ensure medicine exists (so we can throw MEDICINE_NOT_FOUND)
+        MdmMedicine med = medicineSearchRepository.findById(medicineId)
+                .orElseThrow(() -> new MedicineNotFoundException(medicineId));
+
+        PharmacyStock stock = pharmacyStockRepository.findByMedicine_Id(medicineId).orElse(null);
+
+        int qty = (stock == null || stock.getAvailableQty() == null) ? 0 : stock.getAvailableQty();
+        boolean inStock = qty > 0;
+
+        Instant updatedAt = null;
+        // If you added updatedAt column:
+        if (stock != null && stock.getUpdatedAt() != null) {
+            updatedAt = stock.getUpdatedAt().toInstant(ZoneOffset.UTC);
+        }
+
+        log.info("Medicine stock: medicineId={}, brand={}, qty={}, inStock={}",
+                medicineId, med.getBrand(), qty, inStock);
+
+        return MedicineStockDto.builder()
+                .medicineId(medicineId)
+                .stockQty(qty)
+                .inStock(inStock)
+                .lastUpdatedAt(updatedAt)
                 .build();
     }
 }

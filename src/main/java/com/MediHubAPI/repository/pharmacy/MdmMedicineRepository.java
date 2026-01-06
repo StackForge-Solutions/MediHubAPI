@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface MedicineSearchRepository extends JpaRepository<MdmMedicine, Long> {
+public interface MdmMedicineRepository extends JpaRepository<MdmMedicine, Long> {
 
     @Query(value = """
         SELECT
