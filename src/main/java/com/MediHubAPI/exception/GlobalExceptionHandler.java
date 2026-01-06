@@ -32,6 +32,7 @@ public class GlobalExceptionHandler {
                 request.getDescription(false),
                 Instant.now()
         );
+        error.setCode(ex.getCode());
         return new ResponseEntity<>(error, ex.getStatus());
     }
 
