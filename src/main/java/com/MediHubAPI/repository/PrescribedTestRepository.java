@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface PrescribedTestRepository extends JpaRepository<PrescribedTest, Long> {
     List<PrescribedTest> findByVisitSummary_Id(Long visitSummaryId);
+    List<PrescribedTest> findByVisitSummary_IdIn(List<Long> visitSummaryIds);
 }
