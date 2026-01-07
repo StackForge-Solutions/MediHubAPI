@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 
 public interface MasterTestRepository extends JpaRepository<PathologyTestMaster, Long> {
 
@@ -13,4 +14,7 @@ public interface MasterTestRepository extends JpaRepository<PathologyTestMaster,
     List<PathologyTestMaster> findByCategoryIgnoreCase(String category);
 
     List<PathologyTestMaster> findByNameContainingIgnoreCase(String keyword);
+
+    // Only active tests
+    List<PathologyTestMaster> findByIsActiveTrueAndNameContainingIgnoreCaseOrderByNameAsc(String q, Pageable pageable);
 }
