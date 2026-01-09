@@ -2,6 +2,9 @@ package com.MediHubAPI.dto;
 
 import lombok.*;
 
+import java.time.Instant;
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,5 +19,8 @@ public class ErrorEnvelope {
     public static class ErrorBody {
         private String code;
         private String message;
+        private List<Object> details;
+        private String traceId;
+        private Instant timestamp;
     }
 }

@@ -25,5 +25,6 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpec
 
     Optional<Invoice> findFirstByAppointmentIdAndStatusIn(Long appointmentId,
                                                           Collection<Invoice.Status> statuses);
+    Optional<Invoice> findTopByAppointmentIdOrderByCreatedAtDesc(Long appointmentId);
 
 }
