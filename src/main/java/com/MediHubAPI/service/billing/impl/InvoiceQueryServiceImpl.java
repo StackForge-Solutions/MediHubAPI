@@ -28,6 +28,12 @@ public class InvoiceQueryServiceImpl implements InvoiceQueryService {
     private final InvoiceItemRepository invoiceItemRepository;
     private final InvoicePaymentRepository invoicePaymentRepository;
 
+
+    private final com.MediHubAPI.repository.VisitSummaryRepository visitSummaryRepository;
+    private final com.MediHubAPI.repository.PrescribedTestRepository prescribedTestRepository;
+    private final com.MediHubAPI.repository.emr.PrescriptionRepository prescriptionRepository;
+    private final com.MediHubAPI.repository.AppointmentRepository appointmentRepository;
+
     @Override
     @Transactional(readOnly = true)
     public InvoiceByAppointmentResponse getByAppointment(Long appointmentId,
@@ -161,4 +167,86 @@ public class InvoiceQueryServiceImpl implements InvoiceQueryService {
         String out = (ff + " " + ll).trim();
         return out.isEmpty() ? null : out;
     }
+    @Transactional(readOnly = true)
+    @Override
+    public InvoiceDraftByAppointmentResponse getDraftByAppointment(Long appointmentId) {
+
+        var appt = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid appointmentId=" + appointmentId));
+
+        var vs = visitSummaryRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(() -> new IllegalArgumentException("VisitSummary not found for appointmentId=" + appointmentId));
+
+        var prescriptionOpt = prescriptionRepository.findByAppointment_Id(appointmentId);
+
+        var tests = prescribedTestRepository.findByVisitSummary_Id(vs.getId());
+
+        List<InvoiceDraftByAppointmentResponse.DraftItem> items = new ArrayList<>();
+        int sl = 1;
+
+        for (var t : tests) {
+            var master = t.getPathologyTestMaster();
+
+            String code = null;
+            if (master != null && master.getCode() != null && !master.getCode().isBlank()) {
+                code = master.getCode();                  // e.g. "CBC"
+            } else if (master != null && master.getId() != null) {
+                code = "LAB_" + master.getId();           // fallback
+            } else {
+                code = "LAB_PTEST_" + t.getId();          // fallback
+            }
+
+            String serviceCode = code.startsWith("LAB_") ? code : "LAB_" + code; // "LAB_CBC" if code="CBC"
+
+            double unitPrice = (t.getPrice() == null ? 0.0 : t.getPrice());
+            int qty = (t.getQuantity() == null ? 1 : t.getQuantity());
+            double discount = 0.0;
+            boolean taxable = true;
+
+            double lineTotal = (unitPrice * qty) - discount;
+
+            items.add(InvoiceDraftByAppointmentResponse.DraftItem.builder()
+                    .id((long) sl++)
+                    .type("LAB")
+                    .serviceCode(serviceCode)
+                    .serviceName(t.getName())
+                    .unitPrice(unitPrice)
+                    .quantity(qty)
+                    .discount(discount)
+                    .taxable(taxable)
+                    .lineTotal(lineTotal)
+                    .sourceRef(InvoiceDraftByAppointmentResponse.DraftItem.SourceRefItem.builder()
+                            .kind("PRESCRIBED_TEST")
+                            .refId("ptest-" + t.getId())
+                            .build())
+                    .build());
+        }
+
+        double subTotal = items.stream().mapToDouble(InvoiceDraftByAppointmentResponse.DraftItem::getLineTotal).sum();
+        double discountTotal = 0.0;
+        double taxTotal = 0.0;
+        double netPayable = subTotal; // if tax/discount later, adjust here
+
+        String patientName = appt.getPatient() == null ? null : fullName(appt.getPatient().getFirstName(), appt.getPatient().getLastName());
+        String doctorName = appt.getDoctor() == null ? null : fullName(appt.getDoctor().getFirstName(), appt.getDoctor().getLastName());
+
+        return InvoiceDraftByAppointmentResponse.builder()
+                .appointmentId(appointmentId)
+                .tokenNo("TKN-" + String.format("%03d", appointmentId)) // or use invoice token logic if you have it
+                .draft(true)
+                .source(InvoiceDraftByAppointmentResponse.SourceRef.builder()
+                        .prescriptionId(prescriptionOpt.map(p -> p.getId()).orElse(null))
+                        .visitSummaryId(vs.getId())
+                        .build())
+                .patientName(patientName)
+                .doctorName(doctorName)
+                .department(null) // if doctor specialization exists, map it
+                .items(items)
+                .subTotal(subTotal)
+                .discountTotal(discountTotal)
+                .taxTotal(taxTotal)
+                .netPayable(netPayable)
+                .build();
+    }
+
 }

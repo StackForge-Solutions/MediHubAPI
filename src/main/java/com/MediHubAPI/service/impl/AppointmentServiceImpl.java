@@ -40,6 +40,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final UserRepository userRepository;
     private final AppointmentRepository appointmentRepository;
     private final SlotService slotService;  // ✅ Injected
+//    private final AppointmentService appointmentService;
 
 
     @Override

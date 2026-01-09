@@ -3,13 +3,15 @@ package com.MediHubAPI.controller.billing;
 import com.MediHubAPI.dto.ApiMeta;
 import com.MediHubAPI.dto.DataEnvelope;
 import com.MediHubAPI.dto.billing.InvoiceByAppointmentResponse;
+import com.MediHubAPI.dto.billing.InvoiceDraftByAppointmentResponse;
 import com.MediHubAPI.dto.billing.InvoiceFetchMode;
 import com.MediHubAPI.service.billing.InvoiceQueryService;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -19,8 +21,54 @@ import java.util.UUID;
 public class InvoiceQueryController {
 
     private final InvoiceQueryService invoiceQueryService;
+    private Long appointmentId;
+    private String tokenNo;
+    private Boolean draft;
 
-    @GetMapping("/by-appointment/{appointmentId}")
+    private SourceRef source;
+
+    private String patientName;
+    private String doctorName;
+    private String department;
+
+    private List<DraftItem> items;
+
+    private Double subTotal;
+    private Double discountTotal;
+    private Double taxTotal;
+    private Double netPayable;
+
+    @Data @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class SourceRef {
+        private Long prescriptionId;
+        private Long visitSummaryId;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class DraftItem {
+        private Long id;                 // sequential row in response OR prescribedTestId
+        private String type;             // "LAB"
+        private String serviceCode;      // "LAB_HBA1C"
+        private String serviceName;      // "HbA1c"
+        private Double unitPrice;
+        private Integer quantity;
+        private Double discount;
+        private Boolean taxable;
+        private Double lineTotal;
+
+        private SourceRefItem sourceRef;
+
+        @Data @NoArgsConstructor @AllArgsConstructor @Builder
+        public static class SourceRefItem {
+            private String kind;         // "PRESCRIBED_TEST"
+            private String refId;        // "ptest-991"
+        }
+    }
+
+    @GetMapping("/v1/by-appointment/{appointmentId}")
     public DataEnvelope<InvoiceByAppointmentResponse> getExistingInvoiceByAppointment(
             @PathVariable Long appointmentId,
             @RequestParam(value = "includeItems", required = false, defaultValue = "true") boolean includeItems,
@@ -43,4 +91,20 @@ public class InvoiceQueryController {
                         .build())
                 .build();
     }
+
+    @GetMapping("/draft/by-appointment/{appointmentId}")
+    public DataEnvelope<InvoiceDraftByAppointmentResponse> getDraftFromPrescribedTests(
+            @PathVariable Long appointmentId
+    ) {
+        InvoiceDraftByAppointmentResponse data = invoiceQueryService.getDraftByAppointment(appointmentId);
+
+        return DataEnvelope.<InvoiceDraftByAppointmentResponse>builder()
+                .data(data)
+                .meta(ApiMeta.builder()
+                        .traceId(UUID.randomUUID().toString().replace("-", "").substring(0, 16))
+                        .timestamp(Instant.now())
+                        .build())
+                .build();
+    }
+
 }
