@@ -46,7 +46,7 @@ public class Invoice {
     @Column(nullable = false, length = 24)
     private Status status;
 
-    @Column(name = "bill_number", length = 32, unique = true)
+    @Column(name = "bill_number", length = 128)
     private String billNumber; // assigned on finalize
 
     // clinic meta (denormalized for fast prints)
@@ -111,9 +111,19 @@ public class Invoice {
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<InvoicePayment> payments = new ArrayList<>();
 
+
+    @Version
+    @Column(name = "version")
+    private Long version;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+
     @PrePersist
     void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = createdAt;
         if (status == null) status = Status.DRAFT;
         if (currency == null) currency = "INR";
         if (subTotal == null) subTotal = BigDecimal.ZERO;
@@ -123,5 +133,10 @@ public class Invoice {
         if (grandTotal == null) grandTotal = BigDecimal.ZERO;
         if (paidAmount == null) paidAmount = BigDecimal.ZERO;
         if (balanceDue == null) balanceDue = BigDecimal.ZERO;
+    }
+
+    @PreUpdate
+    void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }

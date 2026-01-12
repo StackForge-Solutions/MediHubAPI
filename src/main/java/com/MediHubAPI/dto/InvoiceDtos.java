@@ -11,6 +11,8 @@ import java.util.List;
 
 public class InvoiceDtos {
 
+    public enum ItemType {SERVICE, LAB_TEST, MEDICINE, PACKAGE, OTHER}
+
     // ---------- Create Draft ----------
     public record CreateInvoiceReq(
             @NotNull Long doctorId,
@@ -22,7 +24,11 @@ public class InvoiceDtos {
             String room,
             String notes,
             @NotEmpty List<ItemReq> items,
-            @NotBlank String currency
+            @NotBlank String currency,
+
+            @jakarta.validation.constraints.NotNull
+            ItemType itemType               // ✅ ADD THIS (request-level)
+
     ) {
     }
 
@@ -52,7 +58,6 @@ public class InvoiceDtos {
             String notes,
 
 
-
             LocalDateTime paymentDate,   // 🆕 payment date/time
             String cardType              // 🆕 e.g. "VISA", "MASTERCARD", "RUPAY"
     ) {
@@ -61,7 +66,9 @@ public class InvoiceDtos {
 
     public record AddPaymentsReq(
             @NotEmpty @Valid List<InvoiceDtos.AddPaymentReq> payments
-    ) {}
+    ) {
+    }
+
     // ---------- Finalize ----------
     public record FinalizeInvoiceRes(
             Long id, String billNumber, LocalDateTime issuedAt, String status
@@ -87,7 +94,8 @@ public class InvoiceDtos {
             BigDecimal paidAmount,
             BigDecimal balanceDue,
             LocalDateTime issuedAt
-    ) {}
+    ) {
+    }
 
 
     public record PaymentView(
@@ -98,23 +106,42 @@ public class InvoiceDtos {
             LocalDateTime receivedAt,
             String receivedBy,
             String notes
-    ) {}
-
+    ) {
+    }
     public record InvoiceDraftRes(
             Long invoiceId,
+            String status,                 // "DRAFT"
             Long doctorId,
             Long patientId,
             Long appointmentId,
-            String clinicId,
-            Integer token,
+
+            String clinicId,               // null allowed
+            String tokenNo,                // "TKN-019"
             String queue,
             String room,
+
             String currency,
             String notes,
-            List<Item> items
+
+            List<Item> items,
+
+            BigDecimal subTotal,
+            BigDecimal discountTotal,
+            BigDecimal taxTotal,
+            BigDecimal grandTotal,
+
+            OffsetDateTime createdAt,      // UTC ISO
+            OffsetDateTime updatedAt,      // UTC ISO
+            Long version                  // optimistic lock version
     ) {
         public record Item(
+                // ✅ identity/type fields
+                ItemType itemType,
+                Long refId,
                 Long serviceItemId,
+                String code,
+
+                // ✅ billing fields
                 String name,
                 Integer qty,
                 BigDecimal unitPrice,
@@ -136,6 +163,7 @@ public class InvoiceDtos {
             BigDecimal balanceDue,
             LocalDateTime createdAt,
             LocalDateTime issuedAt
-    ) { }
+    ) {
+    }
 
 }

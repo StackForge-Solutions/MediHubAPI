@@ -1,10 +1,10 @@
-// src/main/java/com/MediHubAPI/billing/web/InvoiceController.java
 package com.MediHubAPI.controller;
 
 
 import com.MediHubAPI.dto.ApiResponse;
 import com.MediHubAPI.dto.InvoiceDtos;
 import com.MediHubAPI.model.billing.Invoice;
+import com.MediHubAPI.model.billing.InvoiceItem;
 import com.MediHubAPI.model.billing.InvoicePayment;
 import com.MediHubAPI.repository.InvoiceRepository;
 import com.MediHubAPI.service.InvoiceService;
@@ -18,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/invoices")
@@ -39,7 +41,7 @@ public class InvoiceController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(
-                         invoice.getId(), // ✅ Convert Long → String
+                        invoice.getId(), // ✅ Convert Long → String
                         request.getRequestURI(),
                         "createInvoiceDraft successful"
                 ));
@@ -53,13 +55,6 @@ public class InvoiceController {
         return new InvoiceDtos.FinalizeInvoiceRes(inv.getId(), inv.getBillNumber(), inv.getIssuedAt(), inv.getStatus().name());
     }
 
-//    @PostMapping("/{id}/payments")
-//    public InvoicePayment addPayment(@PathVariable Long id, @Valid @RequestBody InvoiceDtos.AddPaymentReq req) {
-//        return service.addPayment(id, req);
-//    }
-
-//    @GetMapping("/{id}")
-//    public Invoice get(@PathVariable Long id) { return service.get(id); }
 
     @PostMapping("/{id}/payments")
     public List<InvoicePayment> addPayments(
@@ -85,8 +80,7 @@ public class InvoiceController {
         service.voidInvoice(id, reason);
     }
 
-    // src/main/java/com/MediHubAPI/billing/web/InvoiceController.java
-    @GetMapping
+     @GetMapping
     public org.springframework.data.domain.Page<InvoiceDtos.InvoiceView> search(@RequestParam(required = false) String status, @RequestParam(required = false) Long doctorId, @RequestParam(required = false) Long patientId, org.springframework.data.domain.Pageable pageable) {
         var page = invoiceRepo.findAll(pageable); // (add Specification filters later)
         return page.map(inv -> {
@@ -98,40 +92,74 @@ public class InvoiceController {
         });
     }
 
-    // src/main/java/com/MediHubAPI/billing/web/InvoiceController.java
-    @GetMapping("/{id}/payments")
+     @GetMapping("/{id}/payments")
     public Page<InvoiceDtos.PaymentView> listPayments(@PathVariable Long id, @org.springframework.data.web.PageableDefault(size = 20, sort = "receivedAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
         return service.listPayments(id, pageable);
     }
 
-
-    @GetMapping("/draft")
-    public InvoiceDtos.InvoiceDraftRes getDraftByAppointment(@RequestParam Long appointmentId) {
+    @GetMapping("/all")
+    public InvoiceDtos.InvoiceDraftRes getAllInvoicesByAppointment(
+            @RequestParam Long appointmentId,
+            @RequestParam(required = false) InvoiceDtos.ItemType itemType
+    ) {
         Invoice draft = service.getDraftByAppointment(appointmentId);
 
+        var items = draft.getItems().stream()
+                .filter(it -> {
+                    if (itemType == null) return true;
+                    if (it.getItemType() == null) return false;
+                    return it.getItemType().name().trim().equalsIgnoreCase(itemType.name());
+                })
+                .map(InvoiceController::toDraftItem)
+                .toList();
+
         return new InvoiceDtos.InvoiceDraftRes(
-                draft.getId(), // 👈 include invoiceId
+                draft.getId(),
+                draft.getStatus().name(),
                 draft.getDoctor() != null ? draft.getDoctor().getId() : null,
                 draft.getPatient() != null ? draft.getPatient().getId() : null,
                 draft.getAppointmentId(),
-                draft.getClinicId(),
-                draft.getToken(),
+                draft.getClinicId(),                    // never "null" string
+                formatTokenNo(draft.getToken()),        // TKN-019
                 draft.getQueue(),
                 draft.getRoom(),
                 draft.getCurrency(),
                 draft.getNotes(),
-                draft.getItems().stream()
-                        .map(it -> new InvoiceDtos.InvoiceDraftRes.Item(
-                                it.getServiceItemId(),
-                                it.getName(),
-                                it.getQty(),
-                                it.getUnitPrice(),
-                                it.getDiscountAmount(),
-                                it.getTaxPercent()
-                        ))
-                        .toList()
+                items,
+                draft.getSubTotal(),
+                draft.getDiscountTotal(),
+                draft.getTaxTotal(),
+                draft.getGrandTotal(),
+                toUtc(draft.getCreatedAt()),
+                toUtc(draft.getUpdatedAt()),
+                draft.getVersion()
         );
     }
 
 
+    private static InvoiceDtos.InvoiceDraftRes.Item toDraftItem(InvoiceItem it) {
+        InvoiceDtos.ItemType itemType = (it.getItemType() == null)
+                ? null
+                : InvoiceDtos.ItemType.valueOf(it.getItemType().name());
+
+        return new InvoiceDtos.InvoiceDraftRes.Item(
+                itemType,
+                it.getRefId(),
+                it.getServiceItemId(),
+                it.getCode(),
+                it.getName(),
+                it.getQty(),
+                it.getUnitPrice(),
+                it.getDiscountAmount(),
+                it.getTaxPercent()
+        );
+    }
+
+    private static String formatTokenNo(Integer token) {
+        return token == null ? null : String.format("TKN-%03d", token);
+    }
+
+    private static java.time.OffsetDateTime toUtc(java.time.LocalDateTime dt) {
+        return dt == null ? null : dt.atOffset(java.time.ZoneOffset.UTC);
+    }
 }

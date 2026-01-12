@@ -12,8 +12,10 @@ import com.MediHubAPI.repository.InvoiceItemRepository;
 import com.MediHubAPI.repository.InvoicePaymentRepository;
 import com.MediHubAPI.repository.InvoiceRepository;
 import com.MediHubAPI.model.billing.InvoicePayment;
+import com.MediHubAPI.service.billing.BillNumberSequenceService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -40,7 +42,9 @@ public class InvoiceService {
 
     // TODO: inject real UserService to load User entities
     private User loadUser(Long id) {
-        User u = new User(); u.setId(id); return u;
+        User u = new User();
+        u.setId(id);
+        return u;
     }
 
 
@@ -50,8 +54,8 @@ public class InvoiceService {
      */
     /**
      * 🧾 Create or update (upsert) a draft invoice.
-     *  - Creates a new draft if none exists for the appointment.
-     *  - Updates existing draft items & totals otherwise.
+     * - Creates a new draft if none exists for the appointment.
+     * - Updates existing draft items & totals otherwise.
      */
     @Transactional
     public Invoice upsertDraft(InvoiceDtos.CreateInvoiceReq req, String createdBy) {
@@ -124,6 +128,7 @@ public class InvoiceService {
                     .taxPercent(it.taxPercent())
                     .taxAmount(round(tax))
                     .lineTotal(round(lineTotal))
+                    .itemType(req.itemType())      // ✅ ADD THIS LINE
                     .build();
 
             newItems.add(item);
@@ -161,23 +166,41 @@ public class InvoiceService {
 
 
 
+
     @Transactional
     public Invoice finalizeInvoice(Long invoiceId) {
         Invoice inv = invoiceRepo.findById(invoiceId)
                 .orElseThrow(() -> new EntityNotFoundException("Invoice not found"));
+
         if (inv.getStatus() != Invoice.Status.DRAFT)
             throw new IllegalStateException("Only DRAFT can be finalized");
-        inv.setBillNumber(billSeq.next(inv.getClinicId()));
-        inv.setIssuedAt(LocalDateTime.now());
-        if (inv.getPaidAmount().compareTo(inv.getGrandTotal()) >= 0) {
-            inv.setStatus(Invoice.Status.PAID);
-            inv.setBalanceDue(BigDecimal.ZERO);
-        } else {
-            inv.setStatus(Invoice.Status.ISSUED);
-            inv.setBalanceDue(inv.getGrandTotal().subtract(inv.getPaidAmount()));
+
+        // generate & save; retry if unique collision
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            try {
+                inv.setBillNumber(billSeq.next(inv.getClinicId()));
+                inv.setIssuedAt(LocalDateTime.now());
+
+                if (inv.getPaidAmount().compareTo(inv.getGrandTotal()) >= 0) {
+                    inv.setStatus(Invoice.Status.PAID);
+                    inv.setBalanceDue(BigDecimal.ZERO);
+                } else {
+                    inv.setStatus(Invoice.Status.ISSUED);
+                    inv.setBalanceDue(inv.getGrandTotal().subtract(inv.getPaidAmount()));
+                }
+
+                return invoiceRepo.save(inv);
+
+            } catch (DataIntegrityViolationException ex) {
+                if (attempt == 3) throw ex;
+                // retry with a fresh number
+            }
         }
-        return invoiceRepo.save(inv);
+        throw new IllegalStateException("Finalize failed unexpectedly");
     }
+
+
+
 
     @Transactional
     public InvoicePayment addPayment(Long invoiceId, InvoiceDtos.AddPaymentReq req) {
@@ -250,12 +273,9 @@ public class InvoiceService {
 
     @Transactional(readOnly = true)
     public Invoice getDraftByAppointment(Long appointmentId) {
-        return invoiceRepo.findFirstByAppointmentIdAndStatusIn(
-                appointmentId,
-                java.util.List.of(Invoice.Status.DRAFT, Invoice.Status.PAID)
-        ).orElseThrow(() ->
-                new EntityNotFoundException("Invoice not found (DRAFT/PAID) for appointmentId: " + appointmentId)
-        );
+        return invoiceRepo.findTopByAppointmentIdOrderByCreatedAtDesc(
+                appointmentId
+        ).orElseThrow(() -> new EntityNotFoundException("No DRAFT/PAID invoice for appointmentId=" + appointmentId));
     }
 
     @Transactional

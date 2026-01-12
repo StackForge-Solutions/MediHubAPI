@@ -10,6 +10,7 @@ import com.MediHubAPI.repository.InvoicePaymentRepository;
 import com.MediHubAPI.repository.InvoiceRepository;
 import com.MediHubAPI.repository.PrescribedTestRepository;
 import com.MediHubAPI.repository.VisitSummaryRepository;
+import com.MediHubAPI.service.billing.BillNumberSequenceService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

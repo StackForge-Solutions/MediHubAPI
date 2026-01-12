@@ -1,6 +1,7 @@
 // src/main/java/com/MediHubAPI/billing/model/InvoiceItem.java
 package com.MediHubAPI.model.billing;
 
+import com.MediHubAPI.dto.InvoiceDtos;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -55,6 +56,15 @@ public class InvoiceItem {
     private BigDecimal lineTotal; // computed
 
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "item_type", length = 24)
+    private InvoiceDtos.ItemType itemType;
+
+    @Column(name = "ref_id")
+    private Long refId;
+
+    @Column(name = "code", length = 64)
+    private String code;
 
     // ✅ Optional: Auto-calculate lineTotal before persist
     @PrePersist

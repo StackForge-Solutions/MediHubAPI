@@ -1,9 +1,8 @@
 package com.MediHubAPI.repository;
 
 import com.MediHubAPI.model.billing.Invoice;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
@@ -25,6 +24,16 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpec
 
     Optional<Invoice> findFirstByAppointmentIdAndStatusIn(Long appointmentId,
                                                           Collection<Invoice.Status> statuses);
-    Optional<Invoice> findTopByAppointmentIdOrderByCreatedAtDesc(Long appointmentId);
+
+
+    @EntityGraph(attributePaths = {"items"})
+    Optional<Invoice> findTopByAppointmentIdOrderByCreatedAtDesc(
+            Long appointmentId
+     );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select i from Invoice i where i.id = :id")
+    Optional<Invoice> findByIdForUpdate(@Param("id") Long id);
+
 
 }
