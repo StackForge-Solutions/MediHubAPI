@@ -109,7 +109,7 @@
 					"response": []
 				},
 				{
-					"name": "3.Register New User",
+					"name": "3.Register New User/Doc",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -124,7 +124,38 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"username\": \"sneha_patil\",\n    \"email\": \"sneha.patil@hospitalmarathi.com\",\n    \"password\": \"sneha@123\",\n    \"firstName\": \"Sneha\",\n    \"lastName\": \"Patil\",\n    \"roles\": [\"PATIENT\"]\n  }"
+							"raw": "\n//   {\n//     \"username\": \"arjun_d1\",\n//     \"email\": \"arjun.d1@hospitalmarathi.com\",\n//     \"password\": \"arjun@123\",\n//     \"firstName\": \"Arjun\",\n//     \"lastName\": \"Deshmukh\",\n//     \"roles\": [\"DOCTOR\"],\n//     \"specializationId\": 1\n//   }\n//   {\n//     \"username\": \"neha_d2\",\n//     \"email\": \"neha.d2@hospitalmarathi.com\",\n//     \"password\": \"neha@123\",\n//     \"firstName\": \"Neha\",\n//     \"lastName\": \"Dixit\",\n//     \"roles\": [\"DOCTOR\"],\n//     \"specializationId\": 2\n//   }\n//   {\n//     \"username\": \"rohit_d3\",\n//     \"email\": \"rohit.d3@hospitalmarathi.com\",\n//     \"password\": \"rohit@123\",\n//     \"firstName\": \"Rohit\",\n//     \"lastName\": \"Joshi\",\n//     \"roles\": [\"DOCTOR\"],\n//     \"specializationId\": 3\n//   }\n//   {\n//     \"username\": \"pooja_d4\",\n//     \"email\": \"pooja.d4@hospitalmarathi.com\",\n//     \"password\": \"pooja@123\",\n//     \"firstName\": \"Pooja\",\n//     \"lastName\": \"Kulkarni\",\n//     \"roles\": [\"DOCTOR\"],\n//     \"specializationId\": 4\n//   }\n//   {\n//     \"username\": \"vikram_d5\",\n//     \"email\": \"vikram.d5@hospitalmarathi.com\",\n//     \"password\": \"vikram@123\",\n//     \"firstName\": \"Vikram\",\n//     \"lastName\": \"Patil\",\n//     \"roles\": [\"DOCTOR\"],\n//     \"specializationId\": 5\n//   }\n//   {\n//     \"username\": \"ananya_d6\",\n//     \"email\": \"ananya.d6@hospitalmarathi.com\",\n//     \"password\": \"ananya@123\",\n//     \"firstName\": \"Ananya\",\n//     \"lastName\": \"Ghosh\",\n//     \"roles\": [\"DOCTOR\"],\n//     \"specializationId\": 6\n//   }\n//   {\n//     \"username\": \"sneha_d7\",\n//     \"email\": \"sneha.d7@hospitalmarathi.com\",\n//     \"password\": \"sneha@123\",\n//     \"firstName\": \"Sneha\",\n//     \"lastName\": \"Rane\",\n//     \"roles\": [\"DOCTOR\"],\n//     \"specializationId\": 7\n//   }\n//   {\n//     \"username\": \"rahul_d8\",\n//     \"email\": \"rahul.d8@hospitalmarathi.com\",\n//     \"password\": \"rahul@123\",\n//     \"firstName\": \"Rahul\",\n//     \"lastName\": \"Bhosale\",\n//     \"roles\": [\"DOCTOR\"],\n//     \"specializationId\": 8\n//   }\n//   {\n//     \"username\": \"meera_d9\",\n//     \"email\": \"meera.d9@hospitalmarathi.com\",\n//     \"password\": \"meera@123\",\n//     \"firstName\": \"Meera\",\n//     \"lastName\": \"Iyer\",\n//     \"roles\": [\"DOCTOR\"],\n//     \"specializationId\": 9\n//   }\n//   {\n//     \"username\": \"kabir_d1b\",\n//     \"email\": \"kabir.d1b@hospitalmarathi.com\",\n//     \"password\": \"kabir@123\",\n//     \"firstName\": \"Kabir\",\n//     \"lastName\": \"Shinde\",\n//     \"roles\": [\"DOCTOR\"],\n//     \"specializationId\": 1\n//   }\n\n"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.Register New User/Patient",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "\n//   {\n//     \"username\": \"kavya_g\",\n//     \"email\": \"kavya.gupta@hospitalmarathi.com\",\n//     \"password\": \"kavya@123\",\n//     \"firstName\": \"Kavya\",\n//     \"lastName\": \"Gupta\",\n//     \"roles\": [\"PATIENT\"]\n//   },\n//   {\n//     \"username\": \"rahul_m\",\n//     \"email\": \"rahul.mehta@hospitalmarathi.com\",\n//     \"password\": \"rahul@123\",\n//     \"firstName\": \"Rahul\",\n//     \"lastName\": \"Mehta\",\n//     \"roles\": [\"PATIENT\"]\n//   },\n//   {\n//     \"username\": \"isha_c\",\n//     \"email\": \"isha.chatterjee@hospitalmarathi.com\",\n//     \"password\": \"isha@123\",\n//     \"firstName\": \"Isha\",\n//     \"lastName\": \"Chatterjee\",\n//     \"roles\": [\"PATIENT\"]\n//   },\n//   {\n//     \"username\": \"sourav_d\",\n//     \"email\": \"sourav.das@hospitalmarathi.com\",\n//     \"password\": \"sourav@123\",\n//     \"firstName\": \"Sourav\",\n//     \"lastName\": \"Das\",\n//     \"roles\": [\"PATIENT\"]\n//   },\n//   {\n//     \"username\": \"meera_i\",\n//     \"email\": \"meera.iyer@hospitalmarathi.com\",\n//     \"password\": \"meera@123\",\n//     \"firstName\": \"Meera\",\n//     \"lastName\": \"Iyer\",\n//     \"roles\": [\"PATIENT\"]\n//   },\n//   {\n//     \"username\": \"deepak_s\",\n//     \"email\": \"deepak.singh@hospitalmarathi.com\",\n//     \"password\": \"deepak@123\",\n//     \"firstName\": \"Deepak\",\n//     \"lastName\": \"Singh\",\n//     \"roles\": [\"PATIENT\"]\n//   },\n//   {\n//     \"username\": \"ritika_a\",\n//     \"email\": \"ritika.agarwal@hospitalmarathi.com\",\n//     \"password\": \"ritika@123\",\n//     \"firstName\": \"Ritika\",\n//     \"lastName\": \"Agarwal\",\n//     \"roles\": [\"PATIENT\"]\n//   },\n//   {\n//     \"username\": \"manish_v\",\n//     \"email\": \"manish.verma@hospitalmarathi.com\",\n//     \"password\": \"manish@123\",\n//     \"firstName\": \"Manish\",\n//     \"lastName\": \"Verma\",\n//     \"roles\": [\"PATIENT\"]\n//   },\n//  {\n//     \"username\": \"nidhi_b\",\n//     \"email\": \"nidhi.bose@hospitalmarathi.com\",\n//     \"password\": \"nidhi@123\",\n//     \"firstName\": \"Nidhi\",\n//     \"lastName\": \"Bose\",\n//     \"roles\": [\"PATIENT\"]\n//   },\n//   {\n//     \"username\": \"gaurav_t\",\n//     \"email\": \"gaurav.thakur@hospitalmarathi.com\",\n//     \"password\": \"gaurav@123\",\n//     \"firstName\": \"Gaurav\",\n//     \"lastName\": \"Thakur\",\n//     \"roles\": [\"PATIENT\"]\n//   },\n//   {\n//     \"username\": \"sonali_s\",\n//     \"email\": \"sonali.sawant@hospitalmarathi.com\",\n//     \"password\": \"sonali@123\",\n//     \"firstName\": \"Sonali\",\n//     \"lastName\": \"Sawant\",\n//     \"roles\": [\"PATIENT\"]\n//   },\n//   {\n//     \"username\": \"kabir_r\",\n//     \"email\": \"kabir.roy@hospitalmarathi.com\",\n//     \"password\": \"kabir@123\",\n//     \"firstName\": \"Kabir\",\n//     \"lastName\": \"Roy\",\n//     \"roles\": [\"PATIENT\"]\n//   }"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/users",
@@ -622,7 +653,8 @@
 									"pm.visualizer.set(template, constructVisualizerPayload());"
 								],
 								"type": "text/javascript",
-								"packages": {}
+								"packages": {},
+								"requests": {}
 							}
 						}
 					],
@@ -2033,303 +2065,826 @@
 			]
 		},
 		{
-			"name": "OPD Invoice",
-			"item": [
-				{
-					"name": "1. Create Invoice (Draft)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"doctorId\": 4,// Dr. Mita Sen - 4 \n    \"patientId\": 15,//Debashis Banerjee 15 \n    \"appointmentId\": 27,\n    \"clinicId\": \"CLINIC-001\",//Dynamiac genration \n    \"token\": 1,//Dynamiac genration \n    \"queue\": \"Dr. Mita Sen\",\n    \"room\": \"100\",//Dynamiac genration \n    \"currency\": \"INR\",\n    \"notes\": \"OPD Consultation Bill\",\n    \"items\": [\n        {\n            \"serviceItemId\": 2,\n            \"name\": \"Consultation (Video – International Patients – Rs.700.0)\",\n            \"qty\": 1,\n            \"unitPrice\": 499.00,\n            \"discountAmount\": 0.00,\n            \"taxPercent\": 0.00\n        }\n    ]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/invoices",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"invoices"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "2. Finalize Invoice",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/api/invoices/{{invoiceId}}/finalize",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"invoices",
-								"{{invoiceId}}",
-								"finalize"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "3. Add Payment to Invoice",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"payments\": [\n        {\n            \"method\": \"CASH\",\n            \"amount\": 100.00,\n            \"txnRef\": null,\n            \"receivedBy\": \"frontdesk@clinic\",\n            \"notes\": \"Cash payment at POS\"\n        },\n        {\n            \"method\": \"CARD\",\n            \"amount\": 57.00,\n            \"txnRef\": \"VISA ****4421\",\n            \"receivedBy\": \"frontdesk@clinic\",\n            \"notes\": \"Card payment\"\n        }\n    ]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/invoices/{{invoiceId}}/payments",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"invoices",
-								"{{invoiceId}}",
-								"payments"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "4. Get Invoice by ID",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": ""
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "4.1.Get Draft Invoice by Appointment",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/api/invoices/draft?appointmentId={{appointmentId}}",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"invoices",
-								"draft"
-							],
-							"query": [
-								{
-									"key": "appointmentId",
-									"value": "{{appointmentId}}"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "6. Search / List Invoices",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/api/invoices?status=ISSUED&doctorId=4&patientId=15&page=0&size=10&sort=createdAt,DESC",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"invoices"
-							],
-							"query": [
-								{
-									"key": "status",
-									"value": "ISSUED"
-								},
-								{
-									"key": "doctorId",
-									"value": "4"
-								},
-								{
-									"key": "patientId",
-									"value": "15"
-								},
-								{
-									"key": "page",
-									"value": "0"
-								},
-								{
-									"key": "size",
-									"value": "10"
-								},
-								{
-									"key": "sort",
-									"value": "createdAt,DESC"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "7. List All Payments for an Invoice",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/api/invoices/1/payments?page=0&size=10&sort=receivedAt,DESC",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"invoices",
-								"1",
-								"payments"
-							],
-							"query": [
-								{
-									"key": "page",
-									"value": "0"
-								},
-								{
-									"key": "size",
-									"value": "10"
-								},
-								{
-									"key": "sort",
-									"value": "receivedAt,DESC"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "8. Get Printable Invoice (Future Extension) pdf",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": ""
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "8. Get Printable Invoice (Future Extension) html",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/api/invoices/1/print?format=html",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"invoices",
-								"1",
-								"print"
-							],
-							"query": [
-								{
-									"key": "format",
-									"value": "html"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "9. Delete / Refund (Future extension)",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": ""
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
 			"name": "EMR",
 			"item": [
+				{
+					"name": "Medicine Search",
+					"item": [
+						{
+							"name": "16. BRAND mode (typeahead)",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"language\": \"English\",\n    \"followUpEnabled\": true,\n    \"followUpDuration\": 60,\n    \"followUpUnit\": \"Days\",\n    \"followUpDate\": null,\n    \"sendFollowUpEmail\": false,\n    \"adviceText\": \"Walk daily...\",\n    \"medications\": [\n        {\n            \"medicineId\": 101,\n            \"form\": \"TAB\",\n            \"mode\": \"BRAND\",\n            \"medicineName\": \"CROCIN\",\n            \"composition\": \"Paracetamol 500mg\",\n            \"inStock\": true,\n            \"stockQty\": 4670,\n            \"m\": 1,\n            \"a\": 0,\n            \"n\": 1,\n            \"sosEnabled\": false,\n            \"sosCount\": 0,\n            \"sosUnit\": \"times\",\n            \"startDate\": \"2026-01-06\",\n            \"lifelong\": false,\n            \"duration\": 30,\n            \"durationUnit\": \"Days\",\n            \"periodicity\": \"DAILY\"\n        }\n    ],\n    \"tests\": [\n        {\n            \"name\": \"CBC, ESR\",\n            \"price\": 0,\n            \"tat\": 0,\n            \"quantity\": 1,\n            \"notes\": \"\",\n            \"isCustom\": false\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/pharmacy/medicines/search?mode=BRAND&form=TAB&q=cro&limit=10&inStockOnly=false",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"pharmacy",
+										"medicines",
+										"search"
+									],
+									"query": [
+										{
+											"key": "mode",
+											"value": "BRAND"
+										},
+										{
+											"key": "form",
+											"value": "TAB"
+										},
+										{
+											"key": "q",
+											"value": "cro"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										},
+										{
+											"key": "inStockOnly",
+											"value": "false"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "17. COMPOSITION mode (contains match)",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"language\": \"English\",\n    \"followUpEnabled\": true,\n    \"followUpDuration\": 60,\n    \"followUpUnit\": \"Days\",\n    \"followUpDate\": null,\n    \"sendFollowUpEmail\": false,\n    \"adviceText\": \"Walk daily...\",\n    \"medications\": [\n        {\n            \"medicineId\": 101,\n            \"form\": \"TAB\",\n            \"mode\": \"BRAND\",\n            \"medicineName\": \"CROCIN\",\n            \"composition\": \"Paracetamol 500mg\",\n            \"inStock\": true,\n            \"stockQty\": 4670,\n            \"m\": 1,\n            \"a\": 0,\n            \"n\": 1,\n            \"sosEnabled\": false,\n            \"sosCount\": 0,\n            \"sosUnit\": \"times\",\n            \"startDate\": \"2026-01-06\",\n            \"lifelong\": false,\n            \"duration\": 30,\n            \"durationUnit\": \"Days\",\n            \"periodicity\": \"DAILY\"\n        }\n    ],\n    \"tests\": [\n        {\n            \"name\": \"CBC, ESR\",\n            \"price\": 0,\n            \"tat\": 0,\n            \"quantity\": 1,\n            \"notes\": \"\",\n            \"isCustom\": false\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/pharmacy/medicines/search?mode=COMPOSITION&form=TAB&q=para&limit=10&inStockOnly=false",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"pharmacy",
+										"medicines",
+										"search"
+									],
+									"query": [
+										{
+											"key": "mode",
+											"value": "COMPOSITION"
+										},
+										{
+											"key": "form",
+											"value": "TAB"
+										},
+										{
+											"key": "q",
+											"value": "para"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										},
+										{
+											"key": "inStockOnly",
+											"value": "false"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "18.Without form filter (all forms)",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"language\": \"English\",\n    \"followUpEnabled\": true,\n    \"followUpDuration\": 60,\n    \"followUpUnit\": \"Days\",\n    \"followUpDate\": null,\n    \"sendFollowUpEmail\": false,\n    \"adviceText\": \"Walk daily...\",\n    \"medications\": [\n        {\n            \"medicineId\": 101,\n            \"form\": \"TAB\",\n            \"mode\": \"BRAND\",\n            \"medicineName\": \"CROCIN\",\n            \"composition\": \"Paracetamol 500mg\",\n            \"inStock\": true,\n            \"stockQty\": 4670,\n            \"m\": 1,\n            \"a\": 0,\n            \"n\": 1,\n            \"sosEnabled\": false,\n            \"sosCount\": 0,\n            \"sosUnit\": \"times\",\n            \"startDate\": \"2026-01-06\",\n            \"lifelong\": false,\n            \"duration\": 30,\n            \"durationUnit\": \"Days\",\n            \"periodicity\": \"DAILY\"\n        }\n    ],\n    \"tests\": [\n        {\n            \"name\": \"CBC, ESR\",\n            \"price\": 0,\n            \"tat\": 0,\n            \"quantity\": 1,\n            \"notes\": \"\",\n            \"isCustom\": false\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/pharmacy/medicines/search?mode=BRAND&q=cro&limit=10&inStockOnly=false",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"pharmacy",
+										"medicines",
+										"search"
+									],
+									"query": [
+										{
+											"key": "mode",
+											"value": "BRAND"
+										},
+										{
+											"key": "q",
+											"value": "cro"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										},
+										{
+											"key": "inStockOnly",
+											"value": "false"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "19.Only in-stock medicines",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"language\": \"English\",\n    \"followUpEnabled\": true,\n    \"followUpDuration\": 60,\n    \"followUpUnit\": \"Days\",\n    \"followUpDate\": null,\n    \"sendFollowUpEmail\": false,\n    \"adviceText\": \"Walk daily...\",\n    \"medications\": [\n        {\n            \"medicineId\": 101,\n            \"form\": \"TAB\",\n            \"mode\": \"BRAND\",\n            \"medicineName\": \"CROCIN\",\n            \"composition\": \"Paracetamol 500mg\",\n            \"inStock\": true,\n            \"stockQty\": 4670,\n            \"m\": 1,\n            \"a\": 0,\n            \"n\": 1,\n            \"sosEnabled\": false,\n            \"sosCount\": 0,\n            \"sosUnit\": \"times\",\n            \"startDate\": \"2026-01-06\",\n            \"lifelong\": false,\n            \"duration\": 30,\n            \"durationUnit\": \"Days\",\n            \"periodicity\": \"DAILY\"\n        }\n    ],\n    \"tests\": [\n        {\n            \"name\": \"CBC, ESR\",\n            \"price\": 0,\n            \"tat\": 0,\n            \"quantity\": 1,\n            \"notes\": \"\",\n            \"isCustom\": false\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/pharmacy/medicines/search?mode=BRAND&form=TAB&q=cro&limit=10&inStockOnly=true",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"pharmacy",
+										"medicines",
+										"search"
+									],
+									"query": [
+										{
+											"key": "mode",
+											"value": "BRAND"
+										},
+										{
+											"key": "form",
+											"value": "TAB"
+										},
+										{
+											"key": "q",
+											"value": "cro"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										},
+										{
+											"key": "inStockOnly",
+											"value": "true"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "25.Get latest stock for a selected medicine",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/pharmacy/medicines/{{medicineId}}/stock",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"pharmacy",
+										"medicines",
+										"{{medicineId}}",
+										"stock"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "26.Lab Tests Search (Typeahead)",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/lab/tests/search?q=cbc&limit=10",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"lab",
+										"tests",
+										"search"
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "cbc"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Medicine Template",
+					"item": [
+						{
+							"name": "20. Create template",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Fever-2\",\n    \"language\": \"English\",\n    \"payload\": {\n      \"language\": \"English\",\n      \"followUpEnabled\": true,\n      \"followUpDuration\": 3,\n      \"followUpUnit\": \"Days\",\n      \"followUpDate\": null,\n      \"sendFollowUpEmail\": false,\n      \"adviceText\": \"Drink plenty of fluids.\\nRest.\\nReturn if fever persists > 3 days.\",\n      \"medications\": [\n        {\n          \"medicineId\": 101,\n          \"form\": \"TAB\",\n          \"mode\": \"BRAND\",\n          \"medicineName\": \"CROCIN\",\n          \"composition\": \"Paracetamol 500mg\",\n          \"inStock\": true,\n          \"stockQty\": 4670,\n          \"m\": 1,\n          \"a\": 0,\n          \"n\": 1,\n          \"sosEnabled\": false,\n          \"sosCount\": 0,\n          \"sosUnit\": \"times\",\n          \"startDate\": \"2026-01-06\",\n          \"lifelong\": false,\n          \"duration\": 3,\n          \"durationUnit\": \"Days\",\n          \"periodicity\": \"DAILY\"\n        }\n      ],\n      \"tests\": [\n        {\n          \"name\": \"CBC, ESR\",\n          \"price\": 250,\n          \"tat\": 4,\n          \"quantity\": 1,\n          \"notes\": \"\",\n          \"isCustom\": false\n        }\n      ]\n    }\n  }",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/emr/prescription-templates",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"emr",
+										"prescription-templates"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "21.List templates (modal)",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/emr/prescription-templates?query=fev&limit=50",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"emr",
+										"prescription-templates"
+									],
+									"query": [
+										{
+											"key": "query",
+											"value": "fev"
+										},
+										{
+											"key": "limit",
+											"value": "50"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "22.Get template details (apply)",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/emr/prescription-templates/tpl_3",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"emr",
+										"prescription-templates",
+										"tpl_3"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "23.Update template",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/emr/prescription-templates/tpl_3",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"emr",
+										"prescription-templates",
+										"tpl_3"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "24.Delete template",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/emr/prescription-templates/tpl_2",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"emr",
+										"prescription-templates",
+										"tpl_2"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Import prescription/tests from previous visits",
+					"item": [
+						{
+							"name": "25.By patient",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/emr/patients/{{patientId}}/previous-prescriptions?limit=5",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"emr",
+										"patients",
+										"{{patientId}}",
+										"previous-prescriptions"
+									],
+									"query": [
+										{
+											"key": "limit",
+											"value": "5"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "26.By appointment (exclude current appointment)",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/emr/appointments/{{appointmentId}}/previous-prescriptions?limit=5",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"emr",
+										"appointments",
+										"{{appointmentId}}",
+										"previous-prescriptions"
+									],
+									"query": [
+										{
+											"key": "limit",
+											"value": "5"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "billing suggestions / serviceMasterForLAB",
+					"item": [
+						{
+							"name": "27.Full master (default active=true)",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/lab/tests/master",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"lab",
+										"tests",
+										"master"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "28.Typeahead",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/lab/tests/master?q=hba&limit=50&offset=0",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"lab",
+										"tests",
+										"master"
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "hba"
+										},
+										{
+											"key": "limit",
+											"value": "50"
+										},
+										{
+											"key": "offset",
+											"value": "0"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "PRESCRIBED_TEST billing invoices by appointmentId",
+					"item": [
+						{
+							"name": "29.Default",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/billing/invoices/draft/by-appointment/{{appointmentId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"billing",
+										"invoices",
+										"draft",
+										"by-appointment",
+										"{{appointmentId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "29.LATEST + no items + no payments",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/billing/invoices/draft/by-appointment/{{appointmentId}}?mode=LATEST&includeItems=false&includePayments=false",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"billing",
+										"invoices",
+										"draft",
+										"by-appointment",
+										"{{appointmentId}}"
+									],
+									"query": [
+										{
+											"key": "mode",
+											"value": "LATEST"
+										},
+										{
+											"key": "includeItems",
+											"value": "false"
+										},
+										{
+											"key": "includePayments",
+											"value": "false"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
 				{
 					"name": "1.Bulk Import (Hierarchical JSON)",
 					"request": {
@@ -2809,6 +3364,131 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "13. Queues",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/emr/queue",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"emr",
+								"queue"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "14.Save prescription",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"language\": \"English\",\n    \"followUpEnabled\": true,\n    \"followUpDuration\": 60,\n    \"followUpUnit\": \"Days\",\n    \"followUpDate\": null,\n    \"sendFollowUpEmail\": false,\n    \"adviceText\": \"Walk daily...\",\n    \"medications\": [\n        {\n            \"medicineId\": 101,\n            \"form\": \"TAB\",\n            \"mode\": \"BRAND\",\n            \"medicineName\": \"CROCIN\",\n            \"composition\": \"Paracetamol 500mg\",\n            \"inStock\": true,\n            \"stockQty\": 4670,\n            \"m\": 1,\n            \"a\": 0,\n            \"n\": 1,\n            \"sosEnabled\": false,\n            \"sosCount\": 0,\n            \"sosUnit\": \"times\",\n            \"startDate\": \"2026-01-06\",\n            \"lifelong\": false,\n            \"duration\": 30,\n            \"durationUnit\": \"Days\",\n            \"periodicity\": \"DAILY\"\n        }\n    ],\n    \"tests\": [\n        {\n            \"name\": \"CBC, ESR\",\n            \"price\": 0,\n            \"tat\": 0,\n            \"quantity\": 1,\n            \"notes\": \"\",\n            \"isCustom\": false\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/emr/appointments/12/prescription",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"emr",
+								"appointments",
+								"12",
+								"prescription"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "15.fetch existing prescription",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"language\": \"English\",\n    \"followUpEnabled\": true,\n    \"followUpDuration\": 60,\n    \"followUpUnit\": \"Days\",\n    \"followUpDate\": null,\n    \"sendFollowUpEmail\": false,\n    \"adviceText\": \"Walk daily...\",\n    \"medications\": [\n        {\n            \"medicineId\": 101,\n            \"form\": \"TAB\",\n            \"mode\": \"BRAND\",\n            \"medicineName\": \"CROCIN\",\n            \"composition\": \"Paracetamol 500mg\",\n            \"inStock\": true,\n            \"stockQty\": 4670,\n            \"m\": 1,\n            \"a\": 0,\n            \"n\": 1,\n            \"sosEnabled\": false,\n            \"sosCount\": 0,\n            \"sosUnit\": \"times\",\n            \"startDate\": \"2026-01-06\",\n            \"lifelong\": false,\n            \"duration\": 30,\n            \"durationUnit\": \"Days\",\n            \"periodicity\": \"DAILY\"\n        }\n    ],\n    \"tests\": [\n        {\n            \"name\": \"CBC, ESR\",\n            \"price\": 0,\n            \"tat\": 0,\n            \"quantity\": 1,\n            \"notes\": \"\",\n            \"isCustom\": false\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/emr/appointments/12/prescription",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"emr",
+								"appointments",
+								"12",
+								"prescription"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -2938,6 +3618,464 @@
 								"prescribed-tests",
 								"invoices",
 								"draft"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2.Finalize Prescribed Test Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/prescribed-tests/invoices/{{invoiceId}}/finalize",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"prescribed-tests",
+								"invoices",
+								"{{invoiceId}}",
+								"finalize"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.Bulk Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-User",
+								"value": "cashier@medihub.com"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"payments\": [\n        {\n            \"amount\": 150.00,\n            \"method\": \"CASH\",\n            \"txnRef\": \"CASH-20251015-1\",\n            \"receivedBy\": \"Cashier001\",\n            \"notes\": \"Advance\"\n        } \n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/prescribed-tests/invoices/{{invoiceId}}/bulk",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"prescribed-tests",
+								"invoices",
+								"{{invoiceId}}",
+								"bulk"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Invoice",
+			"item": [
+				{
+					"name": "OPD Invoice",
+					"item": [
+						{
+							"name": "1. Create Invoice (Draft)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"doctorId\": 4,// Dr. Mita Sen - 4 \n    \"patientId\": 15,//Debashis Banerjee 15 \n    \"appointmentId\": 27,\n    \"clinicId\": \"CLINIC-001\",//Dynamiac genration \n    \"token\": 1,//Dynamiac genration \n    \"queue\": \"Dr. Mita Sen\",\n    \"room\": \"100\",//Dynamiac genration \n    \"currency\": \"INR\",\n    \"notes\": \"OPD Consultation Bill\",\n    \"items\": [\n        {\n            \"serviceItemId\": 2,\n            \"name\": \"Consultation (Video – International Patients – Rs.700.0)\",\n            \"qty\": 1,\n            \"unitPrice\": 499.00,\n            \"discountAmount\": 0.00,\n            \"taxPercent\": 0.00\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/invoices",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"invoices"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2. Finalize Invoice",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/invoices/{{invoiceId}}/finalize",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"invoices",
+										"{{invoiceId}}",
+										"finalize"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "3. Add Payment to Invoice",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"payments\": [\n        {\n            \"method\": \"CASH\",\n            \"amount\": 100.00,\n            \"txnRef\": null,\n            \"receivedBy\": \"frontdesk@clinic\",\n            \"notes\": \"Cash payment at POS\"\n        },\n        {\n            \"method\": \"CARD\",\n            \"amount\": 57.00,\n            \"txnRef\": \"VISA ****4421\",\n            \"receivedBy\": \"frontdesk@clinic\",\n            \"notes\": \"Card payment\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/invoices/{{invoiceId}}/payments",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"invoices",
+										"{{invoiceId}}",
+										"payments"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "4. Get Invoice by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": ""
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "6. Search / List Invoices",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/invoices?status=ISSUED&doctorId=4&patientId=15&page=0&size=10&sort=createdAt,DESC",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"invoices"
+									],
+									"query": [
+										{
+											"key": "status",
+											"value": "ISSUED"
+										},
+										{
+											"key": "doctorId",
+											"value": "4"
+										},
+										{
+											"key": "patientId",
+											"value": "15"
+										},
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "10"
+										},
+										{
+											"key": "sort",
+											"value": "createdAt,DESC"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "7. List All Payments for an Invoice",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/invoices/1/payments?page=0&size=10&sort=receivedAt,DESC",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"invoices",
+										"1",
+										"payments"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "10"
+										},
+										{
+											"key": "sort",
+											"value": "receivedAt,DESC"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "8. Get Printable Invoice (Future Extension) pdf",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/invoices/{{invoiceId}}/print",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"invoices",
+										"{{invoiceId}}",
+										"print"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "8. Get Printable Invoice (Future Extension) html",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/invoices/1/print?format=html",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"invoices",
+										"1",
+										"print"
+									],
+									"query": [
+										{
+											"key": "format",
+											"value": "html"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "9. Delete / Refund (Future extension)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": ""
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "All drafted invoices",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/draft?appointmentId={{appointmentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"draft"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointmentId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Only LAB_TEST items",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/all?appointmentId={{appointmentId}}&itemType=LAB_TEST",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"all"
+							],
+							"query": [
+								{
+									"key": "appointmentId",
+									"value": "{{appointmentId}}"
+								},
+								{
+									"key": "itemType",
+									"value": "LAB_TEST"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getVisits list",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/visits?sort=appointmentDate,desc;slotTime,desc",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"visits"
+							],
+							"query": [
+								{
+									"key": "sort",
+									"value": "appointmentDate,desc;slotTime,desc"
+								}
 							]
 						}
 					},
