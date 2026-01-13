@@ -169,17 +169,44 @@ public class InvoiceQueryServiceImpl implements InvoiceQueryService {
         String out = (ff + " " + ll).trim();
         return out.isEmpty() ? null : out;
     }
+
+
+    /**
+     * Backward compatible method (old callers).
+     * No queue filter applied.
+     */
     @Transactional(readOnly = true)
     @Override
-    public InvoiceDraftByAppointmentResponse getDraftByAppointment(Long appointmentId) {
+    public InvoiceDraftByAppointmentResponse getAllInvoicesByAppointmentId(Long appointmentId) {
+        return getAllInvoicesByAppointmentId(appointmentId, null);
+    }
+    /**
+     * New method (queue filter optional).
+     * If queue is provided, fetch latest invoice only for that queue.
+     * If queue is null/blank, behave like old version (no queue filter).
+     */
+    @Transactional(readOnly = true)
+    @Override
+    public InvoiceDraftByAppointmentResponse getAllInvoicesByAppointmentId(Long appointmentId, String queue) {
 
-        // ✅ 1) If ANY invoice exists (DRAFT/ISSUED/PAID/PARTIALLY_PAID/VOID), return it
-        var invOpt = invoiceRepository.findTopByAppointmentIdOrderByCreatedAtDesc(appointmentId);
+        final String normalizedQueue = normalizeQueue(queue);
+
+        /*
+         * 1) If ANY invoice exists for this appointment (optionally filtered by queue),
+         *    return the latest invoice (DRAFT/ISSUED/PAID/PARTIALLY_PAID/VOID).
+         *
+         * Repository method expected:
+         *   Optional<Invoice> findLatestByAppointmentIdAndOptionalQueue(Long appointmentId, String queue);
+         */
+        var invOpt = invoiceRepository.findLatestByAppointmentIdAndOptionalQueue(appointmentId, normalizedQueue);
         if (invOpt.isPresent()) {
             return fromInvoice(invOpt.get(), appointmentId);
         }
 
-        // ✅ 2) Else fallback to your existing "prefill from prescribed tests" logic
+        /*
+         * 2) Else: fallback to "prefill from prescribed tests" (draft preview).
+         *    This returns invoiceId=null and status=null.
+         */
         var appt = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid appointmentId=" + appointmentId));
 
@@ -197,10 +224,15 @@ public class InvoiceQueryServiceImpl implements InvoiceQueryService {
             var master = t.getPathologyTestMaster();
 
             String code;
-            if (master != null && master.getCode() != null && !master.getCode().isBlank()) code = master.getCode();
-            else if (master != null && master.getId() != null) code = "LAB_" + master.getId();
-            else code = "LAB_PTEST_" + t.getId();
+            if (master != null && master.getCode() != null && !master.getCode().isBlank()) {
+                code = master.getCode();
+            } else if (master != null && master.getId() != null) {
+                code = "LAB_" + master.getId();
+            } else {
+                code = "LAB_PTEST_" + t.getId();
+            }
 
+            // Keep your existing UI-friendly pattern (if you want numeric serviceItemId, adjust here)
             String serviceCode = code.startsWith("LAB_") ? code : "LAB_" + code;
 
             double unitPrice = (t.getPrice() == null ? 0.0 : t.getPrice());
@@ -227,17 +259,24 @@ public class InvoiceQueryServiceImpl implements InvoiceQueryService {
                     .build());
         }
 
-        double subTotal = items.stream().mapToDouble(InvoiceDraftByAppointmentResponse.DraftItem::getLineTotal).sum();
+        double subTotal = items.stream()
+                .mapToDouble(InvoiceDraftByAppointmentResponse.DraftItem::getLineTotal)
+                .sum();
 
-        String patientName = appt.getPatient() == null ? null : fullName(appt.getPatient().getFirstName(), appt.getPatient().getLastName());
-        String doctorName  = appt.getDoctor() == null ? null : fullName(appt.getDoctor().getFirstName(), appt.getDoctor().getLastName());
+        String patientName = appt.getPatient() == null
+                ? null
+                : fullName(appt.getPatient().getFirstName(), appt.getPatient().getLastName());
+
+        String doctorName = appt.getDoctor() == null
+                ? null
+                : fullName(appt.getDoctor().getFirstName(), appt.getDoctor().getLastName());
 
         return InvoiceDraftByAppointmentResponse.builder()
-                .invoiceId(null)          // ✅ no invoice yet
-                .status(null)             // ✅ no status yet
+                .invoiceId(null)     // no invoice yet
+                .status(null)        // no status yet
                 .appointmentId(appointmentId)
                 .tokenNo("TKN-" + String.format("%03d", appointmentId))
-                .draft(true)              // ✅ this is “draft preview”, not saved invoice
+                .draft(true)         // draft preview (not saved invoice)
 
                 .source(InvoiceDraftByAppointmentResponse.SourceRef.builder()
                         .prescriptionId(prescriptionOpt.map(Prescription::getId).orElse(null))
@@ -247,7 +286,9 @@ public class InvoiceQueryServiceImpl implements InvoiceQueryService {
                 .patientName(patientName)
                 .doctorName(doctorName)
                 .department(null)
+
                 .items(items)
+
                 .subTotal(subTotal)
                 .discountTotal(0.0)
                 .taxTotal(0.0)
@@ -255,27 +296,37 @@ public class InvoiceQueryServiceImpl implements InvoiceQueryService {
                 .build();
     }
 
-
+    private String normalizeQueue(String queue) {
+        if (queue == null) return null;
+        String q = queue.trim();
+        return q.isEmpty() ? null : q;
+    }
+    /**
+     * Maps a persisted Invoice -> unified InvoiceDraftByAppointmentResponse
+     * used by UI for both “existing invoice” and “draft preview”.
+     */
     private InvoiceDraftByAppointmentResponse fromInvoice(Invoice inv, Long appointmentId) {
 
         List<InvoiceDraftByAppointmentResponse.DraftItem> items = new ArrayList<>();
         int sl = 1;
 
         for (InvoiceItem it : (inv.getItems() == null ? List.<InvoiceItem>of() : inv.getItems())) {
-            String serviceCode = it.getServiceItemId() == null
+
+            // UI expects serviceCode can be null
+            String serviceCode = (it.getServiceItemId() == null)
                     ? null
                     : String.valueOf(it.getServiceItemId());
 
             items.add(InvoiceDraftByAppointmentResponse.DraftItem.builder()
                     .id((long) sl++)
-                    .type("LAB") // if you have itemType in DB, map properly
+                    .type("LAB") // If you have itemType in DB, map properly
                     .serviceCode(serviceCode)
                     .serviceName(it.getName())
-                    .unitPrice(it.getUnitPrice() == null ? 0.0 : it.getUnitPrice().doubleValue())
+                    .unitPrice(toDouble(it.getUnitPrice()))
                     .quantity(it.getQty() == null ? 1 : it.getQty())
-                    .discount(it.getDiscountAmount() == null ? 0.0 : it.getDiscountAmount().doubleValue())
-                    .taxable(it.getTaxPercent() != null && it.getTaxPercent().compareTo(BigDecimal.ZERO) > 0)
-                    .lineTotal(it.getLineTotal() == null ? 0.0 : it.getLineTotal().doubleValue())
+                    .discount(toDouble(it.getDiscountAmount()))
+                    .taxable(isPositive(it.getTaxPercent()))
+                    .lineTotal(toDouble(it.getLineTotal()))
                     .sourceRef(InvoiceDraftByAppointmentResponse.DraftItem.SourceRefItem.builder()
                             .kind("INVOICE_ITEM")
                             .refId("invitem-" + it.getId())
@@ -283,8 +334,13 @@ public class InvoiceQueryServiceImpl implements InvoiceQueryService {
                     .build());
         }
 
-        String patientName = inv.getPatient() == null ? null : fullName(inv.getPatient().getFirstName(), inv.getPatient().getLastName());
-        String doctorName  = inv.getDoctor() == null ? null : fullName(inv.getDoctor().getFirstName(), inv.getDoctor().getLastName());
+        String patientName = inv.getPatient() == null
+                ? null
+                : fullName(inv.getPatient().getFirstName(), inv.getPatient().getLastName());
+
+        String doctorName = inv.getDoctor() == null
+                ? null
+                : fullName(inv.getDoctor().getFirstName(), inv.getDoctor().getLastName());
 
         String st = inv.getStatus() == null ? null : inv.getStatus().name();
 
@@ -292,8 +348,10 @@ public class InvoiceQueryServiceImpl implements InvoiceQueryService {
                 .invoiceId(inv.getId())
                 .status(st)
                 .appointmentId(appointmentId)
-                .tokenNo(inv.getBillNumber() != null ? inv.getBillNumber() : ("TKN-" + String.format("%03d", appointmentId)))
-                .draft("DRAFT".equalsIgnoreCase(st)) // ✅ draft flag based on status
+                .tokenNo(inv.getBillNumber() != null
+                        ? inv.getBillNumber()
+                        : ("TKN-" + String.format("%03d", appointmentId)))
+                .draft("DRAFT".equalsIgnoreCase(st))
 
                 .source(InvoiceDraftByAppointmentResponse.SourceRef.builder()
                         .prescriptionId(null)
@@ -303,13 +361,15 @@ public class InvoiceQueryServiceImpl implements InvoiceQueryService {
                 .patientName(patientName)
                 .doctorName(doctorName)
                 .department(null)
+
                 .items(items)
 
-                .subTotal(inv.getSubTotal() == null ? 0.0 : inv.getSubTotal().doubleValue())
-                .discountTotal(inv.getDiscountTotal() == null ? 0.0 : inv.getDiscountTotal().doubleValue())
-                .taxTotal(inv.getTaxTotal() == null ? 0.0 : inv.getTaxTotal().doubleValue())
-                .netPayable(inv.getGrandTotal() == null ? 0.0 : inv.getGrandTotal().doubleValue())
+                .subTotal(toDouble(inv.getSubTotal()))
+                .discountTotal(toDouble(inv.getDiscountTotal()))
+                .taxTotal(toDouble(inv.getTaxTotal()))
+                .netPayable(toDouble(inv.getGrandTotal()))
                 .build();
     }
+
 
 }

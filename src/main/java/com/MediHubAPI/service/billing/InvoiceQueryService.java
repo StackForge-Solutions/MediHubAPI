@@ -17,5 +17,8 @@ public interface InvoiceQueryService {
 
 
     @Transactional(readOnly = true)
-    InvoiceDraftByAppointmentResponse getDraftByAppointment(Long appointmentId);
+    InvoiceDraftByAppointmentResponse getAllInvoicesByAppointmentId(Long appointmentId);
+    @Transactional(readOnly = true)
+    InvoiceDraftByAppointmentResponse getAllInvoicesByAppointmentId(Long appointmentId, String queue);
+
 }

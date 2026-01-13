@@ -34,6 +34,17 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpec
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select i from Invoice i where i.id = :id")
     Optional<Invoice> findByIdForUpdate(@Param("id") Long id);
-
+    @EntityGraph(attributePaths = {"items"})
+    @Query("""
+                select i
+                from Invoice i
+                where i.appointmentId = :appointmentId
+                  and (:queue is null or i.queue = :queue)
+                order by i.createdAt desc
+            """)
+    Optional<Invoice> findLatestByAppointmentIdAndOptionalQueue(
+            @Param("appointmentId") Long appointmentId,
+            @Param("queue") String queue
+    );
 
 }

@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
         })
 public class InvoicePayment {
 
-    public enum Method {CASH, CARD, UPI, INSURANCE, WALLET, OTHER}
+    public enum Method {CASH, CARD, UPI, INSURANCE, WALLET, OTHER, NETBANKING}
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

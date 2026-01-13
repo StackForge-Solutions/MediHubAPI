@@ -92,19 +92,22 @@ public class InvoiceQueryController {
                 .build();
     }
 
-    @GetMapping("/draft/by-appointment/{appointmentId}")
-    public DataEnvelope<InvoiceDraftByAppointmentResponse> getDraftFromPrescribedTests(
-            @PathVariable Long appointmentId
-    ) {
-        InvoiceDraftByAppointmentResponse data = invoiceQueryService.getDraftByAppointment(appointmentId);
+@GetMapping("/all/by-appointment/{appointmentId}")
+public DataEnvelope<InvoiceDraftByAppointmentResponse> getAllInvoicesByAppointmentId(
+        @PathVariable Long appointmentId,
+        @RequestParam(name = "queue", required = false) String queue
+) {
+    InvoiceDraftByAppointmentResponse data =
+            invoiceQueryService.getAllInvoicesByAppointmentId(appointmentId, queue);
 
-        return DataEnvelope.<InvoiceDraftByAppointmentResponse>builder()
-                .data(data)
-                .meta(ApiMeta.builder()
-                        .traceId(UUID.randomUUID().toString().replace("-", "").substring(0, 16))
-                        .timestamp(Instant.now())
-                        .build())
-                .build();
-    }
+    return DataEnvelope.<InvoiceDraftByAppointmentResponse>builder()
+            .data(data)
+            .meta(ApiMeta.builder()
+                    .traceId(UUID.randomUUID().toString().replace("-", "").substring(0, 16))
+                    .timestamp(Instant.now())
+                    .build())
+            .build();
+}
+
 
 }
