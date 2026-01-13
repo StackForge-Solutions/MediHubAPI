@@ -10,6 +10,10 @@ import java.util.List;
 @Builder
 public class InvoiceDraftByAppointmentResponse {
 
+    // ✅ NEW: if invoice exists
+    private Long invoiceId;     // null if no invoice yet
+    private String status;      // e.g. "DRAFT", "ISSUED", "PAID", "VOID", ...
+
     private Long appointmentId;
     private String tokenNo;
     private Boolean draft;
