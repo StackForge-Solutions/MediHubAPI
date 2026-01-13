@@ -1,6 +1,7 @@
 package com.MediHubAPI.repository;
 
 import com.MediHubAPI.model.billing.Invoice;
+import com.MediHubAPI.model.billing.InvoicePayment;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
@@ -34,6 +35,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpec
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select i from Invoice i where i.id = :id")
     Optional<Invoice> findByIdForUpdate(@Param("id") Long id);
+
     @EntityGraph(attributePaths = {"items"})
     @Query("""
                 select i
@@ -46,5 +48,4 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpec
             @Param("appointmentId") Long appointmentId,
             @Param("queue") String queue
     );
-
 }

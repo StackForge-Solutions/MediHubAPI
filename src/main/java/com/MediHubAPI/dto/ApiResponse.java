@@ -27,4 +27,8 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> ok(String message, String path) {
         return new ApiResponse<>(200, message, path, Instant.now(), null);
     }
+
+    public static ApiResponse<Object> error(String requestURI, String idempotencyConflict, String message) {
+        return new ApiResponse<>(500, message, requestURI, Instant.now(), null);
+    }
 }

@@ -56,13 +56,33 @@ public class InvoiceController {
     }
 
 
+//    @PostMapping("/{id}/payments")
+//    public List<InvoicePayment> addPayments(
+//            @PathVariable Long id,
+//            @Valid @RequestBody InvoiceDtos.AddPaymentsReq req
+//    ) {
+//        // Call service method to handle batch
+//        return service.addPayments(id, req.payments());
+//    }
+
+
     @PostMapping("/{id}/payments")
-    public List<InvoicePayment> addPayments(
+    public List<InvoiceDtos.PaymentView> addPayments(
             @PathVariable Long id,
             @Valid @RequestBody InvoiceDtos.AddPaymentsReq req
     ) {
-        // Call service method to handle batch
-        return service.addPayments(id, req.payments());
+        List<InvoicePayment> saved = service.addPayments(id, req.payments());
+        return saved.stream().map(p -> new InvoiceDtos.PaymentView(
+                p.getId(),
+                p.getIdempotencyKey(),
+                p.getMethod().name(),
+                p.getAmount(),
+                p.getTxnRef(),
+                p.getReceiptNo(),
+                p.getReceivedAt(),
+                p.getReceivedBy(),
+                p.getNotes()
+        )).toList();
     }
 
     // Controller
@@ -92,10 +112,10 @@ public class InvoiceController {
         });
     }
 
-     @GetMapping("/{id}/payments")
-    public Page<InvoiceDtos.PaymentView> listPayments(@PathVariable Long id, @org.springframework.data.web.PageableDefault(size = 20, sort = "receivedAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
-        return service.listPayments(id, pageable);
-    }
+//     @GetMapping("/{id}/payments")
+//    public Page<InvoiceDtos.PaymentView> listPayments(@PathVariable Long id, @org.springframework.data.web.PageableDefault(size = 20, sort = "receivedAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+//        return service.listPayments(id, pageable);
+//    }
 
     @GetMapping("/all")
     public InvoiceDtos.InvoiceDraftRes getAllInvoicesByAppointment(

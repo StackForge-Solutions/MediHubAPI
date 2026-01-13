@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface InvoicePaymentRepository extends JpaRepository<InvoicePayment, Long> {
 
@@ -26,4 +27,12 @@ public interface InvoicePaymentRepository extends JpaRepository<InvoicePayment, 
              AND p.invoice.id = :invoiceId
            """)
     boolean existsByTxnRefAndInvoiceId(String txnRef, Long invoiceId);
+
+
+    Optional<InvoicePayment> findByInvoiceIdAndIdempotencyKey(Long invoiceId, String idempotencyKey);
+
+    Optional<InvoicePayment> findByMethodAndTxnRef(InvoicePayment.Method method, String txnRef);
+
+    Optional<InvoicePayment> findByInvoiceIdAndReceiptNo(Long invoiceId, String receiptNo);
+
 }

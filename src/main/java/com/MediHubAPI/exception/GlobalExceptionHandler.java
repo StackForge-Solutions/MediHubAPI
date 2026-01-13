@@ -1,7 +1,12 @@
 package com.MediHubAPI.exception;
 
+import com.MediHubAPI.dto.ApiResponse;
 import com.MediHubAPI.dto.ErrorResponse;
+import com.MediHubAPI.exception.billing.DuplicateReceiptException;
+import com.MediHubAPI.exception.billing.DuplicateTxnRefException;
+import com.MediHubAPI.exception.billing.IdempotencyConflictException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -185,6 +190,23 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(IdempotencyConflictException.class)
+    public ResponseEntity<ApiResponse<Object>> idemConflict(IdempotencyConflictException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(req.getRequestURI(), "IDEMPOTENCY_CONFLICT", ex.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateTxnRefException.class)
+    public ResponseEntity<ApiResponse<Object>> dupTxn(DuplicateTxnRefException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(req.getRequestURI(), "DUPLICATE_TXN_REF", ex.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateReceiptException.class)
+    public ResponseEntity<ApiResponse<Object>> dupReceipt(DuplicateReceiptException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(req.getRequestURI(), "DUPLICATE_RECEIPT", ex.getMessage()));
+    }
 
 
 }

@@ -50,6 +50,7 @@ public class InvoiceDtos {
 
     // ---------- Add Payment ----------
     public record AddPaymentReq(
+            @NotBlank String idempotencyKey,
             @NotBlank String method, // CASH, CARD, ...
             @NotNull @Digits(integer = 12, fraction = 2) BigDecimal amount,
             String txnRef,
@@ -100,9 +101,11 @@ public class InvoiceDtos {
 
     public record PaymentView(
             Long id,
+            String idempotencyKey,
             String method,
             BigDecimal amount,
             String txnRef,
+            String receiptNo,          // ✅ add this
             LocalDateTime receivedAt,
             String receivedBy,
             String notes
