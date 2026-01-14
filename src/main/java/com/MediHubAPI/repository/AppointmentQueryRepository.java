@@ -28,7 +28,9 @@ public interface AppointmentQueryRepository extends JpaRepository<Appointment, L
                     s.startTime,
                     s.endTime,
                     i.id,
-                    CASE WHEN i.balanceDue = 0 THEN true ELSE false END
+                    CASE WHEN i.balanceDue = 0 THEN true ELSE false END,
+                    i.status
+           
                 )
                 FROM Appointment a
                 LEFT JOIN a.slot s

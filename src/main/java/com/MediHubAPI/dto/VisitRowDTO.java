@@ -1,5 +1,6 @@
 package com.MediHubAPI.dto;
 
+import com.MediHubAPI.model.billing.Invoice;
 import com.MediHubAPI.model.enums.AppointmentType;
 import lombok.Value;
 
@@ -29,4 +30,6 @@ public class VisitRowDTO {
 
     Long invoiceId;
     boolean paid; // true if invoice is fully paid
+    Invoice.Status status;
+
 }

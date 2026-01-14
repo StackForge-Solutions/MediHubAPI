@@ -207,6 +207,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(req.getRequestURI(), "DUPLICATE_RECEIPT", ex.getMessage()));
     }
+    @ExceptionHandler(com.MediHubAPI.exception.billing.DraftUpsertNotAllowedException.class)
+    public ResponseEntity<ApiResponse<Object>> draftNotAllowed(
+            com.MediHubAPI.exception.billing.DraftUpsertNotAllowedException ex,
+            HttpServletRequest req
+    ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(req.getRequestURI(), "DRAFT_UPSERT_NOT_ALLOWED",
+                        ex.getMessage() + " [invoiceId=" + ex.getInvoiceId() + ", status=" + ex.getStatus() + "]"));
+    }
 
 
 }

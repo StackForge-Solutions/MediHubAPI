@@ -38,7 +38,11 @@ public class InvoiceDtos {
             @NotNull @Min(1) Integer qty,
             @NotNull @Digits(integer = 12, fraction = 2) BigDecimal unitPrice,
             @NotNull @Digits(integer = 12, fraction = 2) BigDecimal discountAmount,
-            @NotNull @Digits(integer = 5, fraction = 2) BigDecimal taxPercent
+            @NotNull @Digits(integer = 5, fraction = 2) BigDecimal taxPercent,
+
+            // ✅ add these
+            Long refId,
+            String code
     ) {
     }
 

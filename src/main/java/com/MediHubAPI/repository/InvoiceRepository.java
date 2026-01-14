@@ -1,12 +1,13 @@
 package com.MediHubAPI.repository;
 
 import com.MediHubAPI.model.billing.Invoice;
-import com.MediHubAPI.model.billing.InvoicePayment;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpecificationExecutor<Invoice> {
@@ -48,4 +49,22 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpec
             @Param("appointmentId") Long appointmentId,
             @Param("queue") String queue
     );
+
+// ======================= Repository =======================
+// InvoiceRepository.java
+// NOTE: This is JPQL (entity query) so PESSIMISTIC_WRITE lock is valid.
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+   select i from Invoice i
+   where i.appointmentId = :appointmentId
+     and (:queueLike is null or lower(i.queue) like lower(:queueLike))
+   order by i.createdAt desc
+""")
+    List<Invoice> findLatestByAppointmentIdForUpdate(
+            @Param("appointmentId") Long appointmentId,
+            @Param("queueLike") String queueLike,
+            Pageable pageable
+    );
+
 }
