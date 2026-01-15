@@ -51,6 +51,20 @@ public class UserController {
             throw new HospitalAPIException(HttpStatus.INTERNAL_SERVER_ERROR, "Error creating user");
         }
     }
+    @PostMapping("/bulk")
+    public ResponseEntity<List<UserDto>> createUsersBulk(
+            @RequestBody @Valid List<UserCreateDto> users) {
+
+        if (users == null || users.isEmpty()) {
+            throw new HospitalAPIException(
+                    HttpStatus.BAD_REQUEST,
+                    "User list cannot be empty"
+            );
+        }
+
+        List<UserDto> createdUsers = userService.createUsersBulk(users);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUsers);
+    }
 
 
     /** Create patient with JSON + photo in the same request */
@@ -171,7 +185,7 @@ public class UserController {
 
         // Nice-to-have: inline filename with proper extension
         String ext = mediaType.getSubtype(); // e.g., "png", "jpeg", "webp"
-        String fileName = "patient-" + id + "." + (ext != null ? ext : "bin");
+        String fileName = "patient-" + id + "." + ext;
 
         return ResponseEntity.ok()
                 .contentType(mediaType)

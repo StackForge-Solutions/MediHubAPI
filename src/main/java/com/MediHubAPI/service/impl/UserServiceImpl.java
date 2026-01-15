@@ -168,7 +168,7 @@ public class UserServiceImpl implements UserService {
     private UserDto mapToDTO(User user) {
         UserDto userDto = mapper.map(user, UserDto.class);
         Set<ERole> roles = user.getRoles().stream()
-                .map(role -> role.getName())
+                .map(Role::getName)
                 .collect(Collectors.toSet());
         userDto.setRoles(roles);
         return userDto;
@@ -218,6 +218,26 @@ public class UserServiceImpl implements UserService {
 
         return userRepository.findAll(spec, pageable)
                 .map(this::mapToDTO);
+    }
+    @Override
+    public List<UserDto> createUsersBulk(List<UserCreateDto> users) {
+
+        return users.stream()
+                .map(userCreateDto -> {
+                    try {
+                        // 🔁 Reuse existing single-user logic
+                        return createUser(userCreateDto);
+                    } catch (HospitalAPIException ex) {
+                        // ❌ Stop entire batch on first failure (SAFE DEFAULT)
+                        throw ex;
+                    } catch (Exception ex) {
+                        throw new HospitalAPIException(
+                                HttpStatus.INTERNAL_SERVER_ERROR,
+                                "Failed to create user: " + userCreateDto.getUsername()
+                        );
+                    }
+                })
+                .collect(Collectors.toList());
     }
 
 
