@@ -4,6 +4,7 @@ package com.MediHubAPI.service;
 import com.MediHubAPI.dto.UserCreateDto;
 import com.MediHubAPI.dto.UserDto;
 import com.MediHubAPI.model.ERole;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -23,4 +24,6 @@ public interface UserService {
 
     UserDto updateUserRolesByUsername(String username, Set<ERole> roles);
     public Page<UserDto> searchPatients(String keyword, String specialization, Pageable pageable) ;
-    }
+
+    List<UserDto> createUsersBulk(@Valid List<UserCreateDto> users);
+}
