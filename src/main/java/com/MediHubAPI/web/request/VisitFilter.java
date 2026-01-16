@@ -31,4 +31,7 @@ public class VisitFilter {
 
     // optional sort, e.g. "appointmentDate,desc;slotTime,desc"
     private String sort;
+
+    // 🔹 NEW (optional)
+    private Boolean hasLabTests; // null or false = ignore
 }

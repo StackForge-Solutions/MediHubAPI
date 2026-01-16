@@ -51,7 +51,7 @@ public class VisitQueryService {
 
 
         Pageable pageable = buildPageable(f);
-        return repo.findVisitRows(start, end, f.getDoctorId(), f.getPatientId(), pageable);
+        return repo.findVisitRows(start, end, f.getDoctorId(), f.getPatientId(),  pageable, f.getHasLabTests());
     }
 
     private Pageable buildPageable(VisitFilter f) {
