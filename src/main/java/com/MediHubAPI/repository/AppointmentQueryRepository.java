@@ -86,15 +86,11 @@ public interface AppointmentQueryRepository extends JpaRepository<Appointment, L
       AND (:doctorId IS NULL OR a.doctor.id = :doctorId)
       AND (:patientId IS NULL OR a.patient.id = :patientId)
       AND (
-          :hasLabTests = false
-          OR (
-              :hasLabTests = true
-              AND EXISTS (
-                  SELECT 1
-                  FROM PrescribedTest pt
-                  JOIN pt.visitSummary vs
-                  WHERE vs.appointment.id = a.id
-              )
+          :hasLabTests IS NULL OR :hasLabTests = false
+          OR EXISTS (
+              SELECT 1
+              FROM PrescribedTest pt
+              WHERE pt.visitSummary.appointment.id = a.id
           )
       )
 """,
@@ -105,18 +101,15 @@ public interface AppointmentQueryRepository extends JpaRepository<Appointment, L
       AND (:doctorId IS NULL OR a.doctor.id = :doctorId)
       AND (:patientId IS NULL OR a.patient.id = :patientId)
       AND (
-          :hasLabTests = false
-          OR (
-              :hasLabTests = true
-              AND EXISTS (
-                  SELECT 1
-                  FROM PrescribedTest pt
-                  JOIN pt.visitSummary vs
-                  WHERE vs.appointment.id = a.id
-              )
+          :hasLabTests IS NULL OR :hasLabTests = false
+          OR EXISTS (
+              SELECT 1
+              FROM PrescribedTest pt
+              WHERE pt.visitSummary.appointment.id = a.id
           )
       )
 """)
+
     Page<VisitRowDTO> findVisitRows(
             @Param("start") LocalDate start,
             @Param("end") LocalDate end,
@@ -125,7 +118,6 @@ public interface AppointmentQueryRepository extends JpaRepository<Appointment, L
             @Param("hasLabTests") Boolean hasLabTests,
             Pageable pageable
     );
-
 
 
 
