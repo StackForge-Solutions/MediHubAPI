@@ -5,6 +5,7 @@ import com.MediHubAPI.service.VisitQueryService;
 import com.MediHubAPI.web.request.VisitFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,7 +23,12 @@ public class VisitQueryController {
      * GET /api/visits?sort=appointmentDate,desc;slotTime,desc
      */
     @GetMapping
-    public Page<VisitRowDTO> getVisits(VisitFilter filter) {
-        return service.search(filter);
+    public Page<VisitRowDTO> getVisits(
+            VisitFilter filter,
+            Pageable pageable
+    ) {
+        return service.search(filter, pageable);
     }
 }
+
+

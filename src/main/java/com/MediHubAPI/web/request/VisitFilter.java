@@ -7,6 +7,7 @@ import java.time.LocalDate;
 
 @Data
 public class VisitFilter {
+    private String q;
     // period = DAY | WEEK | MONTH | RANGE (default DAY)
     private String period = "DAY";
 
@@ -34,4 +35,6 @@ public class VisitFilter {
 
     // NEW (optional)
     private Boolean hasLabTests; // null or false = ignore
+
+
 }
