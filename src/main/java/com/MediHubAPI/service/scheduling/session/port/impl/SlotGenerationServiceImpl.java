@@ -1,26 +1,30 @@
 package com.MediHubAPI.service.scheduling.session.port.impl;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import com.MediHubAPI.dto.scheduling.session.preview.PreviewDayDTO;
 import com.MediHubAPI.dto.scheduling.session.preview.PreviewSlotCellDTO;
 import com.MediHubAPI.dto.scheduling.session.preview.PreviewSlotsResponse;
 import com.MediHubAPI.model.enums.BlockType;
 import com.MediHubAPI.model.enums.SessionType;
-import com.MediHubAPI.model.scheduling.SessionSchedule;
-import com.MediHubAPI.model.scheduling.SessionScheduleBlock;
-import com.MediHubAPI.model.scheduling.SessionScheduleDay;
-import com.MediHubAPI.model.scheduling.SessionScheduleInterval;
-import com.MediHubAPI.service.scheduling.session.port.SlotGenerationService;
-import com.MediHubAPI.service.scheduling.session.port.SlotPublishingPort;
+import com.MediHubAPI.model.scheduling.session.SessionSchedule;
+import com.MediHubAPI.model.scheduling.session.SessionScheduleBlock;
+import com.MediHubAPI.model.scheduling.session.SessionScheduleDay;
+import com.MediHubAPI.model.scheduling.session.SessionScheduleInterval;
 import com.MediHubAPI.scheduling.session.service.port.payload.SlotPublishCommand;
 import com.MediHubAPI.scheduling.session.service.port.payload.SlotPublishResult;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.MediHubAPI.service.scheduling.session.port.SlotGenerationService;
+import com.MediHubAPI.service.scheduling.session.port.SlotPublishingPort;
 
 
 @Slf4j
@@ -36,7 +40,8 @@ public class SlotGenerationServiceImpl implements SlotGenerationService {
 
         // Build day wise preview grid
         Map<LocalDate, List<SlotPublishCommand.DesiredSlot>> byDate =
-                desired.stream().collect(Collectors.groupingBy(SlotPublishCommand.DesiredSlot::date, LinkedHashMap::new, Collectors.toList()));
+                desired.stream().collect(Collectors.groupingBy(SlotPublishCommand.DesiredSlot::date, LinkedHashMap::new,
+                        Collectors.toList()));
 
         List<PreviewDayDTO> days = new ArrayList<>();
         for (SessionScheduleDay d : schedule.getDays()) {
@@ -68,7 +73,8 @@ public class SlotGenerationServiceImpl implements SlotGenerationService {
     }
 
     @Override
-    public SlotPublishResult publish(SessionSchedule schedule, boolean failOnBookedConflict, boolean dryRun, String actor) {
+    public SlotPublishResult publish(SessionSchedule schedule, boolean failOnBookedConflict, boolean dryRun,
+            String actor) {
         var desired = buildDesiredSlots(schedule);
         if (dryRun) {
             return new SlotPublishResult(desired.size(), 0, 0, desired.size(),
@@ -79,7 +85,8 @@ public class SlotGenerationServiceImpl implements SlotGenerationService {
             // In STEP-1 we only publish to Slot table for doctor schedules.
             // Global schedules can be stored as DRAFT/PUBLISHED in this module, but slot publishing needs targeting rules.
             return new SlotPublishResult(desired.size(), 0, 0, desired.size(),
-                    desired.stream().map(s -> new SlotPublishResult.Conflict(s.slotKey(), "NO_DOCTOR_TARGET")).toList());
+                    desired.stream().map(
+                            s -> new SlotPublishResult.Conflict(s.slotKey(), "NO_DOCTOR_TARGET")).toList());
         }
 
         SlotPublishCommand cmd = new SlotPublishCommand(

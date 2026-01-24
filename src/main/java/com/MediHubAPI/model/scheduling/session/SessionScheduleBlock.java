@@ -1,10 +1,24 @@
-package com.MediHubAPI.model.scheduling;
+package com.MediHubAPI.model.scheduling.session;
 
-import com.MediHubAPI.model.enums.BlockType;
-import jakarta.persistence.*;
-import lombok.*;
 
 import java.time.LocalTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import com.MediHubAPI.model.enums.BlockType;
 
 @Entity
 @Table(name = "session_schedule_blocks")

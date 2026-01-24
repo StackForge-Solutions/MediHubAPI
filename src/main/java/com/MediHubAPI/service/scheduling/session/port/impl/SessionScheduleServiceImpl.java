@@ -1,6 +1,18 @@
 package com.MediHubAPI.service.scheduling.session.port.impl;
 
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.MediHubAPI.dto.scheduling.session.archive.ArchiveResponse;
 import com.MediHubAPI.dto.scheduling.session.bootstrap.BootstrapResponse;
 import com.MediHubAPI.dto.scheduling.session.bootstrap.HolidayDTO;
@@ -25,24 +37,20 @@ import com.MediHubAPI.model.enums.MergeStrategy;
 import com.MediHubAPI.model.enums.ScheduleMode;
 import com.MediHubAPI.model.enums.ScheduleStatus;
 import com.MediHubAPI.model.enums.SlotGenerationMode;
-import com.MediHubAPI.model.scheduling.SessionSchedule;
-import com.MediHubAPI.model.scheduling.SessionScheduleBlock;
-import com.MediHubAPI.model.scheduling.SessionScheduleDay;
-import com.MediHubAPI.model.scheduling.SessionScheduleInterval;
+import com.MediHubAPI.model.scheduling.session.SessionSchedule;
+import com.MediHubAPI.model.scheduling.session.SessionScheduleBlock;
+import com.MediHubAPI.model.scheduling.session.SessionScheduleDay;
+import com.MediHubAPI.model.scheduling.session.SessionScheduleInterval;
 import com.MediHubAPI.repository.scheduling.session.SessionScheduleRepository;
 import com.MediHubAPI.scheduling.session.mapper.SessionScheduleMapper;
 import com.MediHubAPI.scheduling.session.service.port.payload.SlotPublishResult;
-import com.MediHubAPI.service.scheduling.session.port.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.time.DayOfWeek;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.MediHubAPI.service.scheduling.session.port.ActorProvider;
+import com.MediHubAPI.service.scheduling.session.port.DepartmentDirectoryPort;
+import com.MediHubAPI.service.scheduling.session.port.DoctorDirectoryPort;
+import com.MediHubAPI.service.scheduling.session.port.HolidayCalendarPort;
+import com.MediHubAPI.service.scheduling.session.port.SessionScheduleService;
+import com.MediHubAPI.service.scheduling.session.port.SlotGenerationService;
+import com.MediHubAPI.service.scheduling.session.port.ValidationService;
 
 @Slf4j
 @Service
@@ -91,6 +99,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
                 serverDate
         );
     }
+
     @Override
     @Transactional
     public DraftResponse draft(DraftRequest request) {
@@ -106,7 +115,8 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
 
         var validation = validationService.validate(validateReq);
         if (!validation.valid()) {
-            throw SchedulingException.badRequest("SCHEDULE_INVALID", "Draft validation failed: " + validation.issues().size() + " issue(s)");
+            throw SchedulingException.badRequest("SCHEDULE_INVALID",
+                    "Draft validation failed: " + validation.issues().size() + " issue(s)");
         }
 
         String actor = actorProvider.currentActor();
@@ -126,17 +136,22 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
             schedule.touchForCreate(actor);
         } else {
             schedule = repository.findById(request.scheduleId())
-                    .orElseThrow(() -> SchedulingException.notFound("SCHEDULE_NOT_FOUND", "Schedule not found: " + request.scheduleId()));
+                    .orElseThrow(() -> SchedulingException.notFound("SCHEDULE_NOT_FOUND",
+                            "Schedule not found: " + request.scheduleId()));
 
             // Optimistic lock guard before touching JPA @Version
             if (!Objects.equals(schedule.getVersion(), request.version())) {
-                throw SchedulingException.conflict("STALE_VERSION", "Schedule version mismatch. Expected=" + schedule.getVersion() + " provided=" + request.version());
+                throw SchedulingException.conflict("STALE_VERSION",
+                        "Schedule version mismatch. Expected=" + schedule.getVersion() + " provided=" +
+                                request.version());
             }
             if (schedule.getStatus() == ScheduleStatus.ARCHIVED) {
-                throw SchedulingException.conflict("SCHEDULE_ARCHIVED", "Cannot edit archived schedule: " + schedule.getId());
+                throw SchedulingException.conflict("SCHEDULE_ARCHIVED",
+                        "Cannot edit archived schedule: " + schedule.getId());
             }
             if (schedule.getStatus() == ScheduleStatus.PUBLISHED && schedule.isLocked()) {
-                throw SchedulingException.conflict("SCHEDULE_LOCKED", "Cannot edit locked published schedule: " + schedule.getId());
+                throw SchedulingException.conflict("SCHEDULE_LOCKED",
+                        "Cannot edit locked published schedule: " + schedule.getId());
             }
 
             schedule.setMode(request.mode());
@@ -164,14 +179,17 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
     @Transactional
     public PublishResponse publish(PublishRequest request) {
         SessionSchedule schedule = repository.findById(request.scheduleId())
-                .orElseThrow(() -> SchedulingException.notFound("SCHEDULE_NOT_FOUND", "Schedule not found: " + request.scheduleId()));
+                .orElseThrow(() -> SchedulingException.notFound("SCHEDULE_NOT_FOUND",
+                        "Schedule not found: " + request.scheduleId()));
 
         if (!Objects.equals(schedule.getVersion(), request.version())) {
-            throw SchedulingException.conflict("STALE_VERSION", "Schedule version mismatch. Expected=" + schedule.getVersion() + " provided=" + request.version());
+            throw SchedulingException.conflict("STALE_VERSION",
+                    "Schedule version mismatch. Expected=" + schedule.getVersion() + " provided=" + request.version());
         }
 
         if (schedule.getStatus() == ScheduleStatus.ARCHIVED) {
-            throw SchedulingException.conflict("SCHEDULE_ARCHIVED", "Cannot publish archived schedule: " + schedule.getId());
+            throw SchedulingException.conflict("SCHEDULE_ARCHIVED",
+                    "Cannot publish archived schedule: " + schedule.getId());
         }
 
         if (schedule.isLocked()) {
@@ -189,7 +207,8 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
         );
         var validation = validationService.validate(validateReq);
         if (!validation.valid()) {
-            throw SchedulingException.badRequest("SCHEDULE_INVALID", "Publish validation failed: " + validation.issues().size() + " issue(s)");
+            throw SchedulingException.badRequest("SCHEDULE_INVALID",
+                    "Publish validation failed: " + validation.issues().size() + " issue(s)");
         }
 
         boolean dryRun = request.dryRun() || request.slotGenerationMode() == SlotGenerationMode.DRY_RUN;
@@ -210,9 +229,11 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
                 .map(c -> new PublishConflictDTO(c.slotKey(), c.reason()))
                 .toList();
 
-        log.info("SessionSchedule publish: scheduleId={}, doctorId={}, weekStart={}, dryRun={}, planned={}, created={}, updated={}, skipped={}, conflicts={}",
+        log.info(
+                "SessionSchedule publish: scheduleId={}, doctorId={}, weekStart={}, dryRun={}, planned={}, created={}, updated={}, skipped={}, conflicts={}",
                 schedule.getId(), schedule.getDoctorId(), schedule.getWeekStartDate(), dryRun,
-                publishResult.totalPlanned(), publishResult.created(), publishResult.updated(), publishResult.skipped(), conflicts.size());
+                publishResult.totalPlanned(), publishResult.created(), publishResult.updated(), publishResult.skipped(),
+                conflicts.size());
 
         String msg = dryRun
                 ? "Dry run completed. No DB writes performed."
@@ -235,7 +256,8 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
     @Transactional
     public CopyWeekResponse copyWeek(CopyWeekRequest request) {
         if (Objects.equals(request.sourceWeekStartISO(), request.targetWeekStartISO())) {
-            throw SchedulingException.badRequest("COPY_SAME_WEEK", "sourceWeekStartISO and targetWeekStartISO cannot be same.");
+            throw SchedulingException.badRequest("COPY_SAME_WEEK",
+                    "sourceWeekStartISO and targetWeekStartISO cannot be same.");
         }
 
         // Find source schedule (doctor override, latest non-archived)
@@ -247,10 +269,12 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
                         ScheduleStatus.ARCHIVED
                 )
                 .orElseThrow(() -> SchedulingException.notFound("SOURCE_NOT_FOUND",
-                        "Source schedule not found for doctorId=" + request.doctorId() + " weekStart=" + request.sourceWeekStartISO()));
+                        "Source schedule not found for doctorId=" + request.doctorId() + " weekStart=" +
+                                request.sourceWeekStartISO()));
 
         // Check existing target schedule
-        List<SessionSchedule> existingTargets = repository.findByDoctorIdAndWeekStartDate(request.doctorId(), request.targetWeekStartISO());
+        List<SessionSchedule> existingTargets = repository.findByDoctorIdAndWeekStartDate(request.doctorId(),
+                request.targetWeekStartISO());
         SessionSchedule target = existingTargets.stream()
                 .filter(s -> s.getMode() == ScheduleMode.DOCTOR_OVERRIDE && s.getStatus() != ScheduleStatus.ARCHIVED)
                 .findFirst()
@@ -272,8 +296,10 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
             target.setDaysReplace(deepCopyDays(target, source.getDays()));
             target = repository.save(target);
 
-            log.info("CopyWeek created: sourceScheduleId={}, targetScheduleId={}, doctorId={}, sourceWeek={}, targetWeek={}",
-                    source.getId(), target.getId(), request.doctorId(), request.sourceWeekStartISO(), request.targetWeekStartISO());
+            log.info(
+                    "CopyWeek created: sourceScheduleId={}, targetScheduleId={}, doctorId={}, sourceWeek={}, targetWeek={}",
+                    source.getId(), target.getId(), request.doctorId(), request.sourceWeekStartISO(),
+                    request.targetWeekStartISO());
 
             return new CopyWeekResponse(target.getId(), "Target week schedule created as DRAFT.");
         }
@@ -304,7 +330,8 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
         log.info("CopyWeek merged: sourceScheduleId={}, targetScheduleId={}, doctorId={}, targetWeek={}",
                 source.getId(), target.getId(), request.doctorId(), request.targetWeekStartISO());
 
-        return new CopyWeekResponse(target.getId(), "Target week schedule merged (skipping overlaps) and saved as DRAFT.");
+        return new CopyWeekResponse(target.getId(),
+                "Target week schedule merged (skipping overlaps) and saved as DRAFT.");
     }
 
     @Override
@@ -320,7 +347,8 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
         );
         var validation = validationService.validate(validateReq);
         if (!validation.valid()) {
-            throw SchedulingException.badRequest("SCHEDULE_INVALID", "Preview validation failed: " + validation.issues().size() + " issue(s)");
+            throw SchedulingException.badRequest("SCHEDULE_INVALID",
+                    "Preview validation failed: " + validation.issues().size() + " issue(s)");
         }
 
         // Build a transient schedule (not saved)
@@ -342,7 +370,8 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
     @Override
     public SessionScheduleDetailDTO getById(Long scheduleId) {
         SessionSchedule schedule = repository.findById(scheduleId)
-                .orElseThrow(() -> SchedulingException.notFound("SCHEDULE_NOT_FOUND", "Schedule not found: " + scheduleId));
+                .orElseThrow(
+                        () -> SchedulingException.notFound("SCHEDULE_NOT_FOUND", "Schedule not found: " + scheduleId));
         return SessionScheduleMapper.toDetail(schedule);
     }
 
@@ -373,10 +402,12 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
     @Transactional
     public ArchiveResponse archive(Long scheduleId, Long version) {
         SessionSchedule schedule = repository.findById(scheduleId)
-                .orElseThrow(() -> SchedulingException.notFound("SCHEDULE_NOT_FOUND", "Schedule not found: " + scheduleId));
+                .orElseThrow(
+                        () -> SchedulingException.notFound("SCHEDULE_NOT_FOUND", "Schedule not found: " + scheduleId));
 
         if (!Objects.equals(schedule.getVersion(), version)) {
-            throw SchedulingException.conflict("STALE_VERSION", "Schedule version mismatch. Expected=" + schedule.getVersion() + " provided=" + version);
+            throw SchedulingException.conflict("STALE_VERSION",
+                    "Schedule version mismatch. Expected=" + schedule.getVersion() + " provided=" + version);
         }
         if (schedule.getStatus() == ScheduleStatus.ARCHIVED) {
             return new ArchiveResponse(schedule.getId(), schedule.getVersion(), "Already archived.");
@@ -414,7 +445,8 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
         return out;
     }
 
-    private List<SessionScheduleInterval> toIntervals(SessionScheduleDay day, List<SessionScheduleIntervalDTO> intervals) {
+    private List<SessionScheduleInterval> toIntervals(SessionScheduleDay day,
+            List<SessionScheduleIntervalDTO> intervals) {
         if (intervals == null) return List.of();
         List<SessionScheduleInterval> out = new ArrayList<>();
         for (SessionScheduleIntervalDTO it : intervals) {

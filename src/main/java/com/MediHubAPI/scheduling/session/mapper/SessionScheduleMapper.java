@@ -1,18 +1,17 @@
 package com.MediHubAPI.scheduling.session.mapper;
 
 
+import java.util.ArrayList;
+import java.util.List;
 import com.MediHubAPI.dto.scheduling.session.get.SessionScheduleDetailDTO;
 import com.MediHubAPI.dto.scheduling.session.plan.SessionScheduleBlockDTO;
 import com.MediHubAPI.dto.scheduling.session.plan.SessionScheduleDayPlanDTO;
 import com.MediHubAPI.dto.scheduling.session.plan.SessionScheduleIntervalDTO;
 import com.MediHubAPI.dto.scheduling.session.search.SessionScheduleSummaryDTO;
-import com.MediHubAPI.model.scheduling.SessionSchedule;
-import com.MediHubAPI.model.scheduling.SessionScheduleBlock;
-import com.MediHubAPI.model.scheduling.SessionScheduleDay;
-import com.MediHubAPI.model.scheduling.SessionScheduleInterval;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.MediHubAPI.model.scheduling.session.SessionSchedule;
+import com.MediHubAPI.model.scheduling.session.SessionScheduleBlock;
+import com.MediHubAPI.model.scheduling.session.SessionScheduleDay;
+import com.MediHubAPI.model.scheduling.session.SessionScheduleInterval;
 
 public final class SessionScheduleMapper {
 

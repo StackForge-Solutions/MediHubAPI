@@ -1,12 +1,12 @@
 package com.MediHubAPI.repository.scheduling.session;
-import com.MediHubAPI.model.enums.ScheduleMode;
-import com.MediHubAPI.model.enums.ScheduleStatus;
-import com.MediHubAPI.model.scheduling.SessionSchedule;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import com.MediHubAPI.model.enums.ScheduleMode;
+import com.MediHubAPI.model.enums.ScheduleStatus;
+import com.MediHubAPI.model.scheduling.session.SessionSchedule;
 
 public interface SessionScheduleRepository extends JpaRepository<SessionSchedule, Long> {
 
@@ -17,5 +17,6 @@ public interface SessionScheduleRepository extends JpaRepository<SessionSchedule
 
     List<SessionSchedule> findByModeAndWeekStartDate(ScheduleMode mode, LocalDate weekStartDate);
 
-    List<SessionSchedule> findByModeAndDoctorIdAndWeekStartDate(ScheduleMode mode, Long doctorId, LocalDate weekStartDate);
+    List<SessionSchedule> findByModeAndDoctorIdAndWeekStartDate(ScheduleMode mode, Long doctorId,
+            LocalDate weekStartDate);
 }
