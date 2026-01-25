@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import com.MediHubAPI.mapper.scheduling.template.BootstrapTemplateMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -57,7 +59,7 @@ import com.MediHubAPI.service.scheduling.session.port.ValidationService;
 @RequiredArgsConstructor
 public class SessionScheduleServiceImpl implements SessionScheduleService {
 
-    private final SessionScheduleRepository repository;
+    private final SessionScheduleRepository sessionScheduleRepository;
 
     private final ValidationService validationService;
     private final SlotGenerationService slotGenerationService;
@@ -69,32 +71,51 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
 
     @Override
     public BootstrapResponse bootstrap(Long doctorId, LocalDate weekStartISO) {
+
         LocalDate serverDate = LocalDate.now();
 
-        // Seed schedules for the asked week (if provided)
-        List<SessionScheduleSummaryDTO> seed = new ArrayList<>();
-        if (weekStartISO != null) {
-            List<SessionSchedule> found;
-            if (doctorId != null) {
-                found = repository.findByDoctorIdAndWeekStartDate(doctorId, weekStartISO);
-            } else {
-                found = repository.findByModeAndWeekStartDate(ScheduleMode.DOCTOR_OVERRIDE, weekStartISO);
-            }
-            seed = found.stream().map(SessionScheduleMapper::toSummary).toList();
+        // ✅ 1) Default weekStartISO to current Monday if missing
+        LocalDate effectiveWeekStart = (weekStartISO != null) ? weekStartISO : serverDate;
+
+        // ✅ 2) Normalize to Monday (so UI can pass 2026-01-24 and still work)
+        effectiveWeekStart = effectiveWeekStart.minusDays(effectiveWeekStart.getDayOfWeek().getValue() - 1);
+
+        // -------------------------
+        // Seed schedules (doctor overrides)
+        // -------------------------
+        List<SessionScheduleSummaryDTO> seed;
+        if (doctorId != null) {
+            seed = sessionScheduleRepository.findByDoctorIdAndWeekStartDate(doctorId, effectiveWeekStart).stream()
+                    .map(SessionScheduleMapper::toSummary)
+                    .toList();
+        } else {
+            seed = sessionScheduleRepository.findByModeAndWeekStartDate(ScheduleMode.DOCTOR_OVERRIDE, effectiveWeekStart).stream()
+                    .map(SessionScheduleMapper::toSummary)
+                    .toList();
         }
 
-        // Holidays for that week if weekStart provided
-        List<HolidayDTO> holidays = List.of();
-        if (weekStartISO != null) {
-            LocalDate weekEnd = weekStartISO.plusDays(6);
-            holidays = holidayCalendarPort.listHolidays(weekStartISO, weekEnd);
-        }
+        // -------------------------
+        // Holidays
+        // -------------------------
+        LocalDate weekEnd = effectiveWeekStart.plusDays(6);
+        List<HolidayDTO> holidays = holidayCalendarPort.listHolidays(effectiveWeekStart, weekEnd);
+
+        // -------------------------
+        // ✅ Templates from DB (GLOBAL_TEMPLATE)
+        // -------------------------
+        LocalDate finalEffectiveWeekStart = effectiveWeekStart;
+        List<com.MediHubAPI.dto.scheduling.session.bootstrap.TemplateLiteDTO> templates =
+                sessionScheduleRepository.findByModeAndWeekStartDate(ScheduleMode.GLOBAL_TEMPLATE, effectiveWeekStart)
+                        .stream()
+                        .map(s -> BootstrapTemplateMapper
+                                .toTemplateLite(s, finalEffectiveWeekStart))
+                        .toList();
 
         return new BootstrapResponse(
                 doctorDirectoryPort.listDoctors(),
                 departmentDirectoryPort.listDepartments(),
                 holidays,
-                List.of(),     // templates not in STEP-1
+                templates,     // ✅ NOT EMPTY now (if DB has GLOBAL_TEMPLATE schedules)
                 seed,
                 serverDate
         );
@@ -135,7 +156,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
                     .build();
             schedule.touchForCreate(actor);
         } else {
-            schedule = repository.findById(request.scheduleId())
+            schedule = sessionScheduleRepository.findById(request.scheduleId())
                     .orElseThrow(() -> SchedulingException.notFound("SCHEDULE_NOT_FOUND",
                             "Schedule not found: " + request.scheduleId()));
 
@@ -167,7 +188,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
         // Map plan -> entities
         schedule.setDaysReplace(toEntityDays(schedule, request.days()));
 
-        SessionSchedule saved = repository.save(schedule);
+        SessionSchedule saved = sessionScheduleRepository.save(schedule);
 
         log.info("SessionSchedule draft saved: scheduleId={}, doctorId={}, weekStart={}, status={}, version={}",
                 saved.getId(), saved.getDoctorId(), saved.getWeekStartDate(), saved.getStatus(), saved.getVersion());
@@ -178,7 +199,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
     @Override
     @Transactional
     public PublishResponse publish(PublishRequest request) {
-        SessionSchedule schedule = repository.findById(request.scheduleId())
+        SessionSchedule schedule = sessionScheduleRepository.findById(request.scheduleId())
                 .orElseThrow(() -> SchedulingException.notFound("SCHEDULE_NOT_FOUND",
                         "Schedule not found: " + request.scheduleId()));
 
@@ -221,7 +242,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
         if (published) {
             schedule.setStatus(ScheduleStatus.PUBLISHED);
             schedule.touchForUpdate(actor);
-            schedule = repository.save(schedule);
+            schedule = sessionScheduleRepository.save(schedule);
         }
 
         List<PublishConflictDTO> conflicts = publishResult.conflicts() == null ? List.of()
@@ -261,7 +282,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
         }
 
         // Find source schedule (doctor override, latest non-archived)
-        SessionSchedule source = repository
+        SessionSchedule source = sessionScheduleRepository
                 .findByDoctorIdAndWeekStartDateAndModeAndStatusNot(
                         request.doctorId(),
                         request.sourceWeekStartISO(),
@@ -273,7 +294,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
                                 request.sourceWeekStartISO()));
 
         // Check existing target schedule
-        List<SessionSchedule> existingTargets = repository.findByDoctorIdAndWeekStartDate(request.doctorId(),
+        List<SessionSchedule> existingTargets = sessionScheduleRepository.findByDoctorIdAndWeekStartDate(request.doctorId(),
                 request.targetWeekStartISO());
         SessionSchedule target = existingTargets.stream()
                 .filter(s -> s.getMode() == ScheduleMode.DOCTOR_OVERRIDE && s.getStatus() != ScheduleStatus.ARCHIVED)
@@ -294,7 +315,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
                     .build();
             target.touchForCreate(actor);
             target.setDaysReplace(deepCopyDays(target, source.getDays()));
-            target = repository.save(target);
+            target = sessionScheduleRepository.save(target);
 
             log.info(
                     "CopyWeek created: sourceScheduleId={}, targetScheduleId={}, doctorId={}, sourceWeek={}, targetWeek={}",
@@ -315,7 +336,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
             target.setStatus(ScheduleStatus.DRAFT);
             target.touchForUpdate(actor);
             target.setDaysReplace(deepCopyDays(target, source.getDays()));
-            target = repository.save(target);
+            target = sessionScheduleRepository.save(target);
 
             log.info("CopyWeek replaced: sourceScheduleId={}, targetScheduleId={}, doctorId={}, targetWeek={}",
                     source.getId(), target.getId(), request.doctorId(), request.targetWeekStartISO());
@@ -325,7 +346,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
 
         // MERGE_SKIP_CONFLICTS
         mergeSkipConflicts(target, source, actor);
-        target = repository.save(target);
+        target = sessionScheduleRepository.save(target);
 
         log.info("CopyWeek merged: sourceScheduleId={}, targetScheduleId={}, doctorId={}, targetWeek={}",
                 source.getId(), target.getId(), request.doctorId(), request.targetWeekStartISO());
@@ -369,7 +390,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
 
     @Override
     public SessionScheduleDetailDTO getById(Long scheduleId) {
-        SessionSchedule schedule = repository.findById(scheduleId)
+        SessionSchedule schedule = sessionScheduleRepository.findById(scheduleId)
                 .orElseThrow(
                         () -> SchedulingException.notFound("SCHEDULE_NOT_FOUND", "Schedule not found: " + scheduleId));
         return SessionScheduleMapper.toDetail(schedule);
@@ -386,9 +407,9 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
 
         List<SessionSchedule> found;
         if (doctorId != null) {
-            found = repository.findByModeAndDoctorIdAndWeekStartDate(mode, doctorId, weekStartISO);
+            found = sessionScheduleRepository.findByModeAndDoctorIdAndWeekStartDate(mode, doctorId, weekStartISO);
         } else {
-            found = repository.findByModeAndWeekStartDate(mode, weekStartISO);
+            found = sessionScheduleRepository.findByModeAndWeekStartDate(mode, weekStartISO);
         }
 
         List<SessionScheduleSummaryDTO> items = found.stream()
@@ -401,7 +422,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
     @Override
     @Transactional
     public ArchiveResponse archive(Long scheduleId, Long version) {
-        SessionSchedule schedule = repository.findById(scheduleId)
+        SessionSchedule schedule = sessionScheduleRepository.findById(scheduleId)
                 .orElseThrow(
                         () -> SchedulingException.notFound("SCHEDULE_NOT_FOUND", "Schedule not found: " + scheduleId));
 
@@ -416,7 +437,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
         String actor = actorProvider.currentActor();
         schedule.setStatus(ScheduleStatus.ARCHIVED);
         schedule.touchForUpdate(actor);
-        schedule = repository.save(schedule);
+        schedule = sessionScheduleRepository.save(schedule);
 
         log.info("SessionSchedule archived: scheduleId={}, doctorId={}, weekStart={}, version={}",
                 schedule.getId(), schedule.getDoctorId(), schedule.getWeekStartDate(), schedule.getVersion());
