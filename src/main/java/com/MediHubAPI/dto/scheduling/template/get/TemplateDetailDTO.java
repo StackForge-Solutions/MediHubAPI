@@ -11,7 +11,7 @@ public record TemplateDetailDTO(
         Long doctorId,
         Long departmentId,
         String name,
-        Integer slotDurationMinutes,
+        Integer slotDurationMin,
         boolean active,
         Long version,
         String createdBy,

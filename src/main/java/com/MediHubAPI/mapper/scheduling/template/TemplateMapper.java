@@ -24,7 +24,7 @@ public final class TemplateMapper {
                 t.getDoctorId(),
                 t.getDepartmentId(),
                 t.getName(),
-                t.getSlotDurationMinutes(),
+                t.getSlotDurationMin(),
                 t.isActive(),
                 t.getVersion()
         );
@@ -37,7 +37,7 @@ public final class TemplateMapper {
                 t.getDoctorId(),
                 t.getDepartmentId(),
                 t.getName(),
-                t.getSlotDurationMinutes(),
+                t.getSlotDurationMin(),
                 t.isActive(),
                 t.getVersion(),
                 t.getCreatedBy(),

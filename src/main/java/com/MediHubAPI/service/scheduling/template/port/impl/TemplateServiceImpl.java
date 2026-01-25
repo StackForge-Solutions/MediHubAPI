@@ -77,8 +77,8 @@ public class TemplateServiceImpl implements TemplateService {
         String actor = actorProvider.currentActor();
 
         ScheduleTemplate t = ScheduleTemplate.builder().scope(request.scope()).doctorId(
-                request.doctorId()).departmentId(request.departmentId()).name(request.name()).slotDurationMinutes(
-                request.slotDurationMinutes()).active(Boolean.TRUE.equals(request.active())).build();
+                request.doctorId()).departmentId(request.departmentId()).name(request.name()).slotDurationMin(
+                request.slotDurationMin()).active(Boolean.TRUE.equals(request.active())).build();
         t.touchForCreate(actor);
 
         List<TemplateDayPlanDTO> planDays = request.days();
@@ -130,7 +130,7 @@ public class TemplateServiceImpl implements TemplateService {
         t.setDoctorId(request.doctorId());
         t.setDepartmentId(request.departmentId());
         t.setName(request.name());
-        t.setSlotDurationMinutes(request.slotDurationMinutes());
+        t.setSlotDurationMin(request.slotDurationMin());
         t.setActive(Boolean.TRUE.equals(request.active()));
         t.touchForUpdate(actor);
 
@@ -162,7 +162,7 @@ public class TemplateServiceImpl implements TemplateService {
 
         ScheduleTemplate copy = ScheduleTemplate.builder().scope(request.targetScope()).doctorId(
                 request.targetDoctorId()).departmentId(request.targetDepartmentId()).name(
-                request.newName()).slotDurationMinutes(source.getSlotDurationMinutes()).active(
+                request.newName()).slotDurationMin(source.getSlotDurationMin()).active(
                 request.active()).build();
         copy.touchForCreate(actor);
 
@@ -192,9 +192,9 @@ public class TemplateServiceImpl implements TemplateService {
             throw SchedulingException.badRequest("DEPARTMENT_ID_REQUIRED",
                     "departmentId is required when scope=DEPARTMENT");
         }
-        if (scope == TemplateScope.GLOBAL) {
-            // keep both ids null for global (clean)
-        }
+//        if (scope == TemplateScope.GLOBAL) {
+//            // keep both ids null for global (clean)
+//        }
     }
 
     /**

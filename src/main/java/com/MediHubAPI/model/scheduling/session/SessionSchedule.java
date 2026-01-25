@@ -56,7 +56,7 @@ public class SessionSchedule {
 
     // Slot duration used during slot slicing
     @Column(name = "slot_duration_minutes", nullable = false)
-    private Integer slotDurationMinutes;
+    private Integer slotDurationMin;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)

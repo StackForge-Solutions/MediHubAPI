@@ -49,4 +49,5 @@ public class SessionScheduleInterval {
     // Optional capacity per slot/session (for future)
     @Column(name = "capacity", nullable = false)
     private Integer capacity;
+
 }

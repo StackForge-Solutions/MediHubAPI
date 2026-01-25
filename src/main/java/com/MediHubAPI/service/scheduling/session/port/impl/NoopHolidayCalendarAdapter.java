@@ -14,7 +14,25 @@ public class NoopHolidayCalendarAdapter implements HolidayCalendarPort {
 
     @Override
     public List<HolidayDTO> listHolidays(LocalDate fromInclusive, LocalDate toInclusive) {
-        log.info("HolidayCalendarPort(NOOP): returning 0 holidays for range {}..{}", fromInclusive, toInclusive);
-        return List.of();
+        if (fromInclusive == null || toInclusive == null) return List.of();
+
+        // Mock master list (you can add more)
+        List<HolidayDTO> all = List.of(
+                new HolidayDTO(LocalDate.of(2026, 1, 26), "Republic Day"),
+                new HolidayDTO(LocalDate.of(2026, 3, 25), "Holi (Sample)"),
+                new HolidayDTO(LocalDate.of(2026, 8, 15), "Independence Day"),
+                new HolidayDTO(LocalDate.of(2026, 10, 2), "Gandhi Jayanti"),
+                new HolidayDTO(LocalDate.of(2026, 12, 25), "Christmas")
+        );
+
+        List<HolidayDTO> filtered = all.stream()
+                .filter(h -> !h.dateISO().isBefore(fromInclusive) && !h.dateISO().isAfter(toInclusive))
+                .toList();
+
+        log.info("HolidayCalendarPort(MOCK): returning {} holiday(s) for range {}..{}",
+                filtered.size(), fromInclusive, toInclusive);
+
+        return filtered;
     }
+
 }

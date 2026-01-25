@@ -11,36 +11,46 @@ import lombok.experimental.UtilityClass;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @UtilityClass
-public class BootstrapTemplateMapper {
+public class BootstrapSeedWeeklyMapper {
 
     private static final DateTimeFormatter HHMM = DateTimeFormatter.ofPattern("HH:mm");
     private static final List<String> DEFAULT_CHANNELS = List.of("STAFF", "ONLINE", "CALL_CENTER");
+    private static final String DEFAULT_ROOM = "OPD-101";
+    private static final String TZ = "Asia/Kolkata";
 
-    public static TemplateLiteDTO toTemplateLite(SessionSchedule schedule, LocalDate weekStartMonday) {
-
+    public static SeedWeeklyScheduleDTO toSeedWeekly(
+            SessionSchedule schedule,
+            LocalDate weekStartMonday,
+            Long templateId,
+            Boolean inheritTemplate,
+            String notes,
+            String originForSessions // "LOCAL" or "OVERRIDDEN"
+    ) {
         LocalDate weekEnd = weekStartMonday.plusDays(6);
 
-        String dept = (schedule.getDepartmentId() == null) ? "ALL" : String.valueOf(schedule.getDepartmentId());
-
-        // IMPORTANT:
-        // Your SessionSchedule entity (from paste) has NO "name" field.
-        // So we safely return a default constant. If you later add schedule.getName(), update here.
-        String name = "Default OPD";
+        String deptId = schedule.getDepartmentId() == null ? null : String.valueOf(schedule.getDepartmentId());
 
         List<WeeklyDayDTO> days = new ArrayList<>();
 
-        for (SessionScheduleDay d : schedule.getDays()) {
+        // Ensure stable ordering MON..SUN
+        List<SessionScheduleDay> sortedDays = new ArrayList<>(schedule.getDays());
+        sortedDays.sort(Comparator.comparing(d -> d.getDayOfWeek().getValue()));
 
-            // DayOfWeek.getValue(): MON=1..SUN=7 => add (value-1) days from Monday
+        for (SessionScheduleDay d : sortedDays) {
             LocalDate dateISO = weekStartMonday.plusDays(d.getDayOfWeek().getValue() - 1);
 
             List<WeeklySessionDTO> sessions = new ArrayList<>();
             int sessionCounter = 1;
 
-            for (SessionScheduleInterval interval : d.getIntervals()) {
+            // sort intervals by start time
+            List<SessionScheduleInterval> sortedIntervals = new ArrayList<>(d.getIntervals());
+            sortedIntervals.sort(Comparator.comparing(SessionScheduleInterval::getStartTime));
+
+            for (SessionScheduleInterval interval : sortedIntervals) {
 
                 List<WeeklyBlockDTO> blocks = blocksOverlappingInterval(d.getBlocks(), interval);
 
@@ -51,20 +61,18 @@ public class BootstrapTemplateMapper {
                         interval.getStartTime().format(HHMM),
                         interval.getEndTime().format(HHMM),
 
-                        // extra fields your DTO now expects
-                        schedule.getSlotDurationMin(),     // slotDurationOverrideMin (default = schedule duration)
-                        "OPD-101",                         // roomNo default
+                        // UI expects
+                        schedule.getSlotDurationMin(),
+                        DEFAULT_ROOM,
+
                         interval.getCapacity(),
                         DEFAULT_CHANNELS,
                         true,
                         blocks,
 
-                        "TEMPLATE",                        // origin default (GLOBAL_TEMPLATE থেকে এলে TEMPLATE)
-                        false                    // notes default
-
+                        originForSessions,
+                        false
                 ));
-
-
                 sessionCounter++;
             }
 
@@ -73,33 +81,43 @@ public class BootstrapTemplateMapper {
                     dateISO.toString(),
                     d.isDayOff(),
                     sessions,
-                    "Notes default"
+                    null
             ));
         }
 
-        WeeklyTemplateDTO weekly = new WeeklyTemplateDTO(
+        return new SeedWeeklyScheduleDTO(
+                schedule.getId(),
+                schedule.getMode(),
+
                 weekStartMonday.toString(),
                 weekEnd.toString(),
-                schedule.getDepartmentId() == null ? null : String.valueOf(schedule.getDepartmentId()),
-                "Asia/Kolkata",
-                schedule.getSlotDurationMin(),
-                schedule.getVersion(),
-                days
-        );
 
-        return new TemplateLiteDTO(
-                schedule.getId(),
-                name,
-                dept,
-                weekly
+                deptId,
+                templateId,
+                schedule.getDoctorId(),
+
+                TZ,
+                schedule.getSlotDurationMin(),
+
+                inheritTemplate,
+                schedule.getVersion(),
+
+                days,
+                notes
         );
     }
 
-    private static List<WeeklyBlockDTO> blocksOverlappingInterval(List<SessionScheduleBlock> blocks, SessionScheduleInterval interval) {
+    private static List<WeeklyBlockDTO> blocksOverlappingInterval(List<SessionScheduleBlock> blocks,
+                                                                  SessionScheduleInterval interval) {
         if (blocks == null || blocks.isEmpty()) return List.of();
 
         List<WeeklyBlockDTO> out = new ArrayList<>();
-        for (SessionScheduleBlock b : blocks) {
+
+        // sort blocks by start time
+        List<SessionScheduleBlock> sorted = new ArrayList<>(blocks);
+        sorted.sort(Comparator.comparing(SessionScheduleBlock::getStartTime));
+
+        for (SessionScheduleBlock b : sorted) {
 
             // Overlap rule:
             // b.start < interval.end AND interval.start < b.end

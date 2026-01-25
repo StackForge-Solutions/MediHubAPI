@@ -45,11 +45,13 @@ public class JpaDoctorDirectoryAdapter implements DoctorDirectoryPort {
         }
 
         // Record construction (NO builder)
+        assert u.getSpecialization() != null;
         return new DoctorLiteDTO(
                 u.getId(),
                 fullName.trim(),
                 specializationName,
-                u.isEnabled()
+                u.isEnabled(),
+                u.getSpecialization().getId()
         );
     }
 

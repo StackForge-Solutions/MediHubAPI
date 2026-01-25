@@ -10,6 +10,17 @@ public record BootstrapResponse(
         List<DepartmentLiteDTO> departments,
         List<HolidayDTO> holidays,
         List<TemplateLiteDTO> templates,   // Not implemented in STEP-1 -> empty list
+
         List<SessionScheduleSummaryDTO> seedSchedules,
+
+        // NEW: full weekly schedule (mode=GLOBAL_TEMPLATE) for the week
+        SeedWeeklyScheduleDTO seedGlobalTemplateWeekly,
+
+        // NEW: full weekly schedule (mode=DOCTOR_OVERRIDE) for the week (only when doctorId is provided)
+        SeedWeeklyScheduleDTO seedOverrideWeekly,
+
         LocalDate serverDate
+
+
+
 ) {}

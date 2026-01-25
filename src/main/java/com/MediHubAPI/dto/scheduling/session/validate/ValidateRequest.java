@@ -17,7 +17,7 @@ public record ValidateRequest(
 
         @NotNull LocalDate weekStartDate,
 
-        @NotNull @Min(1) @Max(240) Integer slotDurationMinutes,
+        @NotNull @Min(1) @Max(240) Integer slotDurationMin,
 
         @Valid
         @NotNull

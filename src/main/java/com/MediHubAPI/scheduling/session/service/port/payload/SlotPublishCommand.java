@@ -12,7 +12,7 @@ public record SlotPublishCommand(
         Long scheduleId,
         Long doctorId,
         LocalDate weekStartDate,
-        int slotDurationMinutes,
+        int slotDurationMin,
         boolean failOnBookedConflict,
         List<DesiredSlot> desiredSlots,
         String actor

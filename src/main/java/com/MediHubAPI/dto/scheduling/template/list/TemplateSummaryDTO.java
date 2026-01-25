@@ -9,7 +9,7 @@ public record TemplateSummaryDTO(
         Long doctorId,
         Long departmentId,
         String name,
-        Integer slotDurationMinutes,
+        Integer slotDurationMin,
         boolean active,
         Long version
 ) {}

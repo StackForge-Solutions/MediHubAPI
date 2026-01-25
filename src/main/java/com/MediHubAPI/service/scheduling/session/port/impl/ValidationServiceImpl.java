@@ -21,8 +21,8 @@ public class ValidationServiceImpl implements ValidationService {
     public ValidateResponse validate(ValidateRequest request) {
         List<ValidationIssueDTO> issues = new ArrayList<>();
 
-        if (request.slotDurationMinutes() == null || request.slotDurationMinutes() <= 0) {
-            issues.add(new ValidationIssueDTO("SLOT_DURATION_INVALID", "slotDurationMinutes must be > 0", "slotDurationMinutes"));
+        if (request.slotDurationMin() == null || request.slotDurationMin() <= 0) {
+            issues.add(new ValidationIssueDTO("SLOT_DURATION_INVALID", "slotDurationMin must be > 0", "slotDurationMin"));
         }
 
         // Validate each day: time order, overlaps, dayOff rules

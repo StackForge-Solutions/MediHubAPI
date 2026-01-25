@@ -9,12 +9,15 @@ import java.time.LocalDate;
 import java.util.List;
 
 public record SessionScheduleDetailDTO(
-        Long id,
+        Long scheduleId,
         ScheduleMode mode,
         Long doctorId,
         Long departmentId,
-        LocalDate weekStartDate,
-        Integer slotDurationMinutes,
+
+        LocalDate weekStartISO,
+        LocalDate weekEndISO,
+
+        Integer slotDurationMin,
         ScheduleStatus status,
         boolean locked,
         String lockedReason,

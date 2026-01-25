@@ -7,5 +7,7 @@ public record WeeklyDayDTO(
         Integer weekday,        // 1..7
         String dateISO,         // yyyy-MM-dd
         boolean isDayOff,
-        List<WeeklySessionDTO> sessions
+        List<WeeklySessionDTO> sessions,
+
+        String notes
 ) {}

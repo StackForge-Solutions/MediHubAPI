@@ -49,7 +49,7 @@ public class ScheduleTemplate {
     private String name;
 
     @Column(name = "slot_duration_minutes", nullable = false)
-    private Integer slotDurationMinutes;
+    private Integer slotDurationMin;
 
     @Column(name = "active", nullable = false)
     private boolean active;

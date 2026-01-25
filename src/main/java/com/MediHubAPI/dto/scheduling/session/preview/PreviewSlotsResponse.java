@@ -5,7 +5,7 @@ import java.util.List;
 
 public record PreviewSlotsResponse(
         LocalDate weekStartDate,
-        int slotDurationMinutes,
+        int slotDurationMin,
         List<PreviewDayDTO> days,
         int totalSlotsPlanned
 ) {}

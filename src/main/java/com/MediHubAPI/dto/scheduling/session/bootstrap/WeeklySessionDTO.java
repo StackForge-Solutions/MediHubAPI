@@ -9,8 +9,12 @@ public record WeeklySessionDTO(
         String type,            // OPD/VIDEO/PROCEDURE/CUSTOM
         String startHHmm,       // "HH:mm"
         String endHHmm,         // "HH:mm"
+        Integer slotDurationOverrideMin,
+        String roomNo,
         Integer capacity,
         List<String> channelsAllowed,
         boolean walkinAllowed,
-        List<WeeklyBlockDTO> blocks
+        List<WeeklyBlockDTO> blocks,
+        String origin,   // "LOCAL"/"OVERRIDDEN"/"INHERITED"
+        boolean removed  // default false
 ) {}

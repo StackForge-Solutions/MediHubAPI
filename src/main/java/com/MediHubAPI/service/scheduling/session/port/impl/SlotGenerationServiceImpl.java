@@ -66,7 +66,7 @@ public class SlotGenerationServiceImpl implements SlotGenerationService {
 
         return new PreviewSlotsResponse(
                 schedule.getWeekStartDate(),
-                schedule.getSlotDurationMinutes(),
+                schedule.getSlotDurationMin(),
                 days,
                 desired.size()
         );
@@ -93,7 +93,7 @@ public class SlotGenerationServiceImpl implements SlotGenerationService {
                 schedule.getId(),
                 schedule.getDoctorId(),
                 schedule.getWeekStartDate(),
-                schedule.getSlotDurationMinutes(),
+                schedule.getSlotDurationMin(),
                 failOnBookedConflict,
                 desired,
                 actor
@@ -103,7 +103,7 @@ public class SlotGenerationServiceImpl implements SlotGenerationService {
     }
 
     private List<SlotPublishCommand.DesiredSlot> buildDesiredSlots(SessionSchedule schedule) {
-        int duration = schedule.getSlotDurationMinutes();
+        int duration = schedule.getSlotDurationMin();
 
         // Pre-compute block windows per day for fast lookup
         Map<LocalDate, List<TimeWindowBlock>> blocksByDate = new HashMap<>();

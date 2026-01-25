@@ -4,5 +4,7 @@ public enum BlockType {
     LUNCH,
     WARD_ROUND,
     ADMIN_BLOCK,
-    CUSTOM
-}
+    CUSTOM,
+    MEETING
+
+ }
