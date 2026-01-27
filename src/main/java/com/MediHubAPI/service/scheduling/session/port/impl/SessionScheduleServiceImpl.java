@@ -80,7 +80,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
 
     @Override
     @Transactional(readOnly = true)
-    public BootstrapResponse bootstrap(Long doctorId, LocalDate weekStartISO) {
+    public BootstrapResponse bootstrapSessionSchedules(Long doctorId, LocalDate weekStartISO) {
 
         LocalDate serverDate = LocalDate.now();
 
@@ -174,7 +174,10 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
 
     @Override
     @Transactional
-    public DraftResponse draft(DraftRequest request) {
+    public DraftResponse saveDraftSchedule(DraftRequest request) {
+        log.info("SessionSchedule draft requested: scheduleId={}, doctorId={}, weekStart={}, mode={}, locked={}, version={}",
+                request.scheduleId(), request.doctorId(), request.weekStartDate(), request.mode(), request.locked(),
+                request.version());
         // Validate plan using pure validator
         var validateReq = new ValidateRequest(
                 request.mode(),
@@ -185,11 +188,11 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
                 request.days()
         );
 
-//        var validation = validationService.validate(validateReq);
-//        if (!validation.valid()) {
-//            throw SchedulingException.badRequest("SCHEDULE_INVALID",
-//                    "Draft validation failed: " + validation.issues().size() + " issue(s)");
-//        }
+        var validation = validationService.validate(validateReq);
+        if (!validation.valid()) {
+            throw SchedulingException.badRequest("SCHEDULE_INVALID",
+                    "Draft validation failed: " + validation.issues().size() + " issue(s)");
+        }
 
         String actor = actorProvider.currentActor();
 
@@ -249,7 +252,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
 
     @Override
     @Transactional
-    public PublishResponse publish(PublishRequest request) {
+    public PublishResponse publishSchedule(PublishRequest request) {
         SessionSchedule schedule = sessionScheduleRepository.findById(request.scheduleId())
                 .orElseThrow(() -> SchedulingException.notFound("SCHEDULE_NOT_FOUND",
                         "Schedule not found: " + request.scheduleId()));
@@ -326,7 +329,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
 
     @Override
     @Transactional
-    public CopyWeekResponse copyWeek(CopyWeekRequest request) {
+    public CopyWeekResponse copyWeekSchedule(CopyWeekRequest request) {
         if (Objects.equals(request.sourceWeekStartISO(), request.targetWeekStartISO())) {
             throw SchedulingException.badRequest("COPY_SAME_WEEK",
                     "sourceWeekStartISO and targetWeekStartISO cannot be same.");
@@ -407,7 +410,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
     }
 
     @Override
-    public PreviewSlotsResponse previewSlots(PreviewSlotsRequest request) {
+    public PreviewSlotsResponse previewScheduleSlots(PreviewSlotsRequest request) {
         // Validate first
         var validateReq = new ValidateRequest(
                 request.mode(),
@@ -440,7 +443,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
     }
 
     @Override
-    public SessionScheduleDetailDTO getById(Long scheduleId) {
+    public SessionScheduleDetailDTO getScheduleById(Long scheduleId) {
         SessionSchedule schedule = sessionScheduleRepository.findById(scheduleId)
                 .orElseThrow(
                         () -> SchedulingException.notFound("SCHEDULE_NOT_FOUND", "Schedule not found: " + scheduleId));
@@ -448,7 +451,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
     }
 
     @Override
-    public SearchResponse search(ScheduleMode mode, Long doctorId, LocalDate weekStartISO) {
+    public SearchResponse searchSchedules(ScheduleMode mode, Long doctorId, LocalDate weekStartISO) {
         if (mode == null) {
             throw SchedulingException.badRequest("MODE_REQUIRED", "mode is required");
         }
@@ -472,7 +475,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
 
     @Override
     @Transactional
-    public ArchiveResponse archive(Long scheduleId, Long version) {
+    public ArchiveResponse archiveSchedule(Long scheduleId, Long version) {
         SessionSchedule schedule = sessionScheduleRepository.findById(scheduleId)
                 .orElseThrow(
                         () -> SchedulingException.notFound("SCHEDULE_NOT_FOUND", "Schedule not found: " + scheduleId));
