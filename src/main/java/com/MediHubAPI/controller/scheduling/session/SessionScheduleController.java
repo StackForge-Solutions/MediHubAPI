@@ -36,65 +36,65 @@ public class SessionScheduleController {
 
 
     @GetMapping("/bootstrap")
-    public BootstrapResponse bootstrapSessionSchedules(
+    public BootstrapResponse bootstrap(
             @RequestParam(name = "doctorId", required = false) Long doctorId,
             @RequestParam(name = "weekStartISO", required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate weekStartISO
     ) {
-        return sessionScheduleService.bootstrapSessionSchedules(doctorId, weekStartISO);
+        return sessionScheduleService.bootstrap(doctorId, weekStartISO);
     }
 
 
     @PostMapping("/validate")
-    public ValidateResponse validateSchedule(@Valid @RequestBody ValidateRequest request) {
+    public ValidateResponse validate(@Valid @RequestBody ValidateRequest request) {
         return validationService.validate(request);
     }
 
 
     @PostMapping("/draft")
-    public DraftResponse saveDraftSchedule(@Valid @RequestBody DraftRequest request) {
-        return sessionScheduleService.saveDraftSchedule(request);
+    public DraftResponse draft(@Valid @RequestBody DraftRequest request) {
+        return sessionScheduleService.draft(request);
     }
 
 
     @PostMapping("/publish")
-    public PublishResponse publishSchedule(@Valid @RequestBody PublishRequest request) {
-        return sessionScheduleService.publishSchedule(request);
+    public PublishResponse publish(@Valid @RequestBody PublishRequest request) {
+        return sessionScheduleService.publish(request);
     }
 
 
     @PostMapping("/copy-week")
-    public CopyWeekResponse copyWeekSchedule(@Valid @RequestBody CopyWeekRequest request) {
-        return sessionScheduleService.copyWeekSchedule(request);
+    public CopyWeekResponse copyWeek(@Valid @RequestBody CopyWeekRequest request) {
+        return sessionScheduleService.copyWeek(request);
     }
 
 
     @PostMapping("/preview-slots")
-    public PreviewSlotsResponse previewScheduleSlots(@Valid @RequestBody PreviewSlotsRequest request) {
-        return sessionScheduleService.previewScheduleSlots(request);
+    public PreviewSlotsResponse previewSlots(@Valid @RequestBody PreviewSlotsRequest request) {
+        return sessionScheduleService.previewSlots(request);
     }
 
 
     @GetMapping("/{scheduleId}")
-    public SessionScheduleDetailDTO getScheduleById(@PathVariable Long scheduleId) {
-        return sessionScheduleService.getScheduleById(scheduleId);
+    public SessionScheduleDetailDTO getById(@PathVariable Long scheduleId) {
+        return sessionScheduleService.getById(scheduleId);
     }
 
 
     @GetMapping("/search")
-    public SearchResponse searchSchedules(
+    public SearchResponse search(
             @RequestParam(name = "mode") ScheduleMode mode,
             @RequestParam(name = "doctorId", required = false) Long doctorId,
             @RequestParam(name = "weekStartISO") @DateTimeFormat(iso = ISO.DATE) LocalDate weekStartISO
     ) {
-        return sessionScheduleService.searchSchedules(mode, doctorId, weekStartISO);
+        return sessionScheduleService.search(mode, doctorId, weekStartISO);
     }
 
 
     @PostMapping("/{scheduleId}/archive")
-    public ArchiveResponse archiveSchedule(
+    public ArchiveResponse archive(
             @PathVariable Long scheduleId,
             @RequestParam(name = "version") Long version
     ) {
-        return sessionScheduleService.archiveSchedule(scheduleId, version);
+        return sessionScheduleService.archive(scheduleId, version);
     }
 }

@@ -20,19 +20,19 @@ import java.time.LocalDate;
 public interface SessionScheduleService {
 
 
-    BootstrapResponse bootstrapSessionSchedules(Long doctorId, LocalDate weekStartISO);
+    BootstrapResponse bootstrap(Long doctorId, LocalDate weekStartISO);
 
-    DraftResponse saveDraftSchedule(DraftRequest request);
+    DraftResponse draft(DraftRequest request);
 
-    PublishResponse publishSchedule(PublishRequest request);
+    PublishResponse publish(PublishRequest request);
 
-    CopyWeekResponse copyWeekSchedule(CopyWeekRequest request);
+    CopyWeekResponse copyWeek(CopyWeekRequest request);
 
-    PreviewSlotsResponse previewScheduleSlots(PreviewSlotsRequest request);
+    PreviewSlotsResponse previewSlots(PreviewSlotsRequest request);
 
-    SessionScheduleDetailDTO getScheduleById(Long scheduleId);
+    SessionScheduleDetailDTO getById(Long scheduleId);
 
-    SearchResponse searchSchedules(ScheduleMode mode, Long doctorId, LocalDate weekStartISO);
+    SearchResponse search(ScheduleMode mode, Long doctorId, LocalDate weekStartISO);
 
-    ArchiveResponse archiveSchedule(Long scheduleId, Long version);
+    ArchiveResponse archive(Long scheduleId, Long version);
 }
