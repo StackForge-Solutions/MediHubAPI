@@ -1,11 +1,20 @@
 package com.MediHubAPI.service.scheduling.session.port.impl;
 
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import com.MediHubAPI.dto.scheduling.session.bootstrap.*;
+import com.MediHubAPI.mapper.scheduling.template.BootstrapSeedWeeklyMapper;
+import com.MediHubAPI.mapper.scheduling.template.BootstrapTemplateMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.MediHubAPI.dto.scheduling.session.archive.ArchiveResponse;
-import com.MediHubAPI.dto.scheduling.session.bootstrap.BootstrapResponse;
-import com.MediHubAPI.dto.scheduling.session.bootstrap.HolidayDTO;
-import com.MediHubAPI.dto.scheduling.session.bootstrap.SeedWeeklyScheduleDTO;
-import com.MediHubAPI.dto.scheduling.session.bootstrap.TemplateLiteDTO;
 import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekRequest;
 import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekResponse;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftRequest;
@@ -23,8 +32,6 @@ import com.MediHubAPI.dto.scheduling.session.search.SearchResponse;
 import com.MediHubAPI.dto.scheduling.session.search.SessionScheduleSummaryDTO;
 import com.MediHubAPI.dto.scheduling.session.validate.ValidateRequest;
 import com.MediHubAPI.exception.scheduling.session.SchedulingException;
-import com.MediHubAPI.mapper.scheduling.template.BootstrapSeedWeeklyMapper;
-import com.MediHubAPI.mapper.scheduling.template.BootstrapTemplateMapper;
 import com.MediHubAPI.model.enums.MergeStrategy;
 import com.MediHubAPI.model.enums.ScheduleMode;
 import com.MediHubAPI.model.enums.ScheduleStatus;
@@ -36,17 +43,13 @@ import com.MediHubAPI.model.scheduling.session.SessionScheduleInterval;
 import com.MediHubAPI.repository.scheduling.session.SessionScheduleRepository;
 import com.MediHubAPI.scheduling.session.mapper.SessionScheduleMapper;
 import com.MediHubAPI.scheduling.session.service.port.payload.SlotPublishResult;
-import com.MediHubAPI.service.scheduling.session.port.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.temporal.TemporalAdjusters;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.MediHubAPI.service.scheduling.session.port.ActorProvider;
+import com.MediHubAPI.service.scheduling.session.port.DepartmentDirectoryPort;
+import com.MediHubAPI.service.scheduling.session.port.DoctorDirectoryPort;
+import com.MediHubAPI.service.scheduling.session.port.HolidayCalendarPort;
+import com.MediHubAPI.service.scheduling.session.port.SessionScheduleService;
+import com.MediHubAPI.service.scheduling.session.port.SlotGenerationService;
+import com.MediHubAPI.service.scheduling.session.port.ValidationService;
 
 @Slf4j
 @Service
@@ -170,6 +173,7 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
                 serverDate
         );
     }
+
 
 
     @Override
@@ -501,48 +505,24 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
     // -----------------------
 
     private List<SessionScheduleDay> toEntityDays(SessionSchedule schedule, List<SessionScheduleDayPlanDTO> plans) {
-        if (plans == null) return List.of();
-
-        // Map existing days by DayOfWeek (so we reuse same DB row)
-        Map<DayOfWeek, SessionScheduleDay> existingByDow = schedule.getDays() == null
-                ? new LinkedHashMap<>()
-                : schedule.getDays().stream()
-                .filter(d -> d.getDayOfWeek() != null)
-                .collect(Collectors.toMap(
-                        SessionScheduleDay::getDayOfWeek,
-                        d -> d,
-                        (a, b) -> a,
-                        LinkedHashMap::new
-                ));
-
+        // Ensure all 7 days exist or accept provided subset (we accept provided subset)
         List<SessionScheduleDay> out = new ArrayList<>();
-
         for (SessionScheduleDayPlanDTO p : plans) {
-            DayOfWeek dow = p.dayOfWeek();
+            SessionScheduleDay d = SessionScheduleDay.builder()
+                    .schedule(schedule)
+                    .dayOfWeek(p.dayOfWeek())
+                    .dayOff(p.dayOff())
+                    .build();
 
-            // Reuse if exists, else create new
-            SessionScheduleDay d = existingByDow.getOrDefault(dow,
-                    SessionScheduleDay.builder()
-                            .schedule(schedule)
-                            .dayOfWeek(dow)
-                            .build()
-            );
-
-            // Update fields
-            d.setDayOff(p.dayOff());
-
-            // Replace children safely (these methods should clear+add and set parent)
             d.setIntervalsReplace(toIntervals(d, p.intervals()));
             d.setBlocksReplace(toBlocks(d, p.blocks()));
-
             out.add(d);
         }
-
         return out;
     }
 
     private List<SessionScheduleInterval> toIntervals(SessionScheduleDay day,
-                                                      List<SessionScheduleIntervalDTO> intervals) {
+            List<SessionScheduleIntervalDTO> intervals) {
         if (intervals == null) return List.of();
         List<SessionScheduleInterval> out = new ArrayList<>();
         for (SessionScheduleIntervalDTO it : intervals) {
@@ -571,7 +551,6 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
         }
         return out;
     }
-
 
     private List<SessionScheduleDay> deepCopyDays(SessionSchedule targetSchedule, List<SessionScheduleDay> sourceDays) {
         List<SessionScheduleDay> out = new ArrayList<>();
