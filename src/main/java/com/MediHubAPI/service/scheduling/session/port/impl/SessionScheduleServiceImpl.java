@@ -1,20 +1,11 @@
 package com.MediHubAPI.service.scheduling.session.port.impl;
 
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.temporal.TemporalAdjusters;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import com.MediHubAPI.dto.scheduling.session.bootstrap.*;
-import com.MediHubAPI.mapper.scheduling.template.BootstrapSeedWeeklyMapper;
-import com.MediHubAPI.mapper.scheduling.template.BootstrapTemplateMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import com.MediHubAPI.dto.scheduling.session.archive.ArchiveResponse;
+import com.MediHubAPI.dto.scheduling.session.bootstrap.BootstrapResponse;
+import com.MediHubAPI.dto.scheduling.session.bootstrap.HolidayDTO;
+import com.MediHubAPI.dto.scheduling.session.bootstrap.SeedWeeklyScheduleDTO;
+import com.MediHubAPI.dto.scheduling.session.bootstrap.TemplateLiteDTO;
 import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekRequest;
 import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekResponse;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftRequest;
@@ -32,6 +23,8 @@ import com.MediHubAPI.dto.scheduling.session.search.SearchResponse;
 import com.MediHubAPI.dto.scheduling.session.search.SessionScheduleSummaryDTO;
 import com.MediHubAPI.dto.scheduling.session.validate.ValidateRequest;
 import com.MediHubAPI.exception.scheduling.session.SchedulingException;
+import com.MediHubAPI.mapper.scheduling.template.BootstrapSeedWeeklyMapper;
+import com.MediHubAPI.mapper.scheduling.template.BootstrapTemplateMapper;
 import com.MediHubAPI.model.enums.MergeStrategy;
 import com.MediHubAPI.model.enums.ScheduleMode;
 import com.MediHubAPI.model.enums.ScheduleStatus;
@@ -43,13 +36,17 @@ import com.MediHubAPI.model.scheduling.session.SessionScheduleInterval;
 import com.MediHubAPI.repository.scheduling.session.SessionScheduleRepository;
 import com.MediHubAPI.scheduling.session.mapper.SessionScheduleMapper;
 import com.MediHubAPI.scheduling.session.service.port.payload.SlotPublishResult;
-import com.MediHubAPI.service.scheduling.session.port.ActorProvider;
-import com.MediHubAPI.service.scheduling.session.port.DepartmentDirectoryPort;
-import com.MediHubAPI.service.scheduling.session.port.DoctorDirectoryPort;
-import com.MediHubAPI.service.scheduling.session.port.HolidayCalendarPort;
-import com.MediHubAPI.service.scheduling.session.port.SessionScheduleService;
-import com.MediHubAPI.service.scheduling.session.port.SlotGenerationService;
-import com.MediHubAPI.service.scheduling.session.port.ValidationService;
+import com.MediHubAPI.service.scheduling.session.port.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -175,7 +172,6 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
     }
 
 
-
     @Override
     @Transactional
     public DraftResponse draft(DraftRequest request) {
@@ -199,17 +195,52 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
 
         SessionSchedule schedule;
         if (request.scheduleId() == null) {
-            schedule = SessionSchedule.builder()
-                    .mode(request.mode())
-                    .doctorId(request.doctorId())
-                    .departmentId(request.departmentId())
-                    .weekStartDate(request.weekStartDate())
-                    .slotDurationMin(request.slotDurationMin())
-                    .status(ScheduleStatus.DRAFT)
-                    .locked(request.locked())
-                    .lockedReason(request.lockedReason())
-                    .build();
-            schedule.touchForCreate(actor);
+            // Try to reuse existing schedule for same doctor/week/mode (non-archived) to avoid duplicates
+            schedule = sessionScheduleRepository
+                    .findByDoctorIdAndWeekStartDateAndModeAndStatusNot(
+                            request.doctorId(),
+                            request.weekStartDate(),
+                            request.mode(),
+                            ScheduleStatus.ARCHIVED)
+                    .orElse(null);
+
+            if (schedule == null) {
+                schedule = SessionSchedule.builder()
+                        .mode(request.mode())
+                        .doctorId(request.doctorId())
+                        .departmentId(request.departmentId())
+                        .weekStartDate(request.weekStartDate())
+                        .slotDurationMin(request.slotDurationMin())
+                        .status(ScheduleStatus.DRAFT)
+                        .locked(request.locked())
+                        .lockedReason(request.lockedReason())
+                        .build();
+                schedule.touchForCreate(actor);
+            } else {
+                // act like an update even though scheduleId was not supplied
+                if (request.version() != null && !Objects.equals(schedule.getVersion(), request.version())) {
+                    throw SchedulingException.conflict("STALE_VERSION",
+                            "Schedule version mismatch. Expected=" + schedule.getVersion() + " provided=" +
+                                    request.version());
+                }
+                if (schedule.getStatus() == ScheduleStatus.ARCHIVED) {
+                    throw SchedulingException.conflict("SCHEDULE_ARCHIVED",
+                            "Cannot edit archived schedule: " + schedule.getId());
+                }
+                if (schedule.getStatus() == ScheduleStatus.PUBLISHED && schedule.isLocked()) {
+                    throw SchedulingException.conflict("SCHEDULE_LOCKED",
+                            "Cannot edit locked published schedule: " + schedule.getId());
+                }
+
+                schedule.setMode(request.mode());
+                schedule.setDoctorId(request.doctorId());
+                schedule.setDepartmentId(request.departmentId());
+                schedule.setWeekStartDate(request.weekStartDate());
+                schedule.setSlotDurationMin(request.slotDurationMin());
+                schedule.setLocked(request.locked());
+                schedule.setLockedReason(request.lockedReason());
+                schedule.touchForUpdate(actor);
+            }
         } else {
             schedule = sessionScheduleRepository.findById(request.scheduleId())
                     .orElseThrow(() -> SchedulingException.notFound("SCHEDULE_NOT_FOUND",
@@ -505,52 +536,121 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
     // -----------------------
 
     private List<SessionScheduleDay> toEntityDays(SessionSchedule schedule, List<SessionScheduleDayPlanDTO> plans) {
-        // Ensure all 7 days exist or accept provided subset (we accept provided subset)
-        List<SessionScheduleDay> out = new ArrayList<>();
-        for (SessionScheduleDayPlanDTO p : plans) {
-            SessionScheduleDay d = SessionScheduleDay.builder()
-                    .schedule(schedule)
-                    .dayOfWeek(p.dayOfWeek())
-                    .dayOff(p.dayOff())
-                    .build();
+        if (plans == null) return List.of();
 
+        // Map existing days by DayOfWeek (so we reuse same DB row)
+        Map<DayOfWeek, SessionScheduleDay> existingByDow = schedule.getDays() == null
+                ? new LinkedHashMap<>()
+                : schedule.getDays().stream()
+                .filter(d -> d.getDayOfWeek() != null)
+                .collect(Collectors.toMap(
+                        SessionScheduleDay::getDayOfWeek,
+                        d -> d,
+                        (a, b) -> a,
+                        LinkedHashMap::new
+                ));
+
+        List<SessionScheduleDay> out = new ArrayList<>();
+
+        for (SessionScheduleDayPlanDTO p : plans) {
+            DayOfWeek dow = p.dayOfWeek();
+
+            // Reuse if exists, else create new
+            SessionScheduleDay d = existingByDow.getOrDefault(dow,
+                    SessionScheduleDay.builder()
+                            .schedule(schedule)
+                            .dayOfWeek(dow)
+                            .build()
+            );
+
+            // Update fields
+            d.setDayOff(p.dayOff());
+
+            // Replace children safely (these methods should clear+add and set parent)
             d.setIntervalsReplace(toIntervals(d, p.intervals()));
             d.setBlocksReplace(toBlocks(d, p.blocks()));
+
             out.add(d);
         }
+
         return out;
     }
 
     private List<SessionScheduleInterval> toIntervals(SessionScheduleDay day,
-            List<SessionScheduleIntervalDTO> intervals) {
+                                                      List<SessionScheduleIntervalDTO> intervals) {
         if (intervals == null) return List.of();
+        Map<Long, SessionScheduleInterval> existingById = day.getIntervals() == null
+                ? Map.of()
+                : day.getIntervals().stream()
+                .filter(i -> i.getId() != null)
+                .collect(Collectors.toMap(SessionScheduleInterval::getId, i -> i, (a, b) -> a, LinkedHashMap::new));
+        Map<String, SessionScheduleInterval> existingByKey = day.getIntervals() == null
+                ? Map.of()
+                : day.getIntervals().stream()
+                .collect(Collectors.toMap(
+                        i -> intervalKey(i.getStartTime(), i.getEndTime(), i.getSessionType()),
+                        i -> i,
+                        (a, b) -> a,
+                        LinkedHashMap::new));
+
         List<SessionScheduleInterval> out = new ArrayList<>();
         for (SessionScheduleIntervalDTO it : intervals) {
-            out.add(SessionScheduleInterval.builder()
-                    .day(day)
-                    .startTime(it.startTime())
-                    .endTime(it.endTime())
-                    .sessionType(it.sessionType())
-                    .capacity(it.capacity())
-                    .build());
+            SessionScheduleInterval entity = it.id() != null ? existingById.get(it.id()) : null;
+            if (entity == null) {
+                entity = existingByKey.get(intervalKey(it.startTime(), it.endTime(), it.sessionType()));
+            }
+            if (entity == null) {
+                entity = SessionScheduleInterval.builder()
+                        .day(day)
+                        .build();
+            }
+            entity.setDay(day); // ensure association in case of reuse
+            entity.setStartTime(it.startTime());
+            entity.setEndTime(it.endTime());
+            entity.setSessionType(it.sessionType());
+            entity.setCapacity(it.capacity());
+            out.add(entity);
         }
         return out;
     }
 
     private List<SessionScheduleBlock> toBlocks(SessionScheduleDay day, List<SessionScheduleBlockDTO> blocks) {
         if (blocks == null) return List.of();
+        Map<Long, SessionScheduleBlock> existingById = day.getBlocks() == null
+                ? Map.of()
+                : day.getBlocks().stream()
+                .filter(b -> b.getId() != null)
+                .collect(Collectors.toMap(SessionScheduleBlock::getId, b -> b, (a, c) -> a, LinkedHashMap::new));
+        Map<String, SessionScheduleBlock> existingByKey = day.getBlocks() == null
+                ? Map.of()
+                : day.getBlocks().stream()
+                .collect(Collectors.toMap(
+                        b -> blockKey(b.getBlockType(), b.getStartTime(), b.getEndTime()),
+                        b -> b,
+                        (a, c) -> a,
+                        LinkedHashMap::new));
+
         List<SessionScheduleBlock> out = new ArrayList<>();
         for (SessionScheduleBlockDTO b : blocks) {
-            out.add(SessionScheduleBlock.builder()
-                    .day(day)
-                    .blockType(b.blockType())
-                    .startTime(b.startTime())
-                    .endTime(b.endTime())
-                    .reason(b.reason())
-                    .build());
+            SessionScheduleBlock entity = b.id() != null ? existingById.get(b.id()) : null;
+            if (entity == null) {
+                entity = existingByKey.get(blockKey(b.blockType(), b.startTime(), b.endTime()));
+            }
+            if (entity == null) {
+                entity = SessionScheduleBlock.builder()
+                        .day(day)
+                        .build();
+            }
+            entity.setDay(day); // ensure association in case of reuse
+            entity.setBlockType(b.blockType());
+            entity.setStartTime(b.startTime());
+            entity.setEndTime(b.endTime());
+            entity.setReason(b.reason());
+            out.add(entity);
         }
         return out;
     }
+
 
     private List<SessionScheduleDay> deepCopyDays(SessionSchedule targetSchedule, List<SessionScheduleDay> sourceDays) {
         List<SessionScheduleDay> out = new ArrayList<>();
@@ -650,5 +750,13 @@ public class SessionScheduleServiceImpl implements SessionScheduleService {
 
         target.setStatus(ScheduleStatus.DRAFT);
         target.touchForUpdate(actor);
+    }
+
+    private String intervalKey(java.time.LocalTime start, java.time.LocalTime end, com.MediHubAPI.model.enums.SessionType type) {
+        return start + "|" + end + "|" + type;
+    }
+
+    private String blockKey(com.MediHubAPI.model.enums.BlockType type, java.time.LocalTime start, java.time.LocalTime end) {
+        return type + "|" + start + "|" + end;
     }
 }
