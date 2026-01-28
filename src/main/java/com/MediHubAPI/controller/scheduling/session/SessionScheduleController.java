@@ -7,6 +7,7 @@ import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekResponse;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftRequest;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftResponse;
 import com.MediHubAPI.dto.scheduling.session.get.SessionScheduleDetailDTO;
+import com.MediHubAPI.dto.scheduling.session.get.SessionScheduleVersionDTO;
 import com.MediHubAPI.dto.scheduling.session.preview.PreviewSlotsRequest;
 import com.MediHubAPI.dto.scheduling.session.preview.PreviewSlotsResponse;
 import com.MediHubAPI.dto.scheduling.session.publish.PublishRequest;
@@ -77,6 +78,11 @@ public class SessionScheduleController {
     @GetMapping("/{scheduleId}")
     public SessionScheduleDetailDTO getById(@PathVariable Long scheduleId) {
         return sessionScheduleService.getById(scheduleId);
+    }
+
+    @GetMapping("/{scheduleId}/version")
+    public SessionScheduleVersionDTO getVersion(@PathVariable Long scheduleId) {
+        return sessionScheduleService.getVersion(scheduleId);
     }
 
 
