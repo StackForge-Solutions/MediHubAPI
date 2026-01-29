@@ -2,8 +2,6 @@ package com.MediHubAPI.controller.scheduling.session;
 
 import com.MediHubAPI.dto.scheduling.session.archive.ArchiveResponse;
 import com.MediHubAPI.dto.scheduling.session.bootstrap.BootstrapResponse;
-import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekRequest;
-import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekResponse;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftRequest;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftResponse;
 import com.MediHubAPI.dto.scheduling.session.get.SessionScheduleDetailDTO;
@@ -60,12 +58,6 @@ public class SessionScheduleController {
     @PostMapping("/publish")
     public PublishResponse publish(@Valid @RequestBody PublishRequest request) {
         return sessionScheduleService.publish(request);
-    }
-
-
-    @PostMapping("/copy-week")
-    public CopyWeekResponse copyWeek(@Valid @RequestBody CopyWeekRequest request) {
-        return sessionScheduleService.copyWeek(request);
     }
 
 

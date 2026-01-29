@@ -3,8 +3,6 @@ package com.MediHubAPI.service.scheduling.session.port;
 
 import com.MediHubAPI.dto.scheduling.session.archive.ArchiveResponse;
 import com.MediHubAPI.dto.scheduling.session.bootstrap.BootstrapResponse;
-import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekRequest;
-import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekResponse;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftRequest;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftResponse;
 import com.MediHubAPI.dto.scheduling.session.get.SessionScheduleDetailDTO;
@@ -27,7 +25,6 @@ public interface SessionScheduleService {
 
     PublishResponse publish(PublishRequest request);
 
-    CopyWeekResponse copyWeek(CopyWeekRequest request);
 
     PreviewSlotsResponse previewSlots(PreviewSlotsRequest request);
 
