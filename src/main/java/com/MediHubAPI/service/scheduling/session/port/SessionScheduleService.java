@@ -7,6 +7,10 @@ import com.MediHubAPI.dto.scheduling.session.draft.DraftRequest;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftResponse;
 import com.MediHubAPI.dto.scheduling.session.get.SessionScheduleDetailDTO;
 import com.MediHubAPI.dto.scheduling.session.get.SessionScheduleVersionDTO;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyFromWeekRequest;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyFromWeekResponse;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyLastWeekRequest;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekResponse;
 import com.MediHubAPI.dto.scheduling.session.preview.PreviewSlotsRequest;
 import com.MediHubAPI.dto.scheduling.session.preview.PreviewSlotsResponse;
 import com.MediHubAPI.dto.scheduling.session.publish.PublishRequest;
@@ -24,6 +28,9 @@ public interface SessionScheduleService {
     DraftResponse draft(DraftRequest request);
 
     PublishResponse publish(PublishRequest request);
+
+    CopyFromWeekResponse copyFromWeek(CopyFromWeekRequest request);
+    CopyWeekResponse copyLastWeek(CopyLastWeekRequest request);
 
 
     PreviewSlotsResponse previewSlots(PreviewSlotsRequest request);

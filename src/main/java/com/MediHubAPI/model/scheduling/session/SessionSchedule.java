@@ -15,6 +15,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +26,14 @@ import com.MediHubAPI.model.enums.ScheduleMode;
 import com.MediHubAPI.model.enums.ScheduleStatus;
 
 @Entity
-@Table(name = "session_schedules")
+// Enforce one active schedule per doctor/week/mode at the database layer.
+@Table(
+        name = "session_schedules",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_session_schedule_doctor_week_mode",
+                columnNames = { "doctor_id", "week_start_date", "mode" }
+        )
+)
 @Getter
 @Setter
 @NoArgsConstructor

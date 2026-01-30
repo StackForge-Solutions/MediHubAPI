@@ -2,6 +2,10 @@ package com.MediHubAPI.controller.scheduling.session;
 
 import com.MediHubAPI.dto.scheduling.session.archive.ArchiveResponse;
 import com.MediHubAPI.dto.scheduling.session.bootstrap.BootstrapResponse;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyFromWeekRequest;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyFromWeekResponse;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyLastWeekRequest;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekResponse;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftRequest;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftResponse;
 import com.MediHubAPI.dto.scheduling.session.get.SessionScheduleDetailDTO;
@@ -58,6 +62,16 @@ public class SessionScheduleController {
     @PostMapping("/publish")
     public PublishResponse publish(@Valid @RequestBody PublishRequest request) {
         return sessionScheduleService.publish(request);
+    }
+
+    @PostMapping("/copy-from-week")
+    public CopyFromWeekResponse copyFromWeek(@Valid @RequestBody CopyFromWeekRequest request) {
+        return sessionScheduleService.copyFromWeek(request);
+    }
+
+    @PostMapping("/copy-last-week")
+    public CopyWeekResponse copyLastWeek(@Valid @RequestBody CopyLastWeekRequest request) {
+        return sessionScheduleService.copyLastWeek(request);
     }
 
 

@@ -6,6 +6,10 @@ import com.MediHubAPI.dto.scheduling.session.bootstrap.BootstrapResponse;
 import com.MediHubAPI.dto.scheduling.session.bootstrap.HolidayDTO;
 import com.MediHubAPI.dto.scheduling.session.bootstrap.SeedWeeklyScheduleDTO;
 import com.MediHubAPI.dto.scheduling.session.bootstrap.TemplateLiteDTO;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyFromWeekRequest;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyFromWeekResponse;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyLastWeekRequest;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekResponse;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftRequest;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftResponse;
 import com.MediHubAPI.dto.scheduling.session.get.SessionScheduleDetailDTO;
@@ -24,6 +28,8 @@ import com.MediHubAPI.dto.scheduling.session.validate.ValidateRequest;
 import com.MediHubAPI.exception.scheduling.session.SchedulingException;
 import com.MediHubAPI.mapper.scheduling.template.BootstrapSeedWeeklyMapper;
 import com.MediHubAPI.mapper.scheduling.template.BootstrapTemplateMapper;
+import com.MediHubAPI.model.enums.CopyStrategy;
+import com.MediHubAPI.model.enums.MergeStrategy;
 import com.MediHubAPI.model.enums.ScheduleMode;
 import com.MediHubAPI.model.enums.ScheduleStatus;
 import com.MediHubAPI.model.enums.SlotGenerationMode;
@@ -326,6 +332,165 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
     }
 
     @Override
+    @Transactional
+    public CopyFromWeekResponse copyFromWeek(CopyFromWeekRequest request) {
+        if (request.mode() == null) {
+            throw SchedulingException.badRequest("MODE_REQUIRED", "mode is required");
+        }
+        if (Objects.equals(request.fromWeekStartISO(), request.toWeekStartISO())) {
+            throw SchedulingException.badRequest("COPY_SAME_WEEK", "fromWeekStartISO and toWeekStartISO cannot be same.");
+        }
+        if (request.mode() == ScheduleMode.DOCTOR_OVERRIDE && request.doctorId() == null) {
+            throw SchedulingException.badRequest("DOCTOR_REQUIRED", "doctorId is required when mode=DOCTOR_OVERRIDE.");
+        }
+
+        boolean includeBlocks      = Boolean.TRUE.equals(request.includeBlocks());
+        boolean includeDayOffFlags = Boolean.TRUE.equals(request.includeDayOffFlags());
+
+        // Resolve source schedule
+        SessionSchedule source;
+        if (request.mode() == ScheduleMode.DOCTOR_OVERRIDE) {
+            source = sessionScheduleRepository
+                    .findByDoctorIdAndWeekStartDateAndModeAndStatusNot(request.doctorId(), request.fromWeekStartISO(),
+                            ScheduleMode.DOCTOR_OVERRIDE, ScheduleStatus.ARCHIVED)
+                    .orElseThrow(() -> SchedulingException.notFound("SOURCE_NOT_FOUND",
+                            "Source schedule not found for doctorId=" + request.doctorId() + " weekStart=" + request.fromWeekStartISO()));
+        } else { // GLOBAL_TEMPLATE
+            if (request.templateId() != null) {
+                source = sessionScheduleRepository.findById(request.templateId())
+                        .orElseThrow(() -> SchedulingException.notFound("SOURCE_NOT_FOUND",
+                                "Template schedule not found: " + request.templateId()));
+                if (source.getMode() != ScheduleMode.GLOBAL_TEMPLATE ||
+                    !Objects.equals(source.getWeekStartDate(), request.fromWeekStartISO())) {
+                    throw SchedulingException.badRequest("SOURCE_MISMATCH",
+                            "Template does not match mode=GLOBAL_TEMPLATE and fromWeekStartISO.");
+                }
+            } else {
+                List<SessionSchedule> globals =
+                        sessionScheduleRepository.findByModeAndWeekStartDate(ScheduleMode.GLOBAL_TEMPLATE,
+                                request.fromWeekStartISO());
+                source = globals.stream()
+                        .filter(s -> s.getStatus() != ScheduleStatus.ARCHIVED)
+                        .max(Comparator.comparing(SessionSchedule::getVersion,
+                                Comparator.nullsFirst(Long::compareTo)).thenComparing(SessionSchedule::getId,
+                                Comparator.nullsFirst(Long::compareTo)))
+                        .orElseThrow(() -> SchedulingException.notFound("SOURCE_NOT_FOUND",
+                                "Global template not found for weekStart=" + request.fromWeekStartISO()));
+            }
+        }
+
+        // Resolve target schedule
+        SessionSchedule target;
+        if (request.mode() == ScheduleMode.DOCTOR_OVERRIDE) {
+            List<SessionSchedule> existing =
+                    sessionScheduleRepository.findByDoctorIdAndWeekStartDate(request.doctorId(),
+                            request.toWeekStartISO());
+            target = existing.stream()
+                    .filter(s -> s.getMode() == ScheduleMode.DOCTOR_OVERRIDE && s.getStatus() != ScheduleStatus.ARCHIVED)
+                    .findFirst().orElse(null);
+        } else { // GLOBAL_TEMPLATE
+            List<SessionSchedule> existing =
+                    sessionScheduleRepository.findByModeAndWeekStartDate(ScheduleMode.GLOBAL_TEMPLATE,
+                            request.toWeekStartISO());
+            target = existing.stream().filter(s -> s.getStatus() != ScheduleStatus.ARCHIVED)
+                    .max(Comparator.comparing(SessionSchedule::getVersion,
+                            Comparator.nullsFirst(Long::compareTo)).thenComparing(SessionSchedule::getId,
+                            Comparator.nullsFirst(Long::compareTo)))
+                    .orElse(null);
+        }
+
+        String actor = actorProvider.currentActor();
+
+        if (target == null) {
+            target = SessionSchedule.builder()
+                    .mode(request.mode())
+                    .doctorId(request.mode() == ScheduleMode.DOCTOR_OVERRIDE ? request.doctorId() : null)
+                    .departmentId(source.getDepartmentId())
+                    .weekStartDate(request.toWeekStartISO())
+                    .slotDurationMin(source.getSlotDurationMin())
+                    .status(ScheduleStatus.DRAFT)
+                    .locked(false)
+                    .build();
+            target.touchForCreate(actor);
+            target.setDaysReplace(deepCopyDays(target, source.getDays(), includeBlocks, includeDayOffFlags));
+            target = sessionScheduleRepository.save(target);
+
+            log.info("CopyFromWeek created: sourceScheduleId={}, targetScheduleId={}, mode={}, doctorId={}, sourceWeek={}, targetWeek={}",
+                    source.getId(), target.getId(), request.mode(), request.doctorId(), request.fromWeekStartISO(),
+                    request.toWeekStartISO());
+
+                    return new CopyFromWeekResponse(target.getId(), target.getVersion(), true, 0, List.of());
+        }
+
+        if (target.getStatus() == ScheduleStatus.PUBLISHED && target.isLocked()) {
+            throw SchedulingException.conflict("TARGET_LOCKED", "Target schedule is locked and cannot be modified.");
+        }
+
+        int skippedConflicts = 0;
+        if (request.strategy() == CopyStrategy.REPLACE_ALL) {
+            // Ensure existing days are deleted (orphanRemoval) before inserting new copies to satisfy
+            // the unique constraint on (schedule_id, day_of_week).
+            if (target.getDays() != null) {
+                target.getDays().clear();
+                sessionScheduleRepository.saveAndFlush(target);
+            }
+
+            target.setSlotDurationMin(source.getSlotDurationMin());
+            target.setDepartmentId(source.getDepartmentId());
+            target.setStatus(ScheduleStatus.DRAFT);
+            target.touchForUpdate(actor);
+            target.setDaysReplace(deepCopyDays(target, source.getDays(), includeBlocks, includeDayOffFlags));
+            target = sessionScheduleRepository.save(target);
+
+            log.info("CopyFromWeek replaced: sourceScheduleId={}, targetScheduleId={}, mode={}, doctorId={}, targetWeek={}",
+                    source.getId(), target.getId(), request.mode(), request.doctorId(), request.toWeekStartISO());
+        } else { // MERGE_NON_CONFLICTING
+            skippedConflicts = mergeSkipConflicts(target, source, includeBlocks, includeDayOffFlags);
+            target.setStatus(ScheduleStatus.DRAFT);
+            target.touchForUpdate(actor);
+            target = sessionScheduleRepository.save(target);
+
+            log.info("CopyFromWeek merged: sourceScheduleId={}, targetScheduleId={}, mode={}, doctorId={}, targetWeek={}, skippedConflicts={}",
+                    source.getId(), target.getId(), request.mode(), request.doctorId(), request.toWeekStartISO(),
+                    skippedConflicts);
+        }
+
+        List<String> warnings = skippedConflicts > 0
+                ? List.of("Skipped " + skippedConflicts + " conflicting interval/block(s).")
+                : List.of();
+
+        return new CopyFromWeekResponse(target.getId(), target.getVersion(), true, skippedConflicts, warnings);
+    }
+
+    @Override
+    @Transactional
+    public CopyWeekResponse copyLastWeek(CopyLastWeekRequest request) {
+        LocalDate targetWeekStart = (request.targetWeekStartISO() == null ? LocalDate.now() : request.targetWeekStartISO())
+                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate sourceWeekStart = targetWeekStart.minusWeeks(1);
+
+        CopyStrategy strategy = request.mergeStrategy() == MergeStrategy.REPLACE
+                ? CopyStrategy.REPLACE_ALL
+                : CopyStrategy.MERGE_NON_CONFLICTING;
+
+        CopyFromWeekRequest delegated = new CopyFromWeekRequest(
+                ScheduleMode.DOCTOR_OVERRIDE,
+                request.doctorId(),
+                null,
+                sourceWeekStart,
+                targetWeekStart,
+                strategy,
+                request.includeBlocks() == null ? Boolean.TRUE : request.includeBlocks(),
+                request.includeDayOffFlags() == null ? Boolean.TRUE : request.includeDayOffFlags()
+        );
+
+        CopyFromWeekResponse resp = copyFromWeek(delegated);
+        return new CopyWeekResponse(resp.scheduleId(), resp.warnings().isEmpty()
+                ? "Copy last week completed."
+                : String.join("; ", resp.warnings()));
+    }
+
+    @Override
     public
     PreviewSlotsResponse previewSlots(PreviewSlotsRequest request) {
         // Validate first
@@ -412,6 +577,116 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
     // -----------------------
     // Helpers: mapping + merge
     // -----------------------
+
+    private List<SessionScheduleDay> deepCopyDays(SessionSchedule targetSchedule, List<SessionScheduleDay> sourceDays,
+                                                  boolean includeBlocks, boolean includeDayOffFlags) {
+        List<SessionScheduleDay> out = new ArrayList<>();
+        for (SessionScheduleDay sd : sourceDays) {
+            SessionScheduleDay td = SessionScheduleDay.builder()
+                    .schedule(targetSchedule)
+                    .dayOfWeek(sd.getDayOfWeek())
+                    .dayOff(includeDayOffFlags && sd.isDayOff())
+                    .build();
+
+            List<SessionScheduleInterval> intervals = new ArrayList<>();
+            for (SessionScheduleInterval si : sd.getIntervals()) {
+                intervals.add(SessionScheduleInterval.builder()
+                        .day(td)
+                        .startTime(si.getStartTime())
+                        .endTime(si.getEndTime())
+                        .sessionType(si.getSessionType())
+                        .capacity(si.getCapacity())
+                        .build());
+            }
+            td.setIntervalsReplace(intervals);
+
+            if (includeBlocks) {
+                List<SessionScheduleBlock> blocks = new ArrayList<>();
+                for (SessionScheduleBlock sb : sd.getBlocks()) {
+                    blocks.add(SessionScheduleBlock.builder()
+                            .day(td)
+                            .blockType(sb.getBlockType())
+                            .startTime(sb.getStartTime())
+                            .endTime(sb.getEndTime())
+                            .reason(sb.getReason())
+                            .build());
+                }
+                td.setBlocksReplace(blocks);
+            } else {
+                td.setBlocksReplace(List.of());
+            }
+
+            out.add(td);
+        }
+        return out;
+    }
+
+    private int mergeSkipConflicts(SessionSchedule target, SessionSchedule source, boolean includeBlocks,
+                                   boolean includeDayOffFlags) {
+        if (target.getDays() == null) {
+            target.setDaysReplace(new ArrayList<>());
+        }
+        Map<DayOfWeek, SessionScheduleDay> targetMap = target.getDays().stream()
+                .collect(Collectors.toMap(SessionScheduleDay::getDayOfWeek, d -> d, (a, b) -> a, LinkedHashMap::new));
+
+        int skipped = 0;
+
+        for (SessionScheduleDay sourceDay : source.getDays()) {
+            SessionScheduleDay targetDay = targetMap.get(sourceDay.getDayOfWeek());
+            if (targetDay == null) {
+                SessionScheduleDay copied = deepCopyDays(target, List.of(sourceDay), includeBlocks, includeDayOffFlags).get(0);
+                target.getDays().add(copied);
+                targetMap.put(copied.getDayOfWeek(), copied);
+                continue;
+            }
+
+            if (includeDayOffFlags) {
+                targetDay.setDayOff(sourceDay.isDayOff());
+            }
+            if (targetDay.isDayOff()) continue;
+
+            // Merge intervals
+            for (SessionScheduleInterval si : sourceDay.getIntervals()) {
+                boolean overlaps = targetDay.getIntervals().stream()
+                        .anyMatch(ti -> si.getStartTime().isBefore(ti.getEndTime()) && ti.getStartTime().isBefore(si.getEndTime()));
+                if (overlaps) {
+                    skipped++;
+                } else {
+                    targetDay.getIntervals().add(SessionScheduleInterval.builder()
+                            .day(targetDay)
+                            .startTime(si.getStartTime())
+                            .endTime(si.getEndTime())
+                            .sessionType(si.getSessionType())
+                            .capacity(si.getCapacity())
+                            .build());
+                }
+            }
+
+            // Merge blocks
+            if (includeBlocks) {
+                if (targetDay.getBlocks() == null) {
+                    targetDay.setBlocksReplace(new ArrayList<>());
+                }
+                for (SessionScheduleBlock sb : sourceDay.getBlocks()) {
+                    boolean overlaps = targetDay.getBlocks().stream()
+                            .anyMatch(tb -> sb.getStartTime().isBefore(tb.getEndTime()) && tb.getStartTime().isBefore(sb.getEndTime()));
+                    if (overlaps) {
+                        skipped++;
+                    } else {
+                        targetDay.getBlocks().add(SessionScheduleBlock.builder()
+                                .day(targetDay)
+                                .blockType(sb.getBlockType())
+                                .startTime(sb.getStartTime())
+                                .endTime(sb.getEndTime())
+                                .reason(sb.getReason())
+                                .build());
+                    }
+                }
+            }
+        }
+        return skipped;
+    }
+
 
     private
     List<SessionScheduleDay> toEntityDays(SessionSchedule schedule, List<SessionScheduleDayPlanDTO> plans) {
