@@ -26,12 +26,13 @@ import com.MediHubAPI.model.enums.ScheduleMode;
 import com.MediHubAPI.model.enums.ScheduleStatus;
 
 @Entity
-// Enforce one active schedule per doctor/week/mode at the database layer.
+// Enforce one schedule per doctor/week/mode/status. This allows ARCHIVED history rows while still
+// preventing duplicate active schedules of the same status.
 @Table(
         name = "session_schedules",
         uniqueConstraints = @UniqueConstraint(
-                name = "uq_session_schedule_doctor_week_mode",
-                columnNames = { "doctor_id", "week_start_date", "mode" }
+                name = "uq_session_schedule_doctor_week_mode_status",
+                columnNames = { "doctor_id", "week_start_date", "mode", "status" }
         )
 )
 @Getter
