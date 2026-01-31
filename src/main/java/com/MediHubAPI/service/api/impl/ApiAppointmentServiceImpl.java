@@ -52,8 +52,6 @@ public class ApiAppointmentServiceImpl implements ApiAppointmentService {
             "ROLE_DOCTOR"
     );
 
-    private static final DateTimeFormatter ISO_OFFSET_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-
     private final AppointmentService appointmentService;
     private final SlotService slotService;
     private final PatientRegistrationService patientRegistrationService;
@@ -125,7 +123,8 @@ public class ApiAppointmentServiceImpl implements ApiAppointmentService {
                 .orElseThrow(() -> new HospitalAPIException(HttpStatus.BAD_REQUEST, "INVALID_PATIENT", "Selected patient not found."));
 
         String statusLabel = Boolean.TRUE.equals(booking.getMarkArrived()) ? "ARRIVED" : "CONFIRMED";
-        String createdAtIso = LocalDateTime.now(ZoneOffset.UTC).format(ISO_OFFSET_FORMATTER);
+        String createdAtIso = LocalDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+
 
         AppointmentConfirmResponse.PatientResponse patientResponse = AppointmentConfirmResponse.PatientResponse.builder()
                 .id(patient.getId())
