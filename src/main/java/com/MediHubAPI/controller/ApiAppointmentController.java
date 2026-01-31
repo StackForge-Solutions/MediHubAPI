@@ -1,9 +1,13 @@
 package com.MediHubAPI.controller;
 
+import com.MediHubAPI.dto.api.AppointmentConfirmRequest;
+import com.MediHubAPI.dto.api.AppointmentConfirmResponse;
 import com.MediHubAPI.dto.api.AppointmentListResponse;
 import com.MediHubAPI.exception.HospitalAPIException;
 import com.MediHubAPI.model.enums.AppointmentStatus;
+import com.MediHubAPI.service.api.ApiAppointmentService;
 import com.MediHubAPI.service.AppointmentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -11,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,6 +30,7 @@ import java.time.LocalDate;
 public class ApiAppointmentController {
 
     private final AppointmentService appointmentService;
+    private final ApiAppointmentService apiAppointmentService;
 
     @GetMapping
     public ResponseEntity<AppointmentListResponse> getAppointments(
@@ -48,6 +55,13 @@ public class ApiAppointmentController {
                 .message("ok")
                 .data(appointmentService.getAppointmentsForApi(date, doctorId, departmentId, mappedStatus))
                 .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/confirm")
+    public ResponseEntity<AppointmentConfirmResponse> confirmBooking(
+            @Valid @RequestBody AppointmentConfirmRequest request) {
+        AppointmentConfirmResponse response = apiAppointmentService.confirmBooking(request);
         return ResponseEntity.ok(response);
     }
 
