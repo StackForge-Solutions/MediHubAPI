@@ -3,6 +3,7 @@ package com.MediHubAPI.service;
 import com.MediHubAPI.dto.AppointmentBookingDto;
 import com.MediHubAPI.dto.AppointmentResponseDto;
 import com.MediHubAPI.dto.DoctorScheduleDto;
+import com.MediHubAPI.dto.api.AppointmentApiDto;
 import com.MediHubAPI.model.Appointment;
 import com.MediHubAPI.model.enums.AppointmentStatus;
 import org.springframework.data.domain.Page;
@@ -18,8 +19,6 @@ public interface AppointmentService {
 
     List<AppointmentResponseDto> getAppointmentsForDoctor(Long doctorId, LocalDate date);
 
-    List<AppointmentResponseDto> getAppointmentsForPatient(Long patientId);
-
     void cancelAppointment(Long appointmentId);
 
     AppointmentResponseDto reschedule(Long id, AppointmentBookingDto dto);
@@ -27,6 +26,8 @@ public interface AppointmentService {
     Page<AppointmentResponseDto> getAppointmentsForPatient(Long patientId, Pageable pageable);
 
     Page<AppointmentResponseDto> getAppointmentsWithFilters(LocalDate date, String doctorName, AppointmentStatus status, String range, Pageable pageable);
+
+    List<AppointmentApiDto> getAppointmentsForApi(LocalDate date, Long doctorId, Long departmentId, AppointmentStatus status);
 
     void markAsArrived(Long appointmentId);
 

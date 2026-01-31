@@ -1,46 +1,58 @@
 package com.MediHubAPI.service.impl;
 
 import com.MediHubAPI.dto.*;
+import com.MediHubAPI.dto.api.AppointmentApiDto;
 import com.MediHubAPI.exception.HospitalAPIException;
 import com.MediHubAPI.model.Appointment;
 import com.MediHubAPI.model.Slot;
+import com.MediHubAPI.model.Specialization;
 import com.MediHubAPI.model.User;
+import com.MediHubAPI.model.billing.Invoice;
 import com.MediHubAPI.model.enums.AppointmentStatus;
+import com.MediHubAPI.model.enums.AppointmentType;
 import com.MediHubAPI.model.enums.SlotStatus;
+import com.MediHubAPI.model.enums.SlotType;
 import com.MediHubAPI.repository.AppointmentRepository;
+import com.MediHubAPI.repository.InvoiceRepository;
 import com.MediHubAPI.repository.UserRepository;
-import com.MediHubAPI.service.AppointmentService;
 import com.MediHubAPI.service.SlotService;
 import com.MediHubAPI.specification.DoctorSpecification;
-import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Path;
-import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AppointmentServiceImpl implements AppointmentService {
+public class AppointmentServiceImpl implements com.MediHubAPI.service.AppointmentService {
 
     private final ModelMapper modelMapper;
 
     private final UserRepository userRepository;
     private final AppointmentRepository appointmentRepository;
+    private final InvoiceRepository invoiceRepository;
     private final SlotService slotService;  // ✅ Injected
 //    private final AppointmentService appointmentService;
+
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
 
     @Override
@@ -103,14 +115,6 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public List<AppointmentResponseDto> getAppointmentsForPatient(Long patientId) {
-        log.debug("📄 Fetching appointments for patientId={}", patientId);
-        return appointmentRepository.findByPatientIdOrderByAppointmentDateDesc(patientId).stream()
-                .map(appointment -> modelMapper.map(appointment, AppointmentResponseDto.class))
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public Page<AppointmentResponseDto> getAppointmentsForPatient(Long patientId, Pageable pageable) {
         log.debug("📄 Fetching paginated appointments for patientId={} with pageable={}", patientId, pageable);
         return appointmentRepository.findByPatientId(patientId, pageable)
@@ -126,13 +130,24 @@ public class AppointmentServiceImpl implements AppointmentService {
         return appointmentRepository.findAll(spec, pageable)
                 .map(appointment -> modelMapper.map(appointment, AppointmentResponseDto.class));
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AppointmentApiDto> getAppointmentsForApi(LocalDate date, Long doctorId, Long departmentId, AppointmentStatus status) {
+        Specification<Appointment> spec = buildApiSpecification(date, doctorId, departmentId, status);
+        Sort sort = Sort.by(Sort.Order.asc("appointmentDate"), Sort.Order.asc("slotTime"));
+        return appointmentRepository.findAll(spec, sort).stream()
+                .map(this::toApiDto)
+                .collect(Collectors.toList());
+    }
+
     private Specification<Appointment> buildAppointmentFilterSpec(LocalDate date, String range, String doctorName, AppointmentStatus status) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
             LocalDate today = LocalDate.now();
-            LocalDate startDate =  null;
-            LocalDate endDate = null;
+            LocalDate startDate;
+            LocalDate endDate;
 
             // Determine date filtering logic
             if (date != null) {
@@ -177,6 +192,140 @@ public class AppointmentServiceImpl implements AppointmentService {
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
+    }
+
+    private Specification<Appointment> buildApiSpecification(LocalDate date, Long doctorId, Long departmentId, AppointmentStatus status) {
+        return (root, query, cb) -> {
+            if (query != null) {
+                query.distinct(true);
+            }
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("appointmentDate"), date));
+
+            Join<Appointment, User> doctorJoin = null;
+            if (doctorId != null || departmentId != null) {
+                doctorJoin = root.join("doctor", JoinType.LEFT);
+            }
+
+            if (doctorId != null && doctorJoin != null) {
+                predicates.add(cb.equal(doctorJoin.get("id"), doctorId));
+            }
+
+            if (departmentId != null) {
+                if (doctorJoin == null) {
+                    doctorJoin = root.join("doctor", JoinType.LEFT);
+                }
+                Join<User, Specialization> specializationJoin = doctorJoin.join("specialization", JoinType.LEFT);
+                predicates.add(cb.equal(specializationJoin.get("id"), departmentId));
+            }
+
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    private AppointmentApiDto toApiDto(Appointment appointment) {
+        User doctor = appointment.getDoctor();
+        User patient = appointment.getPatient();
+        Slot slot = appointment.getSlot();
+
+        String createdBy = StringUtils.hasText(appointment.getCreatedBy()) ? appointment.getCreatedBy() : "STAFF";
+        String doctorName = buildDoctorName(doctor);
+
+        return AppointmentApiDto.builder()
+                .id(appointment.getId() != null ? appointment.getId().toString() : null)
+                .doctorId(doctor != null ? doctor.getId() : null)
+                .doctorName(doctorName)
+                .departmentId(doctor != null && doctor.getSpecialization() != null ? doctor.getSpecialization().getId() : null)
+                .patientId(patient != null ? patient.getId() : null)
+                .patientName(buildFullName(patient))
+                .patientPhone(patient != null ? patient.getMobileNumber() : null)
+                .patientHospitalId(patient != null ? patient.getHospitalId() : null)
+                .dateISO(appointment.getAppointmentDate() != null ? appointment.getAppointmentDate().toString() : null)
+                .timeHHmm(appointment.getSlotTime() != null ? appointment.getSlotTime().format(TIME_FORMATTER) : null)
+                .tokenNo(resolveTokenNo(appointment))
+                .visitType(mapVisitType(appointment.getType()))
+                .status(mapApiStatus(appointment.getStatus()))
+                .bookedBy(createdBy)
+                .bookingSource(createdBy)
+                .isWalkin(determineWalkin(appointment))
+                .needsAttention(patient != null && Boolean.TRUE.equals(patient.getNeedsAttention()))
+                .smsStatus(null)
+                .createdAtISO(formatCreatedAt(appointment.getCreatedAt()))
+                .notes(slot != null && slot.getNotes() != null ? slot.getNotes() : "")
+                .build();
+    }
+
+    private String resolveTokenNo(Appointment appointment) {
+        if (appointment == null || appointment.getId() == null) {
+            return null;
+        }
+        return invoiceRepository.findTopByAppointmentIdOrderByCreatedAtDesc(appointment.getId())
+                .map(Invoice::getToken)
+                .map(Object::toString)
+                .orElse(null);
+    }
+
+    private String buildDoctorName(User doctor) {
+        if (doctor == null) {
+            return "Dr. Unknown";
+        }
+        String fullName = buildFullName(doctor);
+        if (!StringUtils.hasText(fullName)) {
+            fullName = doctor.getUsername();
+        }
+        if (!StringUtils.hasText(fullName)) {
+            fullName = "Doctor";
+        }
+        return "Dr. " + fullName.trim();
+    }
+
+    private String buildFullName(User user) {
+        if (user == null) {
+            return null;
+        }
+        String first = StringUtils.hasText(user.getFirstName()) ? user.getFirstName().trim() : "";
+        String last = StringUtils.hasText(user.getLastName()) ? user.getLastName().trim() : "";
+        String combined = (first + " " + last).trim();
+        return StringUtils.hasText(combined) ? combined : user.getUsername();
+    }
+
+    private String mapVisitType(AppointmentType type) {
+        if (type == null || type == AppointmentType.IN_PERSON) {
+            return "CONSULTATION";
+        }
+        return type.name();
+    }
+
+    private String mapApiStatus(AppointmentStatus status) {
+        if (status == null) {
+            return "UNKNOWN";
+        }
+        return switch (status) {
+            case BOOKED -> "CONFIRMED";
+            case ARRIVED -> "ARRIVED";
+            case COMPLETED -> "COMPLETED";
+            case NO_SHOW -> "NO_SHOW";
+            case CANCELLED -> "CANCELLED";
+        };
+    }
+
+    private Boolean determineWalkin(Appointment appointment) {
+        Slot slot = appointment.getSlot();
+        if (slot != null && slot.getType() == SlotType.WALKIN) {
+            return true;
+        }
+        return appointment.getType() == AppointmentType.WALKIN;
+    }
+
+    private String formatCreatedAt(LocalDateTime createdAt) {
+        if (createdAt == null) {
+            return null;
+        }
+        return createdAt.atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     }
 
 
