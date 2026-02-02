@@ -271,7 +271,7 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
         log.info("SessionSchedule draft saved: scheduleId={}, doctorId={}, weekStart={}, status={}, version={}",
                  saved.getId(), saved.getDoctorId(), saved.getWeekStartDate(), saved.getStatus(), saved.getVersion());
 
-        return new DraftResponse(SessionScheduleMapper.toDetail(saved));
+        return new DraftResponse(saved.getId(), saved.getVersion(), "Schedule draft saved successfully");
     }
 
     @Override
