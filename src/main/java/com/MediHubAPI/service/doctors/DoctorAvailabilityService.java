@@ -146,35 +146,12 @@ class DoctorAvailabilityService {
                 continue;
             }
             daySlots.sort(Comparator.comparing(Slot::getStartTime));
-            List<DoctorSessionDto> sessions = buildSessionsFromSlots(daySlots);
-            sessionsByWeekday.get(String.valueOf(dow.getValue())).addAll(sessions);
-        }
-    }
-
-    private
-    List<DoctorSessionDto> buildSessionsFromSlots(List<Slot> slots) {
-        List<DoctorSessionDto> sessions = new ArrayList<>();
-        LocalTime sessionStart = null;
-        LocalTime sessionEnd   = null;
-        int idx = 1;
-        for (Slot slot : slots) {
-            if (sessionStart == null) {
-                sessionStart = slot.getStartTime();
-                sessionEnd = slot.getEndTime();
-                continue;
+            int idx = 1;
+            List<DoctorSessionDto> target = sessionsByWeekday.get(String.valueOf(dow.getValue()));
+            for (Slot slot : daySlots) {
+                target.add(buildSessionDto(idx++, slot.getStartTime(), slot.getEndTime()));
             }
-            if (slot.getStartTime().equals(sessionEnd)) {
-                sessionEnd = slot.getEndTime();
-                continue;
-            }
-            sessions.add(buildSessionDto(idx++, sessionStart, sessionEnd));
-            sessionStart = slot.getStartTime();
-            sessionEnd = slot.getEndTime();
         }
-        if (sessionStart != null && sessionEnd != null) {
-            sessions.add(buildSessionDto(idx++, sessionStart, sessionEnd));
-        }
-        return sessions;
     }
 
     private
