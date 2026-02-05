@@ -30,7 +30,9 @@ import com.MediHubAPI.model.enums.GovtIdType;
 @Table(name = "users", indexes = {
         @Index(name = "idx_users_username", columnList = "username", unique = true),
         @Index(name = "idx_users_email", columnList = "email", unique = true),
-        @Index(name = "idx_users_hospital_id", columnList = "hospital_id", unique = true)
+        @Index(name = "idx_users_hospital_id", columnList = "hospital_id", unique = true),
+        @Index(name = "idx_users_mobile_number", columnList = "mobile_number"),
+        @Index(name = "idx_users_file_no", columnList = "file_no")
 })
 public class User {
     @Id
@@ -51,6 +53,9 @@ public class User {
 
     @Column(name = "last_name")
     private String lastName;
+
+    @Column(name = "title", length = 20)
+    private String title;
 
     @Column(name = "enabled")
     private boolean enabled = true;
@@ -156,6 +161,12 @@ public class User {
     @Column(name = "hospital_id")
     private String hospitalId;
 
+    @Column(name = "file_no")
+    private String fileNo;
+
+    @Column(name = "country_code", length = 8)
+    private String countryCode;
+
     @Column(name = "mobile_number")
     private String mobileNumber;
 
@@ -167,6 +178,9 @@ public class User {
 
     @Column(name = "dob")
     private LocalDate dateOfBirth;
+
+    @Column(name = "age")
+    private Integer age;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "sex")
@@ -188,6 +202,34 @@ public class User {
 
     @Column(name = "mother_tongue")
     private String motherTongue;
+
+    // Address fields
+    @Column(name = "address_line1")
+    private String addressLine1;
+
+    @Column(name = "address_area")
+    private String addressArea;
+
+    @Column(name = "address_city")
+    private String addressCity;
+
+    @Column(name = "address_pin", length = 15)
+    private String addressPin;
+
+    @Column(name = "address_state")
+    private String addressState;
+
+    @Column(name = "address_country")
+    private String addressCountry;
+
+    @Column(name = "is_international")
+    private Boolean international;
+
+    @Column(name = "needs_attention")
+    private Boolean needsAttention;
+
+    @Column(name = "notes", length = 2000)
+    private String notes;
 
 
 }

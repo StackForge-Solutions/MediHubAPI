@@ -3,11 +3,14 @@ package com.MediHubAPI.service.scheduling.session.port;
 
 import com.MediHubAPI.dto.scheduling.session.archive.ArchiveResponse;
 import com.MediHubAPI.dto.scheduling.session.bootstrap.BootstrapResponse;
-import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekRequest;
-import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekResponse;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftRequest;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftResponse;
 import com.MediHubAPI.dto.scheduling.session.get.SessionScheduleDetailDTO;
+import com.MediHubAPI.dto.scheduling.session.get.SessionScheduleVersionDTO;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyFromWeekRequest;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyFromWeekResponse;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyLastWeekRequest;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekResponse;
 import com.MediHubAPI.dto.scheduling.session.preview.PreviewSlotsRequest;
 import com.MediHubAPI.dto.scheduling.session.preview.PreviewSlotsResponse;
 import com.MediHubAPI.dto.scheduling.session.publish.PublishRequest;
@@ -26,11 +29,15 @@ public interface SessionScheduleService {
 
     PublishResponse publish(PublishRequest request);
 
-    CopyWeekResponse copyWeek(CopyWeekRequest request);
+    CopyFromWeekResponse copyFromWeek(CopyFromWeekRequest request);
+    CopyWeekResponse copyLastWeek(CopyLastWeekRequest request);
+
 
     PreviewSlotsResponse previewSlots(PreviewSlotsRequest request);
 
     SessionScheduleDetailDTO getById(Long scheduleId);
+
+    SessionScheduleVersionDTO getVersion(Long scheduleId);
 
     SearchResponse search(ScheduleMode mode, Long doctorId, LocalDate weekStartISO);
 

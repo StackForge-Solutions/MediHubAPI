@@ -28,6 +28,12 @@ public interface SlotRepository extends JpaRepository<Slot, Long>, JpaSpecificat
      */
     List<Slot> findByDoctorIdAndDateAndStatusIn(Long doctorId, LocalDate date, List<SlotStatus> statuses);
 
+    /**
+     * Fetch slots for a doctor between two dates that match specific statuses.
+     */
+    List<Slot> findByDoctorIdAndDateBetweenAndStatusInOrderByDateAscStartTimeAsc(Long doctorId, LocalDate startDate,
+                                                                                LocalDate endDate, List<SlotStatus> statuses);
+
     boolean existsByDoctorIdAndDateAndStartTimeAndEndTime(Long id, LocalDate date, LocalTime current, LocalTime slotEnd);
 
     Optional<Slot> findByDoctorIdAndStartTimeAndDate(Long doctorId, LocalTime slotTime, LocalDate appointmentDate);

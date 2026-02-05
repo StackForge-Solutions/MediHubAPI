@@ -23,6 +23,10 @@ public class SchedulingException extends RuntimeException {
         return new SchedulingException(HttpStatus.CONFLICT, code, message);
     }
 
+    public static SchedulingException preconditionFailed(String code, String message) {
+        return new SchedulingException(HttpStatus.PRECONDITION_FAILED, code, message);
+    }
+
     public static SchedulingException notFound(String code, String message) {
         return new SchedulingException(HttpStatus.NOT_FOUND, code, message);
     }
