@@ -1,5 +1,6 @@
 package com.MediHubAPI.repository;
 
+import com.MediHubAPI.dto.InvoiceDtos;
 import com.MediHubAPI.model.billing.Invoice;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +33,12 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpec
     Optional<Invoice> findTopByAppointmentIdOrderByCreatedAtDesc(
             Long appointmentId
      );
+
+    @EntityGraph(attributePaths = {"items"})
+    Optional<Invoice> findTopByAppointmentIdAndItems_ItemTypeOrderByCreatedAtDesc(
+            Long appointmentId,
+            InvoiceDtos.ItemType itemType
+    );
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select i from Invoice i where i.id = :id")

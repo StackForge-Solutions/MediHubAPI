@@ -19,6 +19,7 @@ public class ErrorEnvelope {
     public static class ErrorBody {
         private String code;
         private String message;
+        private String field;   // optional single field pointer
         private List<Object> details;
         private String traceId;
         private Instant timestamp;
