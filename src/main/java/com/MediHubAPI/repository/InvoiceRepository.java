@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpecificationExecutor<Invoice> {
-    Optional<Invoice> findByBillNumber(String billNumber);
 
     // Avoid MultipleBagFetchException: fetch ONE bag (items) and single-valued associations.
     @Query(

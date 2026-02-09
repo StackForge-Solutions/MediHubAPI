@@ -46,12 +46,6 @@ public class InvoiceDtos {
     ) {
     }
 
-    public record InvoiceSummaryRes(
-            Long id, String status, String billNumber,
-            BigDecimal grandTotal, BigDecimal paidAmount, BigDecimal balanceDue
-    ) {
-    }
-
     // ---------- Add Payment ----------
     public record AddPaymentReq(
             @NotBlank String idempotencyKey,
@@ -155,22 +149,6 @@ public class InvoiceDtos {
                 BigDecimal discountAmount,
                 BigDecimal taxPercent
         ) {}
-    }
-
-    public record InvoiceResp(
-            Long id,
-            String status,
-            String billNumber,
-            BigDecimal subTotal,
-            BigDecimal discountTotal,
-            BigDecimal taxTotal,
-            BigDecimal roundOff,
-            BigDecimal grandTotal,
-            BigDecimal paidAmount,
-            BigDecimal balanceDue,
-            LocalDateTime createdAt,
-            LocalDateTime issuedAt
-    ) {
     }
 
     // ---------- Draft Consultation View ----------

@@ -15,7 +15,6 @@ import com.MediHubAPI.model.billing.InvoiceItem;
 import com.MediHubAPI.model.billing.InvoicePayment;
 import com.MediHubAPI.model.Appointment;
 import com.MediHubAPI.repository.DoctorServiceItemRepository;
-import com.MediHubAPI.repository.InvoiceItemRepository;
 import com.MediHubAPI.repository.InvoicePaymentRepository;
 import com.MediHubAPI.repository.InvoiceRepository;
 import com.MediHubAPI.repository.AppointmentRepository;
