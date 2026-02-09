@@ -2,11 +2,14 @@ package com.MediHubAPI.controller.scheduling.session;
 
 import com.MediHubAPI.dto.scheduling.session.archive.ArchiveResponse;
 import com.MediHubAPI.dto.scheduling.session.bootstrap.BootstrapResponse;
-import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekRequest;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyFromWeekRequest;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyFromWeekResponse;
+import com.MediHubAPI.dto.scheduling.session.copy.CopyLastWeekRequest;
 import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekResponse;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftRequest;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftResponse;
 import com.MediHubAPI.dto.scheduling.session.get.SessionScheduleDetailDTO;
+import com.MediHubAPI.dto.scheduling.session.get.SessionScheduleVersionDTO;
 import com.MediHubAPI.dto.scheduling.session.preview.PreviewSlotsRequest;
 import com.MediHubAPI.dto.scheduling.session.preview.PreviewSlotsResponse;
 import com.MediHubAPI.dto.scheduling.session.publish.PublishRequest;
@@ -61,10 +64,14 @@ public class SessionScheduleController {
         return sessionScheduleService.publish(request);
     }
 
+    @PostMapping("/copy-from-week")
+    public CopyFromWeekResponse copyFromWeek(@Valid @RequestBody CopyFromWeekRequest request) {
+        return sessionScheduleService.copyFromWeek(request);
+    }
 
-    @PostMapping("/copy-week")
-    public CopyWeekResponse copyWeek(@Valid @RequestBody CopyWeekRequest request) {
-        return sessionScheduleService.copyWeek(request);
+    @PostMapping("/copy-last-week")
+    public CopyWeekResponse copyLastWeek(@Valid @RequestBody CopyLastWeekRequest request) {
+        return sessionScheduleService.copyLastWeek(request);
     }
 
 
@@ -77,6 +84,11 @@ public class SessionScheduleController {
     @GetMapping("/{scheduleId}")
     public SessionScheduleDetailDTO getById(@PathVariable Long scheduleId) {
         return sessionScheduleService.getById(scheduleId);
+    }
+
+    @GetMapping("/{scheduleId}/version")
+    public SessionScheduleVersionDTO getVersion(@PathVariable Long scheduleId) {
+        return sessionScheduleService.getVersion(scheduleId);
     }
 
 

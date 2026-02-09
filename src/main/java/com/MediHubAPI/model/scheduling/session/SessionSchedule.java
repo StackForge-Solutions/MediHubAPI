@@ -15,6 +15,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +26,15 @@ import com.MediHubAPI.model.enums.ScheduleMode;
 import com.MediHubAPI.model.enums.ScheduleStatus;
 
 @Entity
-@Table(name = "session_schedules")
+// Enforce one schedule per doctor/week/mode/status. This allows ARCHIVED history rows while still
+// preventing duplicate active schedules of the same status.
+@Table(
+        name = "session_schedules",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_session_schedule_doctor_week_mode_status",
+                columnNames = { "doctor_id", "week_start_date", "mode", "status" }
+        )
+)
 @Getter
 @Setter
 @NoArgsConstructor

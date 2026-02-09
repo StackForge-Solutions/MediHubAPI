@@ -190,8 +190,8 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
-    @ExceptionHandler(IdempotencyConflictException.class)
-    public ResponseEntity<ApiResponse<Object>> idemConflict(IdempotencyConflictException ex, HttpServletRequest req) {
+    @ExceptionHandler({IdempotencyConflictException.class, com.MediHubAPI.exception.visits.IdempotencyConflictException.class})
+    public ResponseEntity<ApiResponse<Object>> idemConflict(RuntimeException ex, HttpServletRequest req) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(req.getRequestURI(), "IDEMPOTENCY_CONFLICT", ex.getMessage()));
     }
