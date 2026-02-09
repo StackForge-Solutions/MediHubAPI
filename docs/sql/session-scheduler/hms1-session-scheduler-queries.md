@@ -81,6 +81,7 @@ SELECT
     AND ss.status <> 'ARCHIVED'
     AND ss.doctor_id = 21          -- bind: target doctor
 --  AND ss.week_start_date = ?      -- bind: week (Monday) you care about
+--    AND u.first_name LIKE '%rahu%'
 
   ORDER BY ss.week_start_date, d.day_of_week;
 ````
