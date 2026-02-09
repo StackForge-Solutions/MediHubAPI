@@ -5,29 +5,25 @@ import com.MediHubAPI.dto.doctor.DoctorSessionsData;
 import com.MediHubAPI.dto.doctor.DoctorSlotDto;
 import com.MediHubAPI.exception.HospitalAPIException;
 import com.MediHubAPI.model.ERole;
+import com.MediHubAPI.model.Slot;
 import com.MediHubAPI.model.User;
-import com.MediHubAPI.model.enums.ScheduleMode;
-import com.MediHubAPI.model.enums.ScheduleStatus;
 import com.MediHubAPI.model.enums.SlotStatus;
 import com.MediHubAPI.model.enums.SlotType;
-import com.MediHubAPI.model.scheduling.session.SessionSchedule;
-import com.MediHubAPI.model.scheduling.session.SessionScheduleDay;
-import com.MediHubAPI.model.scheduling.session.SessionScheduleInterval;
 import com.MediHubAPI.repository.SlotRepository;
 import com.MediHubAPI.repository.UserRepository;
-import com.MediHubAPI.repository.scheduling.session.SessionScheduleRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,31 +36,39 @@ class DoctorAvailabilityService {
 
     private static final DateTimeFormatter TIME_FORMAT            = DateTimeFormatter.ofPattern("HH:mm");
     private static final List<Integer>     ALLOWED_SLOT_DURATIONS = List.of(10, 15, 30);
+    private static final List<SlotStatus>  PUBLISHED_SLOT_STATUSES = List.of(
+            SlotStatus.AVAILABLE,
+            SlotStatus.ADDITIONAL,
+            SlotStatus.WALKIN,
+            SlotStatus.BOOKED,
+            SlotStatus.ARRIVED,
+            SlotStatus.COMPLETED,
+            SlotStatus.RESERVED,
+            SlotStatus.NO_SHOW,
+            SlotStatus.PENDING
+    );
 
-    private final SlotRepository            slotRepository;
-    private final UserRepository            userRepository;
-    private final SessionScheduleRepository sessionScheduleRepository;
+    private final SlotRepository slotRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public
     DoctorSessionsData getSessions(Long doctorId) {
         findDoctor(doctorId); // ensure exists+role
-        LocalDate       weekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        SessionSchedule schedule  = findEffectiveSchedule(doctorId, weekStart);
-        if (schedule == null) {
+        LocalDate weekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate weekEnd   = weekStart.plusDays(6);
+        List<Slot> slots    = slotRepository.findByDoctorIdAndDateBetweenAndStatusInOrderByDateAscStartTimeAsc(
+                doctorId, weekStart, weekEnd, PUBLISHED_SLOT_STATUSES
+        );
+        if (slots.isEmpty()) {
             throw new HospitalAPIException(
                     HttpStatus.NOT_FOUND, "NOT_FOUND",
-                    "No schedule found for doctor " + doctorId
+                    "No published schedule found for doctor " + doctorId
             );
         }
 
         Map<String, List<DoctorSessionDto>> sessionsByWeekday = initializeWeekMap();
-        if (!CollectionUtils.isEmpty(schedule.getDays())) {
-            schedule.getDays().stream()
-                    .sorted(Comparator.comparingInt(d -> d.getDayOfWeek().getValue()))
-                    .forEach(day -> populateDaySessions(day, sessionsByWeekday))
-            ;
-        }
+        fillSessionsFromSlots(slots, sessionsByWeekday);
 
         return DoctorSessionsData.builder()
                                  .doctorId(doctorId)
@@ -84,7 +88,7 @@ class DoctorAvailabilityService {
             );
         }
 
-        List<com.MediHubAPI.model.Slot> slots = slotRepository.findByDoctorIdAndDate(doctorId, date);
+        List<Slot> slots = slotRepository.findByDoctorIdAndDate(doctorId, date);
         if (slots.isEmpty()) {
             throw new HospitalAPIException(
                     HttpStatus.NOT_FOUND, "NOT_FOUND",
@@ -94,13 +98,13 @@ class DoctorAvailabilityService {
 
         return slots.stream()
                     .filter(slot -> durationMin == null || durationMatches(slot, durationMin))
-                    .sorted(Comparator.comparing(com.MediHubAPI.model.Slot::getStartTime))
+                    .sorted(Comparator.comparing(Slot::getStartTime))
                     .map(slot -> mapSlot(slot, doctorId, date))
                     .collect(Collectors.toList());
     }
 
     private
-    boolean durationMatches(com.MediHubAPI.model.Slot slot, Integer durationMin) {
+    boolean durationMatches(Slot slot, Integer durationMin) {
         var start   = slot.getStartTime();
         var end     = slot.getEndTime();
         int minutes = (int) java.time.Duration.between(start, end).toMinutes();
@@ -108,7 +112,7 @@ class DoctorAvailabilityService {
     }
 
     private
-    DoctorSlotDto mapSlot(com.MediHubAPI.model.Slot slot, Long doctorId, LocalDate date) {
+    DoctorSlotDto mapSlot(Slot slot, Long doctorId, LocalDate date) {
         return DoctorSlotDto.builder()
                             .doctorId(doctorId)
                             .dateISO(date.toString())
@@ -116,27 +120,6 @@ class DoctorAvailabilityService {
                             .status(slot.getStatus().name())
                             .isWalkin(slot.getType() == SlotType.WALKIN || slot.getStatus() == SlotStatus.WALKIN)
                             .build();
-    }
-
-    private
-    void populateDaySessions(SessionScheduleDay day, Map<String, List<DoctorSessionDto>> map) {
-        List<DoctorSessionDto> target = map.get(String.valueOf(day.getDayOfWeek().getValue()));
-        if (target == null) return;
-        if (day.getIntervals() == null || day.getIntervals().isEmpty()) {
-            return;
-        }
-        List<SessionScheduleInterval> sorted = day.getIntervals().stream()
-                                                  .sorted(Comparator.comparing(SessionScheduleInterval::getStartTime))
-                                                  .toList()
-                ;
-        int idx = 1;
-        for (SessionScheduleInterval interval : sorted) {
-            target.add(new DoctorSessionDto(
-                    "Session " + idx++,
-                    interval.getStartTime().format(TIME_FORMAT),
-                    interval.getEndTime().format(TIME_FORMAT)
-            ));
-        }
     }
 
     private
@@ -149,36 +132,35 @@ class DoctorAvailabilityService {
     }
 
     private
-    SessionSchedule findEffectiveSchedule(Long doctorId, LocalDate weekStart) {
-        SessionSchedule override = chooseBest(sessionScheduleRepository
-                                                      .findWithChildrenByModeAndDoctorIdAndWeekStartDate(ScheduleMode.DOCTOR_OVERRIDE, doctorId, weekStart));
-        if (override != null) {
-            return override;
+    void fillSessionsFromSlots(List<Slot> weekSlots, Map<String, List<DoctorSessionDto>> sessionsByWeekday) {
+        EnumMap<DayOfWeek, List<Slot>> slotsByDay = new EnumMap<>(DayOfWeek.class);
+        for (DayOfWeek dow : DayOfWeek.values()) {
+            slotsByDay.put(dow, new ArrayList<>());
         }
-        return chooseBest(sessionScheduleRepository
-                                  .findWithChildrenByModeAndWeekStartDate(ScheduleMode.GLOBAL_TEMPLATE, weekStart));
+        for (Slot slot : weekSlots) {
+            slotsByDay.get(slot.getDate().getDayOfWeek()).add(slot);
+        }
+        for (DayOfWeek dow : DayOfWeek.values()) {
+            List<Slot> daySlots = slotsByDay.get(dow);
+            if (daySlots.isEmpty()) {
+                continue;
+            }
+            daySlots.sort(Comparator.comparing(Slot::getStartTime));
+            int idx = 1;
+            List<DoctorSessionDto> target = sessionsByWeekday.get(String.valueOf(dow.getValue()));
+            for (Slot slot : daySlots) {
+                target.add(buildSessionDto(idx++, slot.getStartTime(), slot.getEndTime()));
+            }
+        }
     }
 
     private
-    SessionSchedule chooseBest(List<SessionSchedule> schedules) {
-        return schedules.stream()
-                        .filter(s -> s.getStatus() != ScheduleStatus.ARCHIVED)
-                        .max(Comparator.comparingInt(this::statusPriority)
-                                       .thenComparing(
-                                               SessionSchedule::getVersion,
-                                               Comparator.nullsFirst(Long::compareTo)
-                                                     )
-                                       .thenComparing(SessionSchedule::getId, Comparator.nullsFirst(Long::compareTo)))
-                        .orElse(null);
-    }
-
-    private
-    int statusPriority(SessionSchedule schedule) {
-        return switch (schedule.getStatus()) {
-            case PUBLISHED -> 3;
-            case DRAFT -> 2;
-            default -> 1;
-        };
+    DoctorSessionDto buildSessionDto(int index, LocalTime start, LocalTime end) {
+        return DoctorSessionDto.builder()
+                               .label("Session " + index)
+                               .startHHmm(start.format(TIME_FORMAT))
+                               .endHHmm(end.format(TIME_FORMAT))
+                               .build();
     }
 
     private
