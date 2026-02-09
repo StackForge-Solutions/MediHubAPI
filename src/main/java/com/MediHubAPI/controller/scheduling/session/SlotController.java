@@ -1,4 +1,4 @@
-package com.MediHubAPI.controller;
+package com.MediHubAPI.controller.scheduling.session;
 
 import com.MediHubAPI.dto.*;
 import com.MediHubAPI.exception.HospitalAPIException;

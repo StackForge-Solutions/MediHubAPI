@@ -1,18 +1,23 @@
 package com.MediHubAPI.service;
 
 import com.MediHubAPI.dto.InvoiceDtos;
+import com.MediHubAPI.exception.ValidationException;
+import com.MediHubAPI.exception.ValidationException.ValidationErrorDetail;
 import com.MediHubAPI.exception.billing.DraftUpsertNotAllowedException;
 import com.MediHubAPI.exception.billing.IdempotencyConflictException;
+import com.MediHubAPI.exception.billing.InvoiceNotFoundException;
+import com.MediHubAPI.exception.HospitalAPIException;
 import com.MediHubAPI.model.User;
 import com.MediHubAPI.model.billing.DoctorServiceItem;
 import com.MediHubAPI.model.billing.Invoice;
 import com.MediHubAPI.model.billing.InvoiceAuditLog;
 import com.MediHubAPI.model.billing.InvoiceItem;
 import com.MediHubAPI.model.billing.InvoicePayment;
+import com.MediHubAPI.model.Appointment;
 import com.MediHubAPI.repository.DoctorServiceItemRepository;
-import com.MediHubAPI.repository.InvoiceItemRepository;
 import com.MediHubAPI.repository.InvoicePaymentRepository;
 import com.MediHubAPI.repository.InvoiceRepository;
+import com.MediHubAPI.repository.AppointmentRepository;
 import com.MediHubAPI.service.billing.BillNumberSequenceService;
 import com.MediHubAPI.service.billing.InvoiceAuditService;
 import com.MediHubAPI.service.billing.ReceiptNumberSequenceService;
@@ -40,6 +45,7 @@ public class InvoiceService {
     private final DoctorServiceItemRepository serviceRepo;
     private final BillNumberSequenceService billSeq;
     private final ReceiptNumberSequenceService receiptSeq;
+    private final AppointmentRepository appointmentRepo;
 
     // ✅ NEW
     private final InvoiceAuditService auditService;
@@ -290,6 +296,363 @@ public class InvoiceService {
     public Invoice getDraftByAppointment(Long appointmentId) {
         return invoiceRepo.findTopByAppointmentIdOrderByCreatedAtDesc(appointmentId)
                 .orElseThrow(() -> new EntityNotFoundException("No invoice for appointmentId=" + appointmentId));
+    }
+
+    @Transactional
+    public Long saveConsultDraft(InvoiceDtos.SaveConsultDraftReq req, String createdBy) {
+        List<ValidationErrorDetail> details = new ArrayList<>();
+
+        String currency = (req.currency() == null || req.currency().isBlank()) ? "INR" : req.currency().trim();
+
+        Integer token = null;
+        if (req.token() != null && !req.token().isBlank()) {
+            try {
+                token = Integer.parseInt(req.token().trim());
+            } catch (NumberFormatException nfe) {
+                details.add(new ValidationErrorDetail("token", "must be numeric"));
+            }
+        }
+
+        Invoice inv;
+        boolean isUpdate = req.invoiceId() != null;
+        if (isUpdate) {
+            inv = invoiceRepo.findByIdForUpdate(req.invoiceId())
+                    .orElseThrow(() -> new InvoiceNotFoundException(req.invoiceId(), true));
+
+            if (inv.getStatus() != Invoice.Status.DRAFT) {
+                details.add(new ValidationErrorDetail("invoiceId", "only DRAFT invoices can be updated"));
+            }
+            if (!Objects.equals(inv.getAppointmentId(), req.appointmentId())) {
+                details.add(new ValidationErrorDetail("invoiceId", "appointmentId mismatch"));
+            }
+
+            inv.getItems().clear();
+        } else {
+            inv = new Invoice();
+            inv.setStatus(Invoice.Status.DRAFT);
+            inv.setCreatedBy(createdBy);
+            inv.setCreatedAt(LocalDateTime.now());
+            inv.setPaidAmount(BigDecimal.ZERO);
+        }
+
+        inv.setAppointmentId(req.appointmentId());
+        inv.setDoctor(loadUser(req.doctorId()));
+        inv.setPatient(loadUser(req.patientId()));
+        inv.setClinicId(req.clinicId());
+        inv.setToken(token);
+        inv.setQueue(req.queue());
+        inv.setRoom(req.room());
+        inv.setCurrency(currency);
+        inv.setNotes(req.notes());
+
+        BigDecimal subTotal = BigDecimal.ZERO;
+        BigDecimal discountTotal = BigDecimal.ZERO;
+        BigDecimal taxTotal = BigDecimal.ZERO;
+        List<InvoiceItem> newItems = new ArrayList<>();
+        int sl = 1;
+
+        List<InvoiceDtos.ConsultDraftItemReq> itemReqs = req.items();
+        if (itemReqs == null || itemReqs.isEmpty()) {
+            details.add(new ValidationErrorDetail("items", "must not be empty"));
+        } else {
+            for (int i = 0; i < itemReqs.size(); i++) {
+                InvoiceDtos.ConsultDraftItemReq it = itemReqs.get(i);
+                String idx = "items[" + i + "]";
+
+                BigDecimal qty = it.qty() == null ? null : BigDecimal.valueOf(it.qty());
+                if (qty == null || qty.compareTo(BigDecimal.ZERO) <= 0) {
+                    details.add(new ValidationErrorDetail(idx + ".qty", "must be greater than 0"));
+                    continue;
+                }
+
+                BigDecimal unitPrice = it.unitPrice();
+                BigDecimal disc = it.discountAmount();
+                BigDecimal taxPercent = it.taxPercent();
+
+                BigDecimal lineBase = unitPrice.multiply(qty);
+                BigDecimal taxable = lineBase.subtract(disc);
+                if (taxable.compareTo(BigDecimal.ZERO) < 0) {
+                    details.add(new ValidationErrorDetail(idx + ".discountAmount", "discount exceeds line amount"));
+                    taxable = BigDecimal.ZERO;
+                }
+                BigDecimal tax = taxable.multiply(taxPercent).divide(BigDecimal.valueOf(100));
+                BigDecimal lineTotal = taxable.add(tax);
+
+                subTotal = subTotal.add(lineBase);
+                discountTotal = discountTotal.add(disc);
+                taxTotal = taxTotal.add(tax);
+
+                InvoiceItem item = InvoiceItem.builder()
+                        .invoice(inv)
+                        .serviceItemId(it.serviceItemId())
+                        .slNo(sl++)
+                        .name(it.name())
+                        .qty(it.qty())
+                        .unitPrice(round(unitPrice))
+                        .discountAmount(round(disc))
+                        .taxPercent(round(taxPercent))
+                        .taxAmount(round(tax))
+                        .lineTotal(round(lineTotal))
+                        .itemType(req.itemType())
+                        .code(it.serviceCode())
+                        .build();
+
+                newItems.add(item);
+            }
+        }
+
+        BigDecimal net = subTotal.subtract(discountTotal);
+        if (net.compareTo(BigDecimal.ZERO) <= 0) {
+            details.add(new ValidationErrorDetail("items", "total after discounts must be greater than 0"));
+        }
+
+        if (!details.isEmpty()) {
+            throw new ValidationException("Validation failed", details);
+        }
+
+        inv.getItems().addAll(newItems);
+
+        inv.setSubTotal(round(subTotal));
+        inv.setDiscountTotal(round(discountTotal));
+        inv.setTaxTotal(round(taxTotal));
+        inv.setRoundOff(BigDecimal.ZERO);
+
+        BigDecimal grand = subTotal.subtract(discountTotal).add(taxTotal);
+        inv.setGrandTotal(round(grand));
+
+        if (inv.getPaidAmount() == null) inv.setPaidAmount(BigDecimal.ZERO);
+        inv.setBalanceDue(round(inv.getGrandTotal().subtract(inv.getPaidAmount())));
+
+        Invoice saved = isUpdate ? invoiceRepo.saveAndFlush(inv) : invoiceRepo.save(inv);
+        return saved.getId();
+    }
+
+    @Transactional(readOnly = true)
+    public InvoiceDtos.DraftConsultationRes getDraftConsultation(Long appointmentId) {
+        Invoice invoice = invoiceRepo.findTopByAppointmentIdOrderByCreatedAtDesc(appointmentId)
+                .orElseThrow(() -> new InvoiceNotFoundException(appointmentId));
+
+        if (invoice.getStatus() != Invoice.Status.DRAFT) {
+            throw new InvoiceNotFoundException(appointmentId);
+        }
+
+        List<ValidationErrorDetail> details = new ArrayList<>();
+
+        List<InvoiceItem> invoiceItems = invoice.getItems();
+        if (invoiceItems == null || invoiceItems.isEmpty()) {
+            details.add(new ValidationErrorDetail("items", "must not be empty"));
+        }
+
+        List<InvoiceDtos.DraftConsultationItem> items = new ArrayList<>();
+        if (invoiceItems != null) {
+            for (int i = 0; i < invoiceItems.size(); i++) {
+                InvoiceItem it = invoiceItems.get(i);
+                String idx = "items[" + i + "]";
+
+                if (it.getName() == null || it.getName().isBlank()) {
+                    details.add(new ValidationErrorDetail(idx + ".name", "must not be blank"));
+                }
+                if (it.getQty() == null || it.getQty() <= 0) {
+                    details.add(new ValidationErrorDetail(idx + ".qty", "must be greater than 0"));
+                }
+                if (it.getUnitPrice() == null || it.getUnitPrice().compareTo(BigDecimal.ZERO) < 0) {
+                    details.add(new ValidationErrorDetail(idx + ".unitPrice", "must be greater than or equal to 0"));
+                }
+                if (it.getDiscountAmount() == null || it.getDiscountAmount().compareTo(BigDecimal.ZERO) < 0) {
+                    details.add(new ValidationErrorDetail(idx + ".discountAmount", "must be greater than or equal to 0"));
+                }
+
+                items.add(new InvoiceDtos.DraftConsultationItem(
+                        it.getName(),
+                        it.getQty(),
+                        it.getUnitPrice(),
+                        it.getDiscountAmount(),
+                        it.getServiceItemId()
+                ));
+            }
+        }
+
+        if (!details.isEmpty()) {
+            throw new ValidationException("Validation failed", details);
+        }
+
+        return new InvoiceDtos.DraftConsultationRes(
+                invoice.getId(),
+                invoice.getNotes(),
+                items
+        );
+    }
+
+    @Transactional
+    public InvoiceDtos.AppointmentDraftView createConsultDraftIfMissing(InvoiceDtos.ConsultationDraftHelperReq req, String createdBy) {
+
+        Optional<Invoice> existing = invoiceRepo.findTopByAppointmentIdOrderByCreatedAtDesc(req.appointmentId());
+        if (existing.isPresent()) {
+            return getAppointmentDraftOrInvoice(req.appointmentId());
+        }
+
+        List<ValidationErrorDetail> details = new ArrayList<>();
+        if (req.currency() == null || req.currency().isBlank()) {
+            details.add(new ValidationErrorDetail("currency", "must not be blank"));
+        }
+        if (!details.isEmpty()) throw new ValidationException("Validation failed", details);
+
+        BigDecimal fee = req.fee() != null ? req.fee() : BigDecimal.ZERO;
+
+        Invoice inv = new Invoice();
+        inv.setStatus(Invoice.Status.DRAFT);
+        inv.setCreatedBy(createdBy);
+        inv.setCreatedAt(LocalDateTime.now());
+        inv.setAppointmentId(req.appointmentId());
+        inv.setDoctor(loadUser(req.doctorId()));
+        inv.setPatient(loadUser(req.patientId()));
+        inv.setClinicId(req.clinicId());
+        inv.setCurrency(req.currency().trim());
+        inv.setPaidAmount(BigDecimal.ZERO);
+
+        InvoiceItem item = InvoiceItem.builder()
+                .invoice(inv)
+                .slNo(1)
+                .name("Consultation")
+                .qty(1)
+                .unitPrice(round(fee))
+                .discountAmount(BigDecimal.ZERO)
+                .taxPercent(BigDecimal.ZERO)
+                .taxAmount(BigDecimal.ZERO)
+                .lineTotal(round(fee))
+                .itemType(InvoiceDtos.ItemType.SERVICE)
+                .code("CONSULT")
+                .build();
+
+        inv.getItems().add(item);
+
+        inv.setSubTotal(round(fee));
+        inv.setDiscountTotal(BigDecimal.ZERO);
+        inv.setTaxTotal(BigDecimal.ZERO);
+        inv.setRoundOff(BigDecimal.ZERO);
+        inv.setGrandTotal(round(fee));
+        inv.setBalanceDue(round(fee));
+
+        invoiceRepo.save(inv);
+        return getAppointmentDraftOrInvoice(req.appointmentId());
+    }
+
+    @Transactional(readOnly = true)
+    public InvoiceDtos.InvoiceSummaryView getInvoiceSummary(Long invoiceId) {
+        Invoice inv = invoiceRepo.findById(invoiceId)
+                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId, true));
+
+        InvoicePayment latestPay = (inv.getPayments() == null || inv.getPayments().isEmpty()) ? null
+                : inv.getPayments().stream()
+                .max(Comparator.comparing(InvoicePayment::getReceivedAt, Comparator.nullsLast(Comparator.naturalOrder())))
+                .orElse(null);
+
+        InvoiceDtos.AppointmentPayment payment = latestPay == null
+                ? defaultPayment()
+                : new InvoiceDtos.AppointmentPayment(
+                latestPay.getMethod() != null ? latestPay.getMethod().name() : "Cash",
+                latestPay.getAmount(),
+                latestPay.getCardType(),
+                null,
+                null,
+                latestPay.getTxnRef()
+        );
+
+        return new InvoiceDtos.InvoiceSummaryView(
+                inv.getId(),
+                inv.getStatus() == null ? "ERROR" : inv.getStatus().name(),
+                inv.getPaidAmount(),
+                inv.getBalanceDue(),
+                payment
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public InvoiceDtos.AppointmentDraftView getAppointmentDraftOrInvoice(Long appointmentId) {
+        Appointment appt = appointmentRepo.findById(appointmentId)
+                .orElseThrow(() -> new HospitalAPIException(org.springframework.http.HttpStatus.NOT_FOUND, "APPOINTMENT_NOT_FOUND", "Appointment not found"));
+
+        Optional<Invoice> optInv = invoiceRepo.findTopByAppointmentIdAndItems_ItemTypeOrderByCreatedAtDesc(
+                appointmentId,
+                InvoiceDtos.ItemType.SERVICE
+        );
+        if (optInv.isEmpty()) {
+            return new InvoiceDtos.AppointmentDraftView(
+                    null,
+                    "NEW",
+                    null,
+                    fullName(appt.getPatient()),
+                    fullName(appt.getDoctor()),
+                    department(appt.getDoctor()),
+                    List.of(),
+                    defaultPayment(),
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO
+            );
+        }
+
+        Invoice inv = optInv.get();
+        String status = inv.getStatus() != null ? inv.getStatus().name() : "ERROR";
+
+        List<InvoiceDtos.AppointmentItem> items = inv.getItems() == null ? List.of() :
+                inv.getItems().stream().map(it -> new InvoiceDtos.AppointmentItem(
+                        it.getCode(),
+                        it.getName(),
+                        it.getUnitPrice(),
+                        it.getQty(),
+                        it.getTaxPercent() != null && it.getTaxPercent().compareTo(BigDecimal.ZERO) > 0,
+                        it.getTaxPercent()
+                )).toList();
+
+        InvoicePayment latestPay = (inv.getPayments() == null || inv.getPayments().isEmpty()) ? null
+                : inv.getPayments().stream()
+                .max(Comparator.comparing(InvoicePayment::getReceivedAt, Comparator.nullsLast(Comparator.naturalOrder())))
+                .orElse(null);
+
+        InvoiceDtos.AppointmentPayment payment = latestPay == null
+                ? defaultPayment()
+                : new InvoiceDtos.AppointmentPayment(
+                        latestPay.getMethod() != null ? latestPay.getMethod().name() : "Cash",
+                        latestPay.getAmount(),
+                        latestPay.getCardType(),
+                        null,
+                        null,
+                        latestPay.getTxnRef()
+        );
+
+        return new InvoiceDtos.AppointmentDraftView(
+                inv.getId(),
+                status,
+                inv.getToken() == null ? null : String.valueOf(inv.getToken()),
+                fullName(inv.getPatient()),
+                fullName(inv.getDoctor()),
+                department(inv.getDoctor()),
+                items,
+                payment,
+                inv.getPaidAmount(),
+                inv.getBalanceDue()
+        );
+    }
+
+    private InvoiceDtos.AppointmentPayment defaultPayment() {
+        return new InvoiceDtos.AppointmentPayment("Cash", BigDecimal.ZERO, null, null, null, null);
+    }
+
+    private String fullName(User u) {
+        if (u == null) return null;
+        String first = u.getFirstName() == null ? "" : u.getFirstName();
+        String last = u.getLastName() == null ? "" : u.getLastName();
+        String title = u.getTitle() == null ? "" : u.getTitle();
+        String name = (title + " " + first + " " + last).trim();
+        return name.isEmpty() ? null : name;
+    }
+
+    private String department(User doctor) {
+        if (doctor == null || doctor.getSpecialization() == null) return null;
+        if (doctor.getSpecialization().getDepartment() != null && !doctor.getSpecialization().getDepartment().isBlank()) {
+            return doctor.getSpecialization().getDepartment();
+        }
+        return doctor.getSpecialization().getName();
     }
 
     @Transactional

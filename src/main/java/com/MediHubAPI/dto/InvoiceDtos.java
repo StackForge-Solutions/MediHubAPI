@@ -46,12 +46,6 @@ public class InvoiceDtos {
     ) {
     }
 
-    public record InvoiceSummaryRes(
-            Long id, String status, String billNumber,
-            BigDecimal grandTotal, BigDecimal paidAmount, BigDecimal balanceDue
-    ) {
-    }
-
     // ---------- Add Payment ----------
     public record AddPaymentReq(
             @NotBlank String idempotencyKey,
@@ -157,20 +151,95 @@ public class InvoiceDtos {
         ) {}
     }
 
-    public record InvoiceResp(
-            Long id,
-            String status,
-            String billNumber,
-            BigDecimal subTotal,
-            BigDecimal discountTotal,
-            BigDecimal taxTotal,
-            BigDecimal roundOff,
-            BigDecimal grandTotal,
-            BigDecimal paidAmount,
-            BigDecimal balanceDue,
-            LocalDateTime createdAt,
-            LocalDateTime issuedAt
-    ) {
-    }
+    // ---------- Draft Consultation View ----------
+    public record DraftConsultationRes(
+            Long invoiceId,
+            String notes,
+            List<DraftConsultationItem> items
+    ) {}
 
+    public record DraftConsultationItem(
+            String name,
+            Integer qty,
+            BigDecimal unitPrice,
+            BigDecimal discountAmount,
+            Long serviceItemId
+    ) {}
+
+    // ---------- Consult Billing Draft (Save/Update) ----------
+    public record SaveConsultDraftReq(
+            Long invoiceId, // null => create, value => update
+            @NotNull Long appointmentId,
+            @NotNull Long doctorId,
+            @NotNull Long patientId,
+            @NotBlank String clinicId,
+            String token,               // optional string, we will parse to int if numeric
+            String queue,
+            String room,
+            String currency,
+            @NotNull ItemType itemType,
+            String notes,
+            @NotEmpty @Valid List<ConsultDraftItemReq> items
+    ) {}
+
+    public record ConsultDraftItemReq(
+            Long serviceItemId,
+            String serviceCode,
+            @NotBlank String name,
+            @NotNull @Min(1) Integer qty,
+            @NotNull @Digits(integer = 12, fraction = 2) @DecimalMin(value = "0.00") BigDecimal unitPrice,
+            @NotNull @Digits(integer = 12, fraction = 2) @DecimalMin(value = "0.00") BigDecimal discountAmount,
+            @NotNull @Digits(integer = 5, fraction = 2) @DecimalMin(value = "0.00") BigDecimal taxPercent
+    ) {}
+
+    // Helper to create consultation draft with defaults
+    public record ConsultationDraftHelperReq(
+            @NotNull Long appointmentId,
+            @NotNull Long doctorId,
+            @NotNull Long patientId,
+            @NotBlank String clinicId,
+            BigDecimal fee,
+            String currency
+    ) {}
+
+    // ---------- Appointment draft/invoice view ----------
+    public record AppointmentDraftView(
+            Long invoiceId,
+            String status,
+            String tokenNo,
+            String patientName,
+            String doctorName,
+            String department,
+            List<AppointmentItem> items,
+            AppointmentPayment payment,
+            BigDecimal paidTotal,
+            BigDecimal balanceDue
+    ) {}
+
+    public record AppointmentItem(
+            String serviceCode,
+            String serviceName,
+            BigDecimal unitPrice,
+            Integer quantity,
+            Boolean taxable,
+            BigDecimal taxPercent
+    ) {}
+
+    public record AppointmentPayment(
+            String mode,
+            BigDecimal amountPaid,
+            String cardType,
+            String bankName,
+            String approvalRefNo,
+            String txnRefNo
+    ) {}
+
+    // ---------- Invoice summary ----------
+    public record InvoiceSummaryView(
+            Long invoiceId,
+            String status,
+            BigDecimal paidTotal,
+            BigDecimal balanceDue,
+            AppointmentPayment payment
+    ) {}
 }
