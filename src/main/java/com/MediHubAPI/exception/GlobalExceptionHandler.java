@@ -7,6 +7,10 @@ import com.MediHubAPI.exception.billing.DuplicateTxnRefException;
 import com.MediHubAPI.exception.billing.IdempotencyConflictException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,18 +19,25 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
-import org.springframework.validation.FieldError;
+import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @ControllerAdvice
+@RequiredArgsConstructor
+@Order(Ordered.LOWEST_PRECEDENCE)
 public class GlobalExceptionHandler {
+
+    private final ValidationErrorMapper validationErrorMapper;
 
     @ExceptionHandler(HospitalAPIException.class)
     public ResponseEntity<ErrorResponse> handleHospitalAPIException(HospitalAPIException ex, WebRequest request) {
@@ -43,25 +54,21 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(
-            MethodArgumentNotValidException ex, WebRequest request) {
+            MethodArgumentNotValidException ex, HttpServletRequest request) {
+        ValidationErrorMapper.ValidationProblem problem = validationErrorMapper.from(ex);
+        return buildValidationResponse(problem, request);
+    }
 
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach(error -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<ErrorResponse> handleBindExceptions(BindException ex, HttpServletRequest request) {
+        ValidationErrorMapper.ValidationProblem problem = validationErrorMapper.from(ex);
+        return buildValidationResponse(problem, request);
+    }
 
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "Validation failed",
-                request.getDescription(false),
-                Instant.now()
-        );
-
-        errorResponse.setValidationErrors(errors);
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolations(ConstraintViolationException ex, HttpServletRequest request) {
+        ValidationErrorMapper.ValidationProblem problem = validationErrorMapper.from(ex);
+        return buildValidationResponse(problem, request);
     }
 
     @ExceptionHandler({
@@ -125,38 +132,41 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
-        //  NEW: Handle invalid enum (like wrong role value)
+    //  NEW: Handle invalid enum (like wrong role value)
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidFormat(HttpMessageNotReadableException ex, WebRequest request) {
-        Throwable cause = ex.getMostSpecificCause();
-        String message = "Invalid input format";
+    public ResponseEntity<ErrorResponse> handleInvalidFormat(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        ValidationErrorMapper.ValidationProblem problem = validationErrorMapper.from(ex);
+        Map<String, String> validationErrors = new HashMap<>(problem.validationErrors());
+        List<String> errors = new ArrayList<>(problem.errors());
 
+        Throwable cause = ex.getMostSpecificCause();
         if (cause instanceof InvalidFormatException formatEx && formatEx.getTargetType().isEnum()) {
             String invalidValue = formatEx.getValue().toString();
             Class<?> enumClass = formatEx.getTargetType();
+            String override;
 
             if (enumClass.getSimpleName().equals("ERole")) {
-                boolean isCaseIssue = java.util.Arrays.stream(com.MediHubAPI.model.ERole.values())
+                boolean isCaseIssue = Arrays.stream(com.MediHubAPI.model.ERole.values())
                         .anyMatch(role -> role.name().equalsIgnoreCase(invalidValue));
 
                 if (isCaseIssue) {
-                    message = "Please enter the role in uppercase.";
+                    override = "Please enter the role in uppercase.";
                 } else {
-                    message = "Role not found.";
+                    override = "Role not found.";
                 }
             } else {
-                message = "Invalid enum value.";
+                override = "Invalid enum value.";
             }
+
+            String key = validationErrors.isEmpty()
+                    ? "payload"
+                    : validationErrors.keySet().iterator().next();
+            validationErrors.put(key, override);
+            errors.add(0, override);
+            problem = new ValidationErrorMapper.ValidationProblem(validationErrors, errors, "Validation failed");
         }
 
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                message,
-                request.getDescription(false),
-                Instant.now()
-        );
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+        return buildValidationResponse(problem, request);
     }
 
 
@@ -218,4 +228,19 @@ public class GlobalExceptionHandler {
     }
 
 
+    private ResponseEntity<ErrorResponse> buildValidationResponse(ValidationErrorMapper.ValidationProblem problem, HttpServletRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                "Validation failed",
+                request.getRequestURI(),
+                Instant.now()
+        );
+        errorResponse.setValidationErrors(problem.validationErrors());
+        errorResponse.setErrors(problem.errors());
+        errorResponse.setCode("VALIDATION_ERROR");
+        errorResponse.setErrorCode("VALIDATION_ERROR");
+        errorResponse.setTraceId(validationErrorMapper.extractTraceId(request));
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
 }

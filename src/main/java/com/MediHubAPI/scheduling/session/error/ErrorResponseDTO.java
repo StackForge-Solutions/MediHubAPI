@@ -9,5 +9,8 @@ public record ErrorResponseDTO(
         String code,
         String message,
         String path,
-        Map<String, Object> details
+        Map<String, Object> details,
+        Map<String, String> validationErrors,
+        String errorCode,
+        String traceId
 ) {}
