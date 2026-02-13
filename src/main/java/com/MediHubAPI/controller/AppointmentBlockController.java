@@ -27,8 +27,7 @@ public class AppointmentBlockController {
     @PostMapping("/blocks")
     public ResponseEntity<AppointmentBlockResponse> blockSlots(
             @RequestHeader("Idempotency-Key") String idempotencyKey,
-            @Valid @RequestBody AppointmentBlockRequest request) {
-        AppointmentBlockResponse response = appointmentBlockApiService.blockSlots(idempotencyKey, request);
+            @Valid @RequestBody AppointmentBlockRequest request) {AppointmentBlockResponse response = appointmentBlockApiService.blockSlots(idempotencyKey, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
