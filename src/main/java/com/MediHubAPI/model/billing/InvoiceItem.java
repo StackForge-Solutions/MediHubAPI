@@ -66,6 +66,31 @@ public class InvoiceItem {
     @Column(name = "code", length = 64)
     private String code;
 
+    // ===== Lab result fields (used by Lab module) =====
+    @Column(name = "sample_status", length = 24)
+    private String sampleStatus; // PENDING/COMPLETED/NO_SHOW/RESERVED
+
+    @Column(name = "result_value", length = 128)
+    private String resultValue;
+
+    @Column(name = "result_unit", length = 32)
+    private String resultUnit;
+
+    @Column(name = "reference_range", length = 96)
+    private String referenceRange;
+
+    @Column(name = "out_of_range")
+    private Boolean outOfRange;
+
+    @Column(name = "authorized")
+    private Boolean authorized;
+
+    @Column(name = "authorized_by", length = 128)
+    private String authorizedBy;
+
+    @Column(name = "authorized_at")
+    private java.time.LocalDateTime authorizedAt;
+
     // ✅ Optional: Auto-calculate lineTotal before persist
     @PrePersist
     @PreUpdate
