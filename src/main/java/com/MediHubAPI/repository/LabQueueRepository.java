@@ -36,7 +36,7 @@ public interface LabQueueRepository extends PagingAndSortingRepository<Invoice, 
             SELECT COALESCE(ii.sample_status, 'PENDING')
             FROM invoice_items ii
             WHERE ii.invoice_id = i.id
-              AND (ii.item_type IS NULL OR ii.item_type = 'LAB_TEST')
+              AND ii.item_type = 'LAB_TEST'
             ORDER BY FIELD(COALESCE(ii.sample_status, 'PENDING'),
                            'COMPLETED','PENDING','RESERVED','NO_SHOW')
             LIMIT 1
@@ -52,20 +52,25 @@ public interface LabQueueRepository extends PagingAndSortingRepository<Invoice, 
           )                                                                    AS referrer,
           i.notes                                                              AS notes,
           i.room                                                               AS room
-        FROM invoices i
+        FROM (
+            SELECT i.*,
+                   ROW_NUMBER() OVER (PARTITION BY i.appointment_id ORDER BY i.created_at DESC) AS rn
+            FROM invoices i
+            WHERE DATE(i.created_at) = :date
+              AND i.status IN ('ISSUED','PARTIALLY_PAID','PAID')
+              AND i.balance_due = 0
+              AND i.appointment_id IS NOT NULL
+        ) i
         JOIN users pu ON pu.id = i.patient_id
         LEFT JOIN patients pat ON pat.user_id = i.patient_id
         LEFT JOIN users du ON du.id = i.doctor_id
-        WHERE DATE(i.created_at) = :date
-          AND i.status IN ('ISSUED','PARTIALLY_PAID','PAID')
-          AND i.balance_due = 0
-          AND i.appointment_id IS NOT NULL
+        WHERE i.rn = 1
           AND (
             :status = 'all'
             OR EXISTS (
                 SELECT 1 FROM invoice_items ii2
                 WHERE ii2.invoice_id = i.id
-                  AND (ii2.item_type IS NULL OR ii2.item_type = 'LAB_TEST')
+                  AND ii2.item_type = 'LAB_TEST'
                   AND COALESCE(ii2.sample_status, 'PENDING') = UPPER(:status)
             )
           )
@@ -79,18 +84,25 @@ public interface LabQueueRepository extends PagingAndSortingRepository<Invoice, 
         ORDER BY i.created_at DESC
         """,
         countQuery = """
-        SELECT COUNT(*) FROM invoices i
+        SELECT COUNT(*) FROM (
+            SELECT i.id,
+                   i.patient_id,
+                   i.room,
+                   ROW_NUMBER() OVER (PARTITION BY i.appointment_id ORDER BY i.created_at DESC) AS rn
+            FROM invoices i
+            WHERE DATE(i.created_at) = :date
+              AND i.status IN ('ISSUED','PARTIALLY_PAID','PAID')
+              AND i.balance_due = 0
+              AND i.appointment_id IS NOT NULL
+        ) i
         JOIN users pu ON pu.id = i.patient_id
-        WHERE DATE(i.created_at) = :date
-          AND i.status IN ('ISSUED','PARTIALLY_PAID','PAID')
-          AND i.balance_due = 0
-          AND i.appointment_id IS NOT NULL
+        WHERE i.rn = 1
           AND (
             :status = 'all'
             OR EXISTS (
                 SELECT 1 FROM invoice_items ii2
                 WHERE ii2.invoice_id = i.id
-                  AND (ii2.item_type IS NULL OR ii2.item_type = 'LAB_TEST')
+                  AND ii2.item_type = 'LAB_TEST'
                   AND COALESCE(ii2.sample_status, 'PENDING') = UPPER(:status)
             )
           )

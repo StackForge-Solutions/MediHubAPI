@@ -14,24 +14,26 @@ import java.time.Year;
 
      private final BillNumberSequenceRepository repo;
 
-     @Transactional
-     public String next(String clinicId) {
-         int fy = Year.now().getValue(); // or your FY logic
+    @Transactional
+    public String next(String clinicId) {
+        // Normalize clinicId to avoid "null" in bill numbers
+        String tenant = (clinicId == null || clinicId.isBlank()) ? "CLINIC" : clinicId.trim().toUpperCase();
+        int fy = Year.now().getValue(); // or your FY logic
 
-         BillNumberSequence row = repo.findForUpdate(clinicId, fy)
-                 .orElseGet(() -> {
-                     BillNumberSequence r = new BillNumberSequence();
-                     r.setClinicId(clinicId);
-                     r.setFy(fy);
-                     r.setNextVal(0L);     // first call becomes 1
-                     return repo.save(r);
-                 });
+        BillNumberSequence row = repo.findForUpdate(tenant, fy)
+                .orElseGet(() -> {
+                    BillNumberSequence r = new BillNumberSequence();
+                    r.setClinicId(tenant);
+                    r.setFy(fy);
+                    r.setNextVal(0L);     // first call becomes 1
+                    return repo.save(r);
+                });
 
-         long seq = row.getNextVal() + 1;
-         row.setNextVal(seq);
-         repo.save(row);
+        long seq = row.getNextVal() + 1;
+        row.setNextVal(seq);
+        repo.save(row);
 
-         // ✅ Option 1 format: FY-CLINIC-SEQ
-         return fy + "-" + clinicId + "-" + String.format("%06d", seq);
-     }
- }
+        // ✅ Option 1 format: FY-CLINIC-SEQ
+        return fy + "-" + tenant + "-" + String.format("%06d", seq);
+    }
+}
