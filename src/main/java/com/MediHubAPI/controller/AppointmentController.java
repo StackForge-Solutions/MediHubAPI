@@ -94,7 +94,7 @@ public class AppointmentController {
 
     @PutMapping("/{id}/arrive")
     public ResponseEntity<ApiResponse<Void>> markAsArrived(@PathVariable Long id) {
-        log.info("✅ Marking appointment ID={} as ARRIVED", id);
+        log.info(" Marking appointment ID={} as ARRIVED", id);
         appointmentService.markAsArrived(id);
         return ResponseEntity.ok(ApiResponse.ok("Marked as arrived", "/appointments/" + id + "/arrive"));
     }

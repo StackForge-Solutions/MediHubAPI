@@ -32,7 +32,7 @@ public class SlotShiftRequestDto {
     @Size(max = 500)
     private String reason;                  // optional but recommended
 
-    // ✅ NEW: explicit intent + audit
+    //  NEW: explicit intent + audit
     @NotNull
     private ShiftDirection direction;       // ADVANCE (earlier) or POSTPONE (later)
 
@@ -42,7 +42,7 @@ public class SlotShiftRequestDto {
     @NotNull
     private InitiatorRole initiatedByRole;  // only DOCTOR or STAFF
 
-    // ✅ NEW: scope/behavior knobs
+    //  NEW: scope/behavior knobs
     private boolean onlyBooked;             // true = shift only booked (has appointment)
     private boolean includeBlocked;         // include BLOCKED slots in shift window?
     private boolean dryRun;                 // true = calculate/return result but DON’T save

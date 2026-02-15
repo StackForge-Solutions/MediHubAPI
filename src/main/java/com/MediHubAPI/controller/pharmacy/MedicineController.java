@@ -29,7 +29,7 @@ public class MedicineController {
         return medicineStockService.search(mode, form, q, limit, inStockOnly);
     }
 
-    /** ✅ GET /api/pharmacy/medicines/{id}/stock */
+    /**  GET /api/pharmacy/medicines/{id}/stock */
     @GetMapping("/{id}/stock")
     public DataResponse<MedicineStockDto> getStock(@PathVariable("id") Long id) {
         log.info("API call: getStock medicineId={}", id);

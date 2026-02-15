@@ -166,7 +166,7 @@ public class DoctorServiceImpl implements DoctorService {
                     .startTime(current)
                     .endTime(slotEnd)
                     .status(SlotStatus.AVAILABLE)
-                    .type(SlotType.REGULAR) // ✅ REQUIRED to avoid null
+                    .type(SlotType.REGULAR) //  REQUIRED to avoid null
                     .recurring(false)       // or true if this is from weekly template
                     .build();
 
@@ -209,7 +209,7 @@ public class DoctorServiceImpl implements DoctorService {
     public List<SlotResponseDto> getSlotsForDate(Long doctorId, LocalDate date) {
         validateDoctor(doctorId);
         List<Slot> slots = slotRepository.findByDoctorIdAndDate(doctorId, date);
-        log.info("✅ Fetched {} slots for doctorId={} on {}", slots.size(), doctorId, date);
+        log.info(" Fetched {} slots for doctorId={} on {}", slots.size(), doctorId, date);
         return slots.stream()
                 .map(slot -> modelMapper.map(slot, SlotResponseDto.class))
                 .collect(Collectors.toList());
@@ -257,7 +257,7 @@ public class DoctorServiceImpl implements DoctorService {
         }
 
         slotRepository.saveAll(slots);
-        log.info("✅ Created {} new slots for Doctor={} Date={}", slots.size(), doctor.getId(), date);
+        log.info(" Created {} new slots for Doctor={} Date={}", slots.size(), doctor.getId(), date);
     }
 
     private User validateDoctor(Long id) {

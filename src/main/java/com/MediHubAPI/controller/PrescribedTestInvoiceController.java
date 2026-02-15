@@ -44,7 +44,7 @@ public class PrescribedTestInvoiceController {
     }
 
     /**
-     * ✅ Finalize the draft invoice for prescribed tests.
+     *  Finalize the draft invoice for prescribed tests.
      */
     @PostMapping("/{invoiceId}/finalize")
     public InvoiceDtos.FinalizeInvoiceRes finalizePrescribedTestInvoice(@PathVariable Long invoiceId) {

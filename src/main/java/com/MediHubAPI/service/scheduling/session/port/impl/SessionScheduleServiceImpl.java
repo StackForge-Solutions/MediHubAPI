@@ -105,7 +105,7 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
                                        serverDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)) :
                                        weekStartISO.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
 
-        // ✅ seedSchedules (summary list)
+        //  seedSchedules (summary list)
         List<SessionScheduleSummaryDTO> seedSchedules; {
             List<SessionSchedule> found; if (doctorId != null) {
                 // show all schedules for that doctor & week (GLOBAL_TEMPLATE + OVERRIDE)

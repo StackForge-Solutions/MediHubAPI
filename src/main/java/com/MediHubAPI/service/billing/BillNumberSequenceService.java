@@ -33,7 +33,7 @@ import java.time.Year;
         row.setNextVal(seq);
         repo.save(row);
 
-        // ✅ Option 1 format: FY-CLINIC-SEQ
+        //  Option 1 format: FY-CLINIC-SEQ
         return fy + "-" + tenant + "-" + String.format("%06d", seq);
     }
 }

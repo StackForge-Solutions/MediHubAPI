@@ -13,7 +13,7 @@ public class UserCreateDto {
     private String password;
     private String firstName;
     private String lastName;
-    private Set<ERole> roles; // already done ✅
+    private Set<ERole> roles; // already done 
 
     private LocalDate activationDate;
 

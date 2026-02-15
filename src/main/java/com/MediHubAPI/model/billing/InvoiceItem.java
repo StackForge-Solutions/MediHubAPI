@@ -91,7 +91,7 @@ public class InvoiceItem {
     @Column(name = "authorized_at")
     private java.time.LocalDateTime authorizedAt;
 
-    // ✅ Optional: Auto-calculate lineTotal before persist
+    //  Optional: Auto-calculate lineTotal before persist
     @PrePersist
     @PreUpdate
     private void calculateLineTotal() {

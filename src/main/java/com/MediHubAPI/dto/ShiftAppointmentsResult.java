@@ -36,7 +36,7 @@ public class ShiftAppointmentsResult {
     // reason -> count
     private Map<String, Integer> skipReasonCounts;
 
-    // ✅ Context (helps reproduce/debug later)
+    //  Context (helps reproduce/debug later)
     private Long doctorId;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")

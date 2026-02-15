@@ -25,7 +25,7 @@ public class VisitSummaryServiceImpl implements VisitSummaryService {
     private final ModelMapper modelMapper;
 
     @PersistenceContext
-    private EntityManager entityManager; // ✅ needed to initialize proxies
+    private EntityManager entityManager; //  needed to initialize proxies
 
 
     @Transactional

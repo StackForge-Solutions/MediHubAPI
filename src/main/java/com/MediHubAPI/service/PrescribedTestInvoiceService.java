@@ -131,7 +131,7 @@ public class PrescribedTestInvoiceService {
         // Step 4️⃣: Save (UPSERT — INSERT if new, UPDATE if existing)
         try {
             Invoice saved = isNew ? invoiceRepo.save(inv) : invoiceRepo.saveAndFlush(inv);
-            log.info("✅ Draft invoice {} successfully {} (GrandTotal: {})",
+            log.info(" Draft invoice {} successfully {} (GrandTotal: {})",
                     saved.getId(), (isNew ? "created" : "updated"), saved.getGrandTotal());
             return saved;
         } catch (DataIntegrityViolationException e) {
@@ -183,11 +183,11 @@ public class PrescribedTestInvoiceService {
         if (req.amount() == null || req.amount().compareTo(BigDecimal.ZERO) <= 0)
             throw new IllegalArgumentException("Payment amount must be greater than zero");
 
-        // ✅ Duplicate txn check
+        //  Duplicate txn check
         if (req.txnRef() != null && paymentRepo.existsByTxnRefAndInvoiceId(req.txnRef(), invoiceId))
             throw new IllegalStateException("Duplicate payment detected: same transaction reference already exists");
 
-        // ✅ Overpayment check
+        //  Overpayment check
         BigDecimal dueBefore = inv.getGrandTotal().subtract(inv.getPaidAmount());
         if (req.amount().compareTo(dueBefore) > 0)
             throw new IllegalArgumentException(String.format("Payment %.2f exceeds balance %.2f",
@@ -195,7 +195,7 @@ public class PrescribedTestInvoiceService {
 
         InvoicePayment.Method method = InvoicePayment.Method.valueOf(req.method());
 
-        // ✅ Card type validation
+        //  Card type validation
         String cardType = null;
         if (method.name().contains("CARD")) {
             if (req.cardType() == null || req.cardType().isBlank()) {
@@ -204,12 +204,12 @@ public class PrescribedTestInvoiceService {
             cardType = req.cardType().toUpperCase(); // e.g., VISA, MASTER, RUPAY
         }
 
-        // ✅ Determine payment date
+        //  Determine payment date
         LocalDateTime paymentDate = (req.receivedAt() != null)
                 ? req.receivedAt().toLocalDateTime()
                 : LocalDateTime.now();
 
-        // ✅ Build payment record
+        //  Build payment record
         InvoicePayment payment = InvoicePayment.builder()
                 .invoice(inv)
                 .method(method)
@@ -224,7 +224,7 @@ public class PrescribedTestInvoiceService {
 
         paymentRepo.save(payment);
 
-        // ✅ Update invoice totals
+        //  Update invoice totals
         BigDecimal updatedPaid = inv.getPaidAmount().add(payment.getAmount());
         inv.setPaidAmount(round(updatedPaid));
 
@@ -247,7 +247,7 @@ public class PrescribedTestInvoiceService {
 
         invoiceRepo.save(inv);
 
-        log.info("✅ Payment {} added for invoice={}, method={}, cardType={}, balanceDue={}",
+        log.info(" Payment {} added for invoice={}, method={}, cardType={}, balanceDue={}",
                 payment.getAmount(), invoiceId, method, cardType, inv.getBalanceDue());
 
         return payment;

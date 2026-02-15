@@ -47,7 +47,7 @@ public class InvoiceService {
     private final ReceiptNumberSequenceService receiptSeq;
     private final AppointmentRepository appointmentRepo;
 
-    // ✅ NEW
+    //  NEW
     private final InvoiceAuditService auditService;
 
     private static final EnumSet<InvoicePayment.Method> GATEWAY_METHODS =
@@ -64,23 +64,23 @@ public class InvoiceService {
     }
 
     /*
-      ✅ FIXED: Upsert draft with strict rules:
+       FIXED: Upsert draft with strict rules:
       - Lock latest invoice row for appointment (if exists)
       - If latest status is DRAFT => update it
       - If latest status is ISSUED/PARTIALLY_PAID/PAID => 409 reject (no draft update allowed)
       - If no invoice exists => create new DRAFT
 
-      ✅ PaidAmount is never reset by draft upsert.
-      ✅ Concurrency safe when combined with DB unique constraint (see SQL section).
+       PaidAmount is never reset by draft upsert.
+       Concurrency safe when combined with DB unique constraint (see SQL section).
      */
 
     /**
-     * ✅ Draft Upsert (HARD RULE):
+     *  Draft Upsert (HARD RULE):
      * - appointmentId এ যদি latest invoice status ISSUED/PARTIALLY_PAID/PAID হয় -> 409 throw
      * - only DRAFT থাকলে update allowed
      * - none থাকলে new DRAFT create
 
-     * ✅ Concurrency safe:
+     *  Concurrency safe:
      * - appointmentId ভিত্তিতে latest invoice row কে PESSIMISTIC lock দিয়ে পড়ছি
      *   (findLatestByAppointmentIdForUpdate + PageRequest(0,1))
      */

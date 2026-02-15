@@ -15,7 +15,7 @@ public class LabTestSearchController {
 
     private final LabTestSearchService labTestSearchService;
 
-    /** ✅ GET /api/lab/tests/search?q=cbc&limit=10 */
+    /**  GET /api/lab/tests/search?q=cbc&limit=10 */
     @GetMapping("/search")
     public DataResponse<LabTestSearchDataDto> search(
             @RequestParam("q") String q,
