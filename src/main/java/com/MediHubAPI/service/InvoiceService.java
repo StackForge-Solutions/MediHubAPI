@@ -24,13 +24,13 @@ import com.MediHubAPI.service.billing.ReceiptNumberSequenceService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -79,7 +79,7 @@ public class InvoiceService {
      * - appointmentId এ যদি latest invoice status ISSUED/PARTIALLY_PAID/PAID হয় -> 409 throw
      * - only DRAFT থাকলে update allowed
      * - none থাকলে new DRAFT create
-     *
+
      * ✅ Concurrency safe:
      * - appointmentId ভিত্তিতে latest invoice row কে PESSIMISTIC lock দিয়ে পড়ছি
      *   (findLatestByAppointmentIdForUpdate + PageRequest(0,1))
@@ -159,7 +159,8 @@ public class InvoiceService {
 
             BigDecimal taxable = lineBase.subtract(disc);
             BigDecimal taxPercent = it.taxPercent() == null ? BigDecimal.ZERO : it.taxPercent();
-            BigDecimal tax = taxable.multiply(taxPercent).divide(BigDecimal.valueOf(100));
+             BigDecimal tax = taxable.multiply(taxPercent)
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
             BigDecimal lineTotal = taxable.add(tax);
 
@@ -275,24 +276,6 @@ public class InvoiceService {
     }
 
     @Transactional(readOnly = true)
-    public Page<InvoiceDtos.PaymentView> listPayments(Long invoiceId, Pageable pageable) {
-        invoiceRepo.findById(invoiceId).orElseThrow(() -> new EntityNotFoundException("Invoice not found"));
-
-        return payRepo.findByInvoiceId(invoiceId, pageable)
-                .map(p -> new InvoiceDtos.PaymentView(
-                        p.getId(),
-                        p.getIdempotencyKey(),
-                        p.getMethod().name(),
-                        p.getAmount(),
-                        p.getTxnRef(),
-                        p.getReceiptNo(),
-                        p.getReceivedAt(),
-                        p.getReceivedBy(),
-                        p.getNotes()
-                ));
-    }
-
-    @Transactional(readOnly = true)
     public Invoice getDraftByAppointment(Long appointmentId) {
         return invoiceRepo.findTopByAppointmentIdOrderByCreatedAtDesc(appointmentId)
                 .orElseThrow(() -> new EntityNotFoundException("No invoice for appointmentId=" + appointmentId));
@@ -375,7 +358,9 @@ public class InvoiceService {
                     details.add(new ValidationErrorDetail(idx + ".discountAmount", "discount exceeds line amount"));
                     taxable = BigDecimal.ZERO;
                 }
-                BigDecimal tax = taxable.multiply(taxPercent).divide(BigDecimal.valueOf(100));
+
+                BigDecimal tax = taxable.multiply(taxPercent)
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
                 BigDecimal lineTotal = taxable.add(tax);
 
                 subTotal = subTotal.add(lineBase);
@@ -425,62 +410,6 @@ public class InvoiceService {
 
         Invoice saved = isUpdate ? invoiceRepo.saveAndFlush(inv) : invoiceRepo.save(inv);
         return saved.getId();
-    }
-
-    @Transactional(readOnly = true)
-    public InvoiceDtos.DraftConsultationRes getDraftConsultation(Long appointmentId) {
-        Invoice invoice = invoiceRepo.findTopByAppointmentIdOrderByCreatedAtDesc(appointmentId)
-                .orElseThrow(() -> new InvoiceNotFoundException(appointmentId));
-
-        if (invoice.getStatus() != Invoice.Status.DRAFT) {
-            throw new InvoiceNotFoundException(appointmentId);
-        }
-
-        List<ValidationErrorDetail> details = new ArrayList<>();
-
-        List<InvoiceItem> invoiceItems = invoice.getItems();
-        if (invoiceItems == null || invoiceItems.isEmpty()) {
-            details.add(new ValidationErrorDetail("items", "must not be empty"));
-        }
-
-        List<InvoiceDtos.DraftConsultationItem> items = new ArrayList<>();
-        if (invoiceItems != null) {
-            for (int i = 0; i < invoiceItems.size(); i++) {
-                InvoiceItem it = invoiceItems.get(i);
-                String idx = "items[" + i + "]";
-
-                if (it.getName() == null || it.getName().isBlank()) {
-                    details.add(new ValidationErrorDetail(idx + ".name", "must not be blank"));
-                }
-                if (it.getQty() == null || it.getQty() <= 0) {
-                    details.add(new ValidationErrorDetail(idx + ".qty", "must be greater than 0"));
-                }
-                if (it.getUnitPrice() == null || it.getUnitPrice().compareTo(BigDecimal.ZERO) < 0) {
-                    details.add(new ValidationErrorDetail(idx + ".unitPrice", "must be greater than or equal to 0"));
-                }
-                if (it.getDiscountAmount() == null || it.getDiscountAmount().compareTo(BigDecimal.ZERO) < 0) {
-                    details.add(new ValidationErrorDetail(idx + ".discountAmount", "must be greater than or equal to 0"));
-                }
-
-                items.add(new InvoiceDtos.DraftConsultationItem(
-                        it.getName(),
-                        it.getQty(),
-                        it.getUnitPrice(),
-                        it.getDiscountAmount(),
-                        it.getServiceItemId()
-                ));
-            }
-        }
-
-        if (!details.isEmpty()) {
-            throw new ValidationException("Validation failed", details);
-        }
-
-        return new InvoiceDtos.DraftConsultationRes(
-                invoice.getId(),
-                invoice.getNotes(),
-                items
-        );
     }
 
     @Transactional

@@ -11,8 +11,6 @@ import com.MediHubAPI.service.InvoiceService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -108,14 +106,12 @@ public class InvoiceController {
 
             String patientName = inv.getPatient() == null ? null : ((inv.getPatient().getFirstName() == null ? "" : inv.getPatient().getFirstName()) + " " + (inv.getPatient().getLastName() == null ? "" : inv.getPatient().getLastName())).trim();
 
+            assert doctorName != null;
+            assert patientName != null;
             return new InvoiceDtos.InvoiceView(inv.getId(), inv.getBillNumber(), inv.getStatus().name(), doctorName.isBlank() ? null : doctorName, patientName.isBlank() ? null : patientName, inv.getGrandTotal(), inv.getPaidAmount(), inv.getBalanceDue(), inv.getIssuedAt());
         });
     }
 
-//     @GetMapping("/{id}/payments")
-//    public Page<InvoiceDtos.PaymentView> listPayments(@PathVariable Long id, @org.springframework.data.web.PageableDefault(size = 20, sort = "receivedAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
-//        return service.listPayments(id, pageable);
-//    }
 
     @GetMapping("/all")
     public InvoiceDtos.InvoiceDraftRes getAllInvoicesByAppointment(
