@@ -173,6 +173,13 @@ public class PrescribedTestInvoiceService {
         if (inv.getStatus() == Invoice.Status.VOID)
             throw new IllegalStateException("Cannot make payment for a VOID invoice");
 
+        // Auto-finalize drafts so bill number/date are always available once payments start.
+        if (inv.getStatus() == Invoice.Status.DRAFT) {
+            inv.setBillNumber(billSeq.next(inv.getClinicId()));
+            inv.setIssuedAt(LocalDateTime.now());
+            inv.setStatus(Invoice.Status.ISSUED);
+        }
+
         if (req.amount() == null || req.amount().compareTo(BigDecimal.ZERO) <= 0)
             throw new IllegalArgumentException("Payment amount must be greater than zero");
 
@@ -220,6 +227,14 @@ public class PrescribedTestInvoiceService {
         // ✅ Update invoice totals
         BigDecimal updatedPaid = inv.getPaidAmount().add(payment.getAmount());
         inv.setPaidAmount(round(updatedPaid));
+
+        // Ensure bill number/date exist whenever balance is cleared via payments (legacy drafts)
+        if (inv.getBillNumber() == null) {
+            inv.setBillNumber(billSeq.next(inv.getClinicId()));
+        }
+        if (inv.getIssuedAt() == null) {
+            inv.setIssuedAt(LocalDateTime.now());
+        }
 
         BigDecimal newBalance = inv.getGrandTotal().subtract(inv.getPaidAmount());
         if (newBalance.signum() <= 0) {

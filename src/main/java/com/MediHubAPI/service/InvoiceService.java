@@ -727,6 +727,14 @@ public class InvoiceService {
         if (inv.getPaidAmount() == null) inv.setPaidAmount(BigDecimal.ZERO);
         inv.setPaidAmount(round(inv.getPaidAmount().add(p.getAmount())));
 
+        // Ensure bill number/date exist whenever balance settles via payments
+        if (inv.getBillNumber() == null) {
+            inv.setBillNumber(billSeq.next(inv.getClinicId()));
+        }
+        if (inv.getIssuedAt() == null) {
+            inv.setIssuedAt(LocalDateTime.now());
+        }
+
         BigDecimal due = inv.getGrandTotal().subtract(inv.getPaidAmount());
         if (due.signum() <= 0) {
             inv.setStatus(Invoice.Status.PAID);
