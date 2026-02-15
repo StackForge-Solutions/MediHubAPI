@@ -57,6 +57,9 @@ public interface LabQueueRepository extends PagingAndSortingRepository<Invoice, 
         LEFT JOIN patients pat ON pat.user_id = i.patient_id
         LEFT JOIN users du ON du.id = i.doctor_id
         WHERE DATE(i.created_at) = :date
+          AND i.status IN ('ISSUED','PARTIALLY_PAID','PAID')
+          AND i.balance_due = 0
+          AND i.appointment_id IS NOT NULL
           AND (
             :status = 'all'
             OR EXISTS (
@@ -79,6 +82,9 @@ public interface LabQueueRepository extends PagingAndSortingRepository<Invoice, 
         SELECT COUNT(*) FROM invoices i
         JOIN users pu ON pu.id = i.patient_id
         WHERE DATE(i.created_at) = :date
+          AND i.status IN ('ISSUED','PARTIALLY_PAID','PAID')
+          AND i.balance_due = 0
+          AND i.appointment_id IS NOT NULL
           AND (
             :status = 'all'
             OR EXISTS (

@@ -22,7 +22,7 @@ public class LabQueueService {
 
     private static final DateTimeFormatter DT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
-    public Page<LabQueueItemDto> list(LocalDate date, String status, String search, String room, int page, int pageSize) {
+    public Page<LabQueueItemDto> fetchLabQueuePage(LocalDate date, String status, String search, String room, int page, int pageSize) {
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(pageSize, 1), 200);
         Pageable pageable = PageRequest.of(safePage, safeSize);

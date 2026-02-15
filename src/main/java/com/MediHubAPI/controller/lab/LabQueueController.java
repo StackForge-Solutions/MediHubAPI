@@ -23,7 +23,7 @@ public class LabQueueController {
     private final LabQueueService labQueueService;
 
     @GetMapping
-    public Map<String, Object> list(
+    public Map<String, Object> getLabQueue(
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(value = "status", defaultValue = "all") String status,
             @RequestParam(value = "search", required = false) String search,
@@ -34,7 +34,7 @@ public class LabQueueController {
         log.info("API call: lab queue date={}, status={}, search={}, room={}, page={}, pageSize={}",
                 date, status, search, room, page, pageSize);
 
-        var result = labQueueService.list(date, status, search, room, page, pageSize);
+        var result = labQueueService.fetchLabQueuePage(date, status, search, room, page, pageSize);
 
         Map<String, Object> resp = new HashMap<>();
         resp.put("items", result.getContent());
