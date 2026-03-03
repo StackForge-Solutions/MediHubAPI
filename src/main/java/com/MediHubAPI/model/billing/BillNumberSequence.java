@@ -20,7 +20,7 @@ public class BillNumberSequence {
     @Column(name = "fy", nullable = false)
     private int fy;
 
-    // ✅ DB column is next_val
+    //  DB column is next_val
     @Column(name = "next_val", nullable = false)
     private long nextVal;
 

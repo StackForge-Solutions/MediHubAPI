@@ -34,7 +34,7 @@ Fetch **Doctor Override** schedules for a specific doctor (optionally for a spec
 - doctor info (name, username, specialization)
 - each schedule day
 - nested JSON arrays for **intervals** and **blocks** per day  
-  ✅ implemented via correlated subqueries so intervals and blocks do not cross-multiply.
+   implemented via correlated subqueries so intervals and blocks do not cross-multiply.
 
 ### SQL
 ```sql

@@ -18,7 +18,7 @@ public interface InvoicePaymentRepository extends JpaRepository<InvoicePayment, 
     List<InvoicePayment> findByInvoiceIdOrderByReceivedAtDesc(Long invoiceId);
 
     /**
-     * ✅ Checks if a transaction reference already exists for the same invoice.
+     *  Checks if a transaction reference already exists for the same invoice.
      */
     @Query("""
            SELECT COUNT(p) > 0 

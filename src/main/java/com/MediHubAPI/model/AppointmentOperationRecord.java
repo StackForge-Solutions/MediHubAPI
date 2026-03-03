@@ -39,7 +39,7 @@ public class AppointmentOperationRecord {
     private String requestHash;
 
     @Lob
-    @Column(name = "response_payload", nullable = false)
+    @Column(name = "response_payload", nullable = false, columnDefinition = "LONGTEXT")
     private String responsePayload;
 
     @Column(name = "created_at", nullable = false)

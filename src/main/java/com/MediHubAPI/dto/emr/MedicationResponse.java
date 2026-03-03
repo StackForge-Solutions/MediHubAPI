@@ -10,7 +10,7 @@ import java.time.LocalDate;
 @Builder
 public class MedicationResponse {
 
-    private Long id;           // ✅ added
+    private Long id;           //  added
     private Long medicineId;
 
     private String form;

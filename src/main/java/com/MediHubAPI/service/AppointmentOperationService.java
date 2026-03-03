@@ -1,5 +1,6 @@
 package com.MediHubAPI.service;
 
+import com.MediHubAPI.config.IdempotencyProperties;
 import com.MediHubAPI.exception.HospitalAPIException;
 import com.MediHubAPI.exception.visits.IdempotencyConflictException;
 import com.MediHubAPI.model.AppointmentOperationRecord;
@@ -22,6 +23,7 @@ public class AppointmentOperationService {
 
     private final AppointmentOperationRecordRepository repository;
     private final ObjectMapper objectMapper;
+    private final IdempotencyProperties idempotencyProperties;
 
     @Transactional
     public <T> T execute(String idempotencyKey,
@@ -29,13 +31,17 @@ public class AppointmentOperationService {
                          Supplier<T> action) {
         AppointmentOperationRecord existing = repository.findByIdempotencyKey(idempotencyKey).orElse(null);
         if (existing != null) {
-            if (!existing.getOperation().equals(meta.operation().name())) {
-                throw new IdempotencyConflictException("Idempotency key already used for a different operation");
+            if (isExpired(existing)) {
+                repository.delete(existing);
+            } else {
+                if (!existing.getOperation().equals(meta.operation().name())) {
+                    throw new IdempotencyConflictException("Idempotency key already used for a different operation");
+                }
+                if (!existing.getRequestHash().equals(meta.requestHash())) {
+                    throw new IdempotencyConflictException("Idempotency key already used for another request payload");
+                }
+                return deserialize(existing.getResponsePayload(), meta.responseType());
             }
-            if (!existing.getRequestHash().equals(meta.requestHash())) {
-                throw new IdempotencyConflictException("Idempotency key already used for another request payload");
-            }
-            return deserialize(existing.getResponsePayload(), meta.responseType());
         }
 
         T result = action.get();
@@ -70,6 +76,15 @@ public class AppointmentOperationService {
             throw new HospitalAPIException(HttpStatus.INTERNAL_SERVER_ERROR, "IDEMPOTENCY_WRITE_FAILURE",
                     "Failed to cache operation result", ex);
         }
+    }
+
+    private boolean isExpired(AppointmentOperationRecord record) {
+        long ttlHours = idempotencyProperties.getTtlHours();
+        if (ttlHours <= 0) {
+            return false;
+        }
+        Instant expiresAt = record.getCreatedAt().plusSeconds(ttlHours * 3600);
+        return Instant.now().isAfter(expiresAt);
     }
 
     public record AppointmentOperationMeta<T>(AppointmentOperationType operation,

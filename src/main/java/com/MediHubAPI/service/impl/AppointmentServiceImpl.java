@@ -49,7 +49,7 @@ public class AppointmentServiceImpl implements com.MediHubAPI.service.Appointmen
     private final UserRepository userRepository;
     private final AppointmentRepository appointmentRepository;
     private final InvoiceRepository invoiceRepository;
-    private final SlotService slotService;  // ✅ Injected
+    private final SlotService slotService;  //  Injected
 //    private final AppointmentService appointmentService;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
@@ -57,7 +57,7 @@ public class AppointmentServiceImpl implements com.MediHubAPI.service.Appointmen
 
     @Override
     public AppointmentResponseDto bookAppointment(AppointmentBookingDto dto) {
-        return bookAppointment(dto, null); // ✅ simply forward with null
+        return bookAppointment(dto, null); //  simply forward with null
     }
 
     @Override
@@ -86,11 +86,11 @@ public class AppointmentServiceImpl implements com.MediHubAPI.service.Appointmen
                 .slotTime(dto.getSlotTime())
                 .type(dto.getAppointmentType())
                 .status(AppointmentStatus.BOOKED)
-                .rescheduledFrom(rescheduledFrom) // ✅ Set original appointment
+                .rescheduledFrom(rescheduledFrom) //  Set original appointment
                 .build();
 
         Appointment saved = appointmentRepository.save(appointment);
-        log.info("✅ Appointment booked successfully: {}", saved.getId());
+        log.info(" Appointment booked successfully: {}", saved.getId());
 
 
 
@@ -342,7 +342,7 @@ public class AppointmentServiceImpl implements com.MediHubAPI.service.Appointmen
 
         appointment.setStatus(AppointmentStatus.ARRIVED);
         appointmentRepository.save(appointment);
-        log.info("✅ Appointment {} marked as ARRIVED", appointmentId);
+        log.info(" Appointment {} marked as ARRIVED", appointmentId);
     }
 
 
@@ -359,7 +359,7 @@ public class AppointmentServiceImpl implements com.MediHubAPI.service.Appointmen
 
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointmentRepository.save(appointment);
-        log.info("✅ Appointment cancelled: {}", appointmentId);
+        log.info(" Appointment cancelled: {}", appointmentId);
     }
 
     @Override
@@ -388,7 +388,7 @@ public class AppointmentServiceImpl implements com.MediHubAPI.service.Appointmen
                 .appointmentType(dto.getAppointmentType() != null ? dto.getAppointmentType() : existing.getType())
                 .build();
 
-        return bookAppointment(newBooking, existing); // ✅ track reschedule source
+        return bookAppointment(newBooking, existing); //  track reschedule source
     }
 
 
@@ -439,7 +439,7 @@ public class AppointmentServiceImpl implements com.MediHubAPI.service.Appointmen
             String hourLabel = slot.getStartTime().withMinute(0).toString(); // "09:00"
             String exactTime = slot.getStartTime().toString();              // "09:10"
 
-            // ✅ Safe patient name using Optional
+            //  Safe patient name using Optional
             String patientName = Optional.ofNullable(slot.getAppointment())
                     .map(Appointment::getPatient)
                     .map(p -> {

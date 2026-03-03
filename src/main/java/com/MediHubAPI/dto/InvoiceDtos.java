@@ -27,7 +27,7 @@ public class InvoiceDtos {
             @NotBlank String currency,
 
             @jakarta.validation.constraints.NotNull
-            ItemType itemType               // ✅ ADD THIS (request-level)
+            ItemType itemType               //  ADD THIS (request-level)
 
     ) {
     }
@@ -40,7 +40,7 @@ public class InvoiceDtos {
             @NotNull @Digits(integer = 12, fraction = 2) BigDecimal discountAmount,
             @NotNull @Digits(integer = 5, fraction = 2) BigDecimal taxPercent,
 
-            // ✅ add these
+            //  add these
             Long refId,
             String code
     ) {
@@ -103,7 +103,7 @@ public class InvoiceDtos {
             String method,
             BigDecimal amount,
             String txnRef,
-            String receiptNo,          // ✅ add this
+            String receiptNo,          //  add this
             LocalDateTime receivedAt,
             String receivedBy,
             String notes
@@ -136,13 +136,13 @@ public class InvoiceDtos {
             Long version                  // optimistic lock version
     ) {
         public record Item(
-                // ✅ identity/type fields
+                //  identity/type fields
                 ItemType itemType,
                 Long refId,
                 Long serviceItemId,
                 String code,
 
-                // ✅ billing fields
+                //  billing fields
                 String name,
                 Integer qty,
                 BigDecimal unitPrice,

@@ -41,7 +41,7 @@ public class ChiefComplaintServiceImpl implements ChiefComplaintService {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new RuntimeException("Appointment not found with ID: " + appointmentId));
 
-        // ✅ Find existing VisitSummary or create one if not exists
+        //  Find existing VisitSummary or create one if not exists
         VisitSummary visitSummary = visitSummaryRepository.findByAppointmentId(appointmentId)
                 .orElseGet(() -> {
                     log.info("No VisitSummary found for appointmentId={}, creating new one", appointmentId);
@@ -57,14 +57,14 @@ public class ChiefComplaintServiceImpl implements ChiefComplaintService {
                     return visitSummaryRepository.saveAndFlush(newVisit);
                 });
 
-        // ✅ Delete existing complaints for this visit
+        //  Delete existing complaints for this visit
         List<ChiefComplaint> existing = chiefComplaintRepository.findByVisitSummary_Id(visitSummary.getId());
         if (!existing.isEmpty()) {
             log.info("Deleting {} existing chief complaints for visitSummaryId={}", existing.size(), visitSummary.getId());
             chiefComplaintRepository.deleteAll(existing);
         }
 
-        // ✅ Save new complaints
+        //  Save new complaints
         List<ChiefComplaint> saved = complaints.stream()
                 .map(dto -> {
                     ChiefComplaint entity = modelMapper.map(dto, ChiefComplaint.class);

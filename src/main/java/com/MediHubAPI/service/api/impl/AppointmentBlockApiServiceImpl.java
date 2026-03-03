@@ -173,7 +173,8 @@ class AppointmentBlockApiServiceImpl implements AppointmentBlockApiService {
         int          cancelled    = 0;
         for (Slot slot : candidates) {
             LocalTime slotStart = slot.getStartTime();
-            if (slotStart.isBefore(start) || !slotStart.isBefore(end)) {
+            // Inclusive end bound: block slots whose start time is <= end
+            if (slotStart.isBefore(start) || slotStart.isAfter(end)) {
                 continue;
             }
             Appointment appointment = slot.getAppointment();

@@ -25,20 +25,20 @@ public class VitalsService {
     public VitalsDTO saveOrUpdateVitals(Long appointmentId, VitalsDTO dto) {
         log.info("Saving/Updating vitals for appointmentId={}", appointmentId);
 
-        // ✅ Find VisitSummary by appointmentId
+        //  Find VisitSummary by appointmentId
         VisitSummary visitSummary = visitSummaryRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(() -> new IllegalArgumentException("VisitSummary not found for appointmentId " + appointmentId));
 
-        // ✅ Map DTO → Entity
+        //  Map DTO → Entity
         Vitals vitals = modelMapper.map(dto, Vitals.class);
         vitals.setVisitSummary(visitSummary);
 
-        // ✅ Preserve existing Vitals ID if updating
+        //  Preserve existing Vitals ID if updating
         if (visitSummary.getVitals() != null) {
             vitals.setId(visitSummary.getVitals().getId());
         }
 
-        // ✅ Save and associate
+        //  Save and associate
         Vitals saved = vitalsRepository.save(vitals);
         visitSummary.setVitals(saved);
 

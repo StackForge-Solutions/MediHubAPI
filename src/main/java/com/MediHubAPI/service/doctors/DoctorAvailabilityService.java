@@ -45,7 +45,8 @@ class DoctorAvailabilityService {
             SlotStatus.COMPLETED,
             SlotStatus.RESERVED,
             SlotStatus.NO_SHOW,
-            SlotStatus.PENDING
+            SlotStatus.PENDING,
+            SlotStatus.BLOCKED
     );
 
     private final SlotRepository slotRepository;

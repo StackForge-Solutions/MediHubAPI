@@ -9,14 +9,14 @@ public class HospitalAPIException extends RuntimeException {
     private final HttpStatus status;
     private final String code;
 
-    // ✅ existing 2-arg (keep if you already use)
+    //  existing 2-arg (keep if you already use)
     public HospitalAPIException(HttpStatus status, String message) {
         super(message);
         this.status = status;
         this.code = null;
     }
 
-    // ✅ NEW 3-arg constructor
+    //  NEW 3-arg constructor
     public HospitalAPIException(HttpStatus status, String code, String message) {
         super(message);
         this.status = status;

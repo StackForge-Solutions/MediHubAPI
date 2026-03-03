@@ -16,7 +16,7 @@ public class DraftUpsertNotAllowedException extends RuntimeException {
         this.status = status;
     }
 
-    // ✅ NEW (add this) - allows custom message
+    //  NEW (add this) - allows custom message
     public DraftUpsertNotAllowedException(String message, Long invoiceId, Invoice.Status status) {
         super(message);
         this.invoiceId = invoiceId;

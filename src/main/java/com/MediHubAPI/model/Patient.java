@@ -93,7 +93,7 @@ public class Patient {
 //    @Column(nullable = false)
 //    private Department department;
 
-    // ✅ Instead of Department, use Specialization
+    //  Instead of Department, use Specialization
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "specialization_id")
     private Specialization specialization;

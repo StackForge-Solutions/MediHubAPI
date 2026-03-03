@@ -58,10 +58,10 @@ public class UserServiceImpl implements UserService {
                 throw new HospitalAPIException(HttpStatus.BAD_REQUEST, "Only one SUPER_ADMIN is allowed.");
             }
 
-            // ✅ Allow unauthenticated user to register SUPER_ADMIN ONLY ONCE
+            //  Allow unauthenticated user to register SUPER_ADMIN ONLY ONCE
             // Do not validate role creation permission here
         } else {
-            // ✅ All other roles must be validated against logged-in user's roles
+            //  All other roles must be validated against logged-in user's roles
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             Set<String> currentUserRoles = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
