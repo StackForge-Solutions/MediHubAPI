@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -24,4 +26,5 @@ public class LabQueueItemDto {
     private Boolean referrer;
     private String notes;
     private String room;
+    private List<String> alerts;
 }

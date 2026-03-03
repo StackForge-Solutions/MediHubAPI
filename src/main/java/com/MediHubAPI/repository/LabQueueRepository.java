@@ -51,7 +51,16 @@ public interface LabQueueRepository extends PagingAndSortingRepository<Invoice, 
             OR (pat.referrer_type IS NOT NULL AND pat.referrer_type <> ''), TRUE, FALSE
           )                                                                    AS referrer,
           i.notes                                                              AS notes,
-          i.room                                                               AS room
+          i.room                                                               AS room,
+          (
+            SELECT GROUP_CONCAT(DISTINCT TRIM(ii3.name) ORDER BY TRIM(ii3.name) SEPARATOR '||')
+            FROM invoice_items ii3
+            WHERE ii3.invoice_id = i.id
+              AND ii3.item_type = 'LAB_TEST'
+              AND COALESCE(ii3.authorized, FALSE) = TRUE
+              AND ii3.name IS NOT NULL
+              AND TRIM(ii3.name) <> ''
+          )                                                                    AS alerts
         FROM (
             SELECT i.*,
                    ROW_NUMBER() OVER (PARTITION BY i.appointment_id ORDER BY i.created_at DESC) AS rn

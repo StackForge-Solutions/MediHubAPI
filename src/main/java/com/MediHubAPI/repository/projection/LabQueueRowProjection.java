@@ -17,4 +17,5 @@ public interface LabQueueRowProjection {
     Integer getReferrer();
     String getNotes();
     String getRoom();
+    String getAlerts();
 }

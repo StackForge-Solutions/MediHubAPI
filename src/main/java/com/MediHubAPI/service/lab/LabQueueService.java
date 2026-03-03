@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +50,7 @@ public class LabQueueService {
                 .referrer(toBool(r.getReferrer()))
                 .notes(r.getNotes())
                 .room(r.getRoom())
+                .alerts(parseAlerts(r.getAlerts()))
                 .build());
     }
 
@@ -66,5 +69,16 @@ public class LabQueueService {
         String s = status.trim().toUpperCase();
         if ("NOSHOW".equals(s)) return "NO_SHOW";
         return s;
+    }
+
+    private List<String> parseAlerts(String alerts) {
+        if (alerts == null || alerts.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(alerts.split("\\|\\|"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .distinct()
+                .toList();
     }
 }
