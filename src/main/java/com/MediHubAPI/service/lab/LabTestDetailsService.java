@@ -5,6 +5,7 @@ import com.MediHubAPI.model.billing.Invoice;
 import com.MediHubAPI.model.billing.InvoiceItem;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import com.MediHubAPI.util.HospitalIdResolver;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 public class LabTestDetailsService {
 
     private final com.MediHubAPI.repository.PatientLabInvoiceRepository invoiceRepository;
+    private final HospitalIdResolver hospitalIdResolver;
 
     @Transactional(readOnly = true)
     public LabTestDetailsDto getDetails(Long patientId) {
@@ -65,14 +67,15 @@ public class LabTestDetailsService {
         if (inv.getPatient() != null) {
             var u = inv.getPatient();
             String sex = u.getSex() == null ? "Other" : switch (u.getSex()) { case MALE -> "Male"; case FEMALE -> "Female"; default -> "Other"; };
-            String age = u.getDateOfBirth() == null ? "NA" : String.valueOf(java.time.Period.between(u.getDateOfBirth(), java.time.LocalDate.now()).getYears()) + " Y";
+            String age = u.getDateOfBirth() == null ? "NA" :
+                java.time.Period.between(u.getDateOfBirth(), java.time.LocalDate.now()).getYears() + " Y";
             ageSex = sex + " | (" + age + ")";
         }
 
         return LabTestDetailsDto.builder()
                 .patientId(patientId)
                 .name(patientName)
-                .hospitalId(inv.getPatient() != null ? inv.getPatient().getHospitalId() : null)
+                .hospitalId(hospitalIdResolver.resolve(inv.getPatient() != null ? inv.getPatient().getHospitalId() : null))
                 .ageSex(ageSex)
                 .dob(inv.getPatient() != null && inv.getPatient().getDateOfBirth() != null ? inv.getPatient().getDateOfBirth().toString() : null)
                 .billDate(billDate)

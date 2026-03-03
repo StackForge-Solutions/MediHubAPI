@@ -8,6 +8,7 @@ import com.MediHubAPI.model.*;
 import com.MediHubAPI.repository.SpecializationRepository;
 import com.MediHubAPI.repository.UserRepository;
 import com.MediHubAPI.service.PatientService;
+import com.MediHubAPI.util.HospitalIdResolver;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,7 @@ public class PatientServiceImpl implements PatientService {
     private final UserRepository userRepository;
     private final SpecializationRepository specializationRepository;
     private final PasswordEncoder passwordEncoder;
+    private final HospitalIdResolver hospitalIdResolver;
 
 
     @Override
@@ -175,7 +177,7 @@ public class PatientServiceImpl implements PatientService {
 
         return PatientResponseDto.builder()
                 .id(p.getId())
-                .hospitalId(p.getHospitalId())
+                .hospitalId(hospitalIdResolver.resolve(p.getHospitalId()))
                 .firstName(p.getFirstName())
                 .lastName(p.getLastName())
                 .mobileNumber(p.getMobileNumber())
@@ -184,28 +186,6 @@ public class PatientServiceImpl implements PatientService {
                 .consultingDoctorName(doctorName)
                 .photoContentType(p.getPhotoContentType())
                 .photoPresent(p.getPhoto() != null && p.getPhoto().length > 0)
-                .build();
-    }
-
-    private PatientResponseDto toResponseDto(Patient patient) {
-        String doctorName = null;
-        if (patient.getConsultingDoctor() != null) {
-            User d = patient.getConsultingDoctor();
-            doctorName = ((d.getFirstName() != null ? d.getFirstName() : "") + " " +
-                    (d.getLastName() != null ? d.getLastName() : "")).trim();
-        }
-
-        return PatientResponseDto.builder()
-                .id(patient.getId())
-                .hospitalId(patient.getHospitalId())
-                .firstName(patient.getFirstName())
-                .lastName(patient.getLastName())
-                .mobileNumber(patient.getMobileNumber())
-                .email(patient.getEmail())
-                .specializationName(patient.getSpecialization() != null ? String.valueOf(patient.getSpecialization()) : null)
-                .consultingDoctorName(doctorName)
-                .photoContentType(patient.getPhotoContentType())
-                .photoPresent(patient.getPhoto() != null && patient.getPhoto().length > 0)
                 .build();
     }
 

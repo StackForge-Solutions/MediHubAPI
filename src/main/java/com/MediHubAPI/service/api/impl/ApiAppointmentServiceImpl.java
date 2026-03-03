@@ -18,6 +18,7 @@ import com.MediHubAPI.service.api.ApiAppointmentService;
 import com.MediHubAPI.service.AppointmentService;
 import com.MediHubAPI.service.SlotService;
 import com.MediHubAPI.service.patient.PatientRegistrationService;
+import com.MediHubAPI.util.HospitalIdResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -57,6 +58,7 @@ public class ApiAppointmentServiceImpl implements ApiAppointmentService {
     private final PatientRegistrationService patientRegistrationService;
     private final UserRepository userRepository;
     private final InvoiceRepository invoiceRepository;
+    private final HospitalIdResolver hospitalIdResolver;
 
     @Override
     @Transactional
@@ -121,6 +123,7 @@ public class ApiAppointmentServiceImpl implements ApiAppointmentService {
                 .orElseThrow(() -> new HospitalAPIException(HttpStatus.BAD_REQUEST, "MISSING_CONTEXT", "Missing doctor/slot context."));
         User patient = userRepository.findById(patientResolution.getId())
                 .orElseThrow(() -> new HospitalAPIException(HttpStatus.BAD_REQUEST, "INVALID_PATIENT", "Selected patient not found."));
+        String resolvedHospitalId = hospitalIdResolver.resolve(patient);
 
         String statusLabel = Boolean.TRUE.equals(booking.getMarkArrived()) ? "ARRIVED" : "CONFIRMED";
         String createdAtIso = LocalDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
@@ -128,9 +131,9 @@ public class ApiAppointmentServiceImpl implements ApiAppointmentService {
 
         AppointmentConfirmResponse.PatientResponse patientResponse = AppointmentConfirmResponse.PatientResponse.builder()
                 .id(patient.getId())
-                .hospitalId(patient.getHospitalId())
-                .registrationId(patient.getHospitalId())
-                .newPatientHospitalId(patientResolution.isCreated() ? patient.getHospitalId() : null)
+                .hospitalId(resolvedHospitalId)
+                .registrationId(resolvedHospitalId)
+                .newPatientHospitalId(patientResolution.isCreated() ? resolvedHospitalId : null)
                 .fullName(buildFullName(patient))
                 .phone(formatPatientPhone(patient.getCountryCode(), patient.getMobileNumber()))
                 .needsAttention(Boolean.TRUE.equals(patient.getNeedsAttention()))
@@ -230,7 +233,7 @@ public class ApiAppointmentServiceImpl implements ApiAppointmentService {
         if (patient.getId() != null) {
             User existing = userRepository.findById(patient.getId())
                     .orElseThrow(() -> new HospitalAPIException(HttpStatus.BAD_REQUEST, "INVALID_PATIENT", "Selected patient not found."));
-            return new PatientResolution(existing.getId(), existing.getHospitalId(), false);
+            return new PatientResolution(existing.getId(), hospitalIdResolver.resolve(existing), false);
         }
         if (patient.getDetails() == null) {
             throw new HospitalAPIException(HttpStatus.BAD_REQUEST, "MISSING_PATIENT", "Select a patient or register a new one.");
@@ -241,7 +244,7 @@ public class ApiAppointmentServiceImpl implements ApiAppointmentService {
         if (data == null || data.getId() == null) {
             throw new HospitalAPIException(HttpStatus.INTERNAL_SERVER_ERROR, "UNKNOWN", "Failed to create patient record.");
         }
-        return new PatientResolution(data.getId(), data.getHospitalId(), true);
+        return new PatientResolution(data.getId(), hospitalIdResolver.resolve(data.getHospitalId()), true);
     }
 
     private PatientRegisterRequest buildRegistrationRequest(AppointmentConfirmRequest.PatientBlock patient,

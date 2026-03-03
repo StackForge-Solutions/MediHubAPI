@@ -8,6 +8,7 @@ import com.MediHubAPI.model.User;
 import com.MediHubAPI.repository.UserRepository;
 import com.MediHubAPI.specification.PatientSearchSpecification;
 import com.MediHubAPI.specification.UserSpecification;
+import com.MediHubAPI.util.HospitalIdResolver;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 public class PatientSearchService {
 
     private final UserRepository userRepository;
+    private final HospitalIdResolver hospitalIdResolver;
 
     @Transactional
     public List<PatientSearchResultDto> search(PatientSearchBy by, String query) {
@@ -44,7 +46,7 @@ public class PatientSearchService {
     private PatientSearchResultDto toDto(User user) {
         return PatientSearchResultDto.builder()
                 .id(user.getId())
-                .hospitalId(user.getHospitalId())
+                .hospitalId(hospitalIdResolver.resolve(user))
                 .fileNo(user.getFileNo())
                 .fullName(buildFullName(user))
                 .phone(user.getMobileNumber())

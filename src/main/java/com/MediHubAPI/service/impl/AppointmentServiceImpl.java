@@ -20,6 +20,7 @@ import com.MediHubAPI.specification.DoctorSpecification;
 import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.MediHubAPI.util.HospitalIdResolver;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -50,6 +51,7 @@ public class AppointmentServiceImpl implements com.MediHubAPI.service.Appointmen
     private final AppointmentRepository appointmentRepository;
     private final InvoiceRepository invoiceRepository;
     private final SlotService slotService;  //  Injected
+    private final HospitalIdResolver hospitalIdResolver;
 //    private final AppointmentService appointmentService;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
@@ -231,6 +233,7 @@ public class AppointmentServiceImpl implements com.MediHubAPI.service.Appointmen
         User doctor = appointment.getDoctor();
         User patient = appointment.getPatient();
         Slot slot = appointment.getSlot();
+        String patientHospitalId = hospitalIdResolver.resolve(patient != null ? patient.getHospitalId() : null);
 
         String createdBy = StringUtils.hasText(appointment.getCreatedBy()) ? appointment.getCreatedBy() : "STAFF";
         String doctorName = buildDoctorName(doctor);
@@ -243,7 +246,7 @@ public class AppointmentServiceImpl implements com.MediHubAPI.service.Appointmen
                 .patientId(patient != null ? patient.getId() : null)
                 .patientName(buildFullName(patient))
                 .patientPhone(patient != null ? patient.getMobileNumber() : null)
-                .patientHospitalId(patient != null ? patient.getHospitalId() : null)
+                .patientHospitalId(patientHospitalId)
                 .dateISO(appointment.getAppointmentDate() != null ? appointment.getAppointmentDate().toString() : null)
                 .timeHHmm(appointment.getSlotTime() != null ? appointment.getSlotTime().format(TIME_FORMATTER) : null)
                 .tokenNo(resolveTokenNo(appointment))
