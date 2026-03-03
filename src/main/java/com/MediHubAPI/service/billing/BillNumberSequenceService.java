@@ -16,8 +16,7 @@ import java.time.Year;
 
     @Transactional
     public String next(String clinicId) {
-        // Normalize clinicId to avoid "null" in bill numbers
-        String tenant = (clinicId == null || clinicId.isBlank()) ? "CLINIC" : clinicId.trim().toUpperCase();
+        String tenant = normalizeClinicId(clinicId);
         int fy = Year.now().getValue(); // or your FY logic
 
         BillNumberSequence row = repo.findForUpdate(tenant, fy)
@@ -35,5 +34,20 @@ import java.time.Year;
 
         //  Option 1 format: FY-CLINIC-SEQ
         return fy + "-" + tenant + "-" + String.format("%06d", seq);
+    }
+
+    /**
+     * Normalize clinic identifier so literal strings like "null"/"NULL"/"N/A"
+     * don't leak into bill numbers. Falls back to "CLINIC" when blank.
+     */
+    private String normalizeClinicId(String clinicId) {
+        if (clinicId == null) return "CLINIC";
+        String trimmed = clinicId.trim();
+        if (trimmed.isEmpty()) return "CLINIC";
+        String upper = trimmed.toUpperCase();
+        if (upper.equals("NULL") || upper.equals("N/A") || upper.equals("NONE")) {
+            return "CLINIC";
+        }
+        return upper;
     }
 }
