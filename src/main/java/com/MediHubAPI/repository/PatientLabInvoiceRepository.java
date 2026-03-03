@@ -17,4 +17,7 @@ public interface PatientLabInvoiceRepository extends JpaRepository<Invoice, Long
             Long patientId,
             InvoiceDtos.ItemType itemType
     );
+
+    @EntityGraph(attributePaths = {"items", "patient", "patient.specialization"})
+    Optional<Invoice> findByPatient_IdAndBillNumber(Long patientId, String billNumber);
 }
