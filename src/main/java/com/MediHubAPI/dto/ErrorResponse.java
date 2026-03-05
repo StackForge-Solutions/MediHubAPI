@@ -19,7 +19,7 @@ public class ErrorResponse {
     private String code;
     private String errorCode;
     private String traceId;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Instant timestamp;
 
     private Map<String, String> validationErrors;  // Added while keeping legacy fields intact
