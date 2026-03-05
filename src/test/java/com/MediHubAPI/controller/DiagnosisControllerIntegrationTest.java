@@ -28,6 +28,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -200,6 +201,87 @@ class DiagnosisControllerIntegrationTest {
                 .andExpect(jsonPath("$.path").value("/api/diagnoses"))
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
                 .andExpect(jsonPath("$.errorCode").value("INVALID_INPUT"));
+
+        verifyNoInteractions(diagnosisService);
+    }
+
+    @Test
+    @DisplayName("PUT /api/diagnoses returns updated payload for valid request")
+    void updateDiagnosisReturnsSuccessPayload() throws Exception {
+        DiagnosisRowResponse row = new DiagnosisRowResponse(
+                "Type 2 Diabetes Mellitus with nephropathy",
+                "3 yrs, 2 mths",
+                Instant.parse("2023-01-01T00:00:00Z"),
+                true,
+                true,
+                "Updated notes"
+        );
+        when(diagnosisService.updateDiagnosis(eq(123L), any())).thenReturn(row);
+
+        String requestBody = """
+                {
+                  "appointmentId": 123,
+                  "currentName": "Type 2 Diabetes Mellitus",
+                  "source": "primary",
+                  "name": "Type 2 Diabetes Mellitus with nephropathy",
+                  "years": 3,
+                  "months": 2,
+                  "days": 0,
+                  "sinceYear": null,
+                  "chronic": true,
+                  "primary": true,
+                  "comments": "Updated notes"
+                }
+                """;
+
+        mockMvc.perform(put("/api/diagnoses")
+                        .param("appointmentId", "123")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Diagnosis updated successfully"))
+                .andExpect(jsonPath("$.data.name").value("Type 2 Diabetes Mellitus with nephropathy"))
+                .andExpect(jsonPath("$.data.sinceLabel").value("3 yrs, 2 mths"))
+                .andExpect(jsonPath("$.data.sinceDate").value("2023-01-01T00:00:00Z"))
+                .andExpect(jsonPath("$.data.chronic").value(true))
+                .andExpect(jsonPath("$.data.primary").value(true))
+                .andExpect(jsonPath("$.data.comments").value("Updated notes"));
+
+        verify(diagnosisService).updateDiagnosis(eq(123L), any());
+    }
+
+    @Test
+    @DisplayName("PUT /api/diagnoses with missing currentName returns DIAGNOSIS_002 payload")
+    void updateDiagnosisMissingCurrentNameReturnsDiagnosisValidationPayload() throws Exception {
+        String requestBody = """
+                {
+                  "appointmentId": 123,
+                  "currentName": "",
+                  "source": "primary",
+                  "name": "Type 2 Diabetes Mellitus with nephropathy",
+                  "years": 3,
+                  "months": 2,
+                  "days": 0,
+                  "sinceYear": null,
+                  "chronic": true,
+                  "primary": true,
+                  "comments": "Updated notes"
+                }
+                """;
+
+        mockMvc.perform(put("/api/diagnoses")
+                        .param("appointmentId", "123")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.path").value("/api/diagnoses"))
+                .andExpect(jsonPath("$.code").value("DIAGNOSIS_002"))
+                .andExpect(jsonPath("$.errorCode").value("DIAGNOSIS_002"))
+                .andExpect(jsonPath("$.validationErrors.currentName").value("currentName is required"))
+                .andExpect(jsonPath("$.errors[0]").value("Diagnosis not found"));
 
         verifyNoInteractions(diagnosisService);
     }

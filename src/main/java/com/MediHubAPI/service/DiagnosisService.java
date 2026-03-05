@@ -2,8 +2,10 @@ package com.MediHubAPI.service;
 
 import com.MediHubAPI.dto.diagnosis.CreateDiagnosisRequest;
 import com.MediHubAPI.dto.diagnosis.DiagnosisRowResponse;
+import com.MediHubAPI.dto.diagnosis.UpdateDiagnosisRequest;
 import com.MediHubAPI.exception.diagnosis.DiagnosisAppointmentNotFoundException;
 import com.MediHubAPI.exception.diagnosis.DiagnosisInvalidInputException;
+import com.MediHubAPI.exception.diagnosis.DiagnosisValidationException;
 import com.MediHubAPI.exception.diagnosis.DuplicateDiagnosisException;
 import com.MediHubAPI.model.Appointment;
 import com.MediHubAPI.model.Diagnosis;
@@ -23,6 +25,7 @@ import java.time.Year;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -82,6 +85,63 @@ public class DiagnosisService {
                 saved.getChronic(),
                 saved.getPrimaryDiagnosis(),
                 saved.getComments()
+        );
+    }
+
+    @Transactional
+    public DiagnosisRowResponse updateDiagnosis(Long appointmentId, UpdateDiagnosisRequest request) {
+        validateAppointmentId(appointmentId);
+        validateSinceYear(request.getSinceYear());
+
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new DiagnosisAppointmentNotFoundException(appointmentId));
+
+        VisitSummary visitSummary = resolveVisitSummary(appointmentId, appointment);
+
+        String normalizedSource = normalizeRequired(request.getSource(), "source");
+        String normalizedCurrentName = normalizeRequired(request.getCurrentName(), "currentName");
+        String normalizedName = normalizeRequired(request.getName(), "name");
+        String normalizedComments = normalizeOptional(request.getComments());
+
+        Diagnosis diagnosis = diagnosisRepository.findByVisitSummary_IdAndSourceIgnoreCaseAndNameIgnoreCase(
+                        visitSummary.getId(), normalizedSource, normalizedCurrentName)
+                .orElseThrow(this::diagnosisNotFoundValidation);
+
+        if (diagnosisRepository.existsByVisitSummary_IdAndSourceIgnoreCaseAndNameIgnoreCaseAndIdNot(
+                visitSummary.getId(), normalizedSource, normalizedName, diagnosis.getId())) {
+            throw new DuplicateDiagnosisException();
+        }
+
+        if (Boolean.TRUE.equals(request.getPrimary())) {
+            diagnosisRepository.clearPrimaryForVisitSummary(visitSummary.getId());
+        }
+
+        Integer effectiveSinceYear = request.getSinceYear() != null ? request.getSinceYear() : diagnosis.getSinceYear();
+
+        diagnosis.setSource(normalizedSource);
+        diagnosis.setName(normalizedName);
+        diagnosis.setYears(request.getYears());
+        diagnosis.setMonths(request.getMonths());
+        diagnosis.setDays(request.getDays());
+        diagnosis.setSinceYear(effectiveSinceYear);
+        diagnosis.setChronic(request.getChronic());
+        diagnosis.setPrimaryDiagnosis(request.getPrimary());
+        diagnosis.setComments(normalizedComments);
+
+        Diagnosis updated;
+        try {
+            updated = diagnosisRepository.save(diagnosis);
+        } catch (DataIntegrityViolationException ex) {
+            throw new DuplicateDiagnosisException();
+        }
+
+        return new DiagnosisRowResponse(
+                updated.getName(),
+                formatSinceLabel(updated.getYears(), updated.getMonths(), updated.getDays(), true),
+                toSinceDate(updated.getSinceYear()),
+                updated.getChronic(),
+                updated.getPrimaryDiagnosis(),
+                updated.getComments()
         );
     }
 
@@ -185,5 +245,15 @@ public class DiagnosisService {
             return;
         }
         parts.add(value + " " + (value == 1 ? singular : plural));
+    }
+
+    private DiagnosisValidationException diagnosisNotFoundValidation() {
+        return new DiagnosisValidationException(
+                "DIAGNOSIS_002",
+                "DIAGNOSIS_002",
+                "Validation failed",
+                Map.of("currentName", "currentName is required"),
+                List.of("Diagnosis not found")
+        );
     }
 }

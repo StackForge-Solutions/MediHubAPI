@@ -17,10 +17,20 @@ public class DiagnosisValidationException extends DiagnosisException {
             Map<String, String> validationErrors,
             List<String> errors
     ) {
+        this(errorCode, "VALIDATION_ERROR", message, validationErrors, errors);
+    }
+
+    public DiagnosisValidationException(
+            String errorCode,
+            String responseCode,
+            String message,
+            Map<String, String> validationErrors,
+            List<String> errors
+    ) {
         super(HttpStatus.BAD_REQUEST, errorCode, message);
         this.validationErrors = validationErrors;
         this.errors = errors;
-        this.responseCode = "VALIDATION_ERROR";
+        this.responseCode = responseCode;
     }
 
     public Map<String, String> getValidationErrors() {

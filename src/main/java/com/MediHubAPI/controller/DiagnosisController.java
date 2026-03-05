@@ -4,6 +4,7 @@ import com.MediHubAPI.dto.diagnosis.CreateDiagnosisRequest;
 import com.MediHubAPI.dto.diagnosis.CreateDiagnosisResponse;
 import com.MediHubAPI.dto.diagnosis.FetchDiagnosesResponse;
 import com.MediHubAPI.dto.diagnosis.DiagnosisRowResponse;
+import com.MediHubAPI.dto.diagnosis.UpdateDiagnosisRequest;
 import com.MediHubAPI.exception.diagnosis.DiagnosisInvalidInputException;
 import com.MediHubAPI.exception.diagnosis.DiagnosisValidationException;
 import com.MediHubAPI.service.DiagnosisService;
@@ -36,6 +37,21 @@ public class DiagnosisController {
         DiagnosisRowResponse created = diagnosisService.createDiagnosis(resolvedAppointmentId, request);
         CreateDiagnosisResponse response = new CreateDiagnosisResponse(created, "Diagnosis created successfully");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PutMapping
+    public ResponseEntity<CreateDiagnosisResponse> updateDiagnosis(
+            @RequestParam(required = false) Long appointmentId,
+            @RequestBody UpdateDiagnosisRequest request
+    ) {
+        validateUpdateRequest(request);
+        Long resolvedAppointmentId = resolveUpdateAppointmentId(appointmentId, request.getAppointmentId());
+        log.info("API call: updateDiagnosis appointmentId={}, source={}, currentName={}",
+                resolvedAppointmentId, request.getSource(), request.getCurrentName());
+
+        DiagnosisRowResponse updated = diagnosisService.updateDiagnosis(resolvedAppointmentId, request);
+        CreateDiagnosisResponse response = new CreateDiagnosisResponse(updated, "Diagnosis updated successfully");
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping
@@ -83,5 +99,46 @@ public class DiagnosisController {
         }
 
         return appointmentId;
+    }
+
+    private Long resolveUpdateAppointmentId(Long queryParamAppointmentId, Long bodyAppointmentId) {
+        if (queryParamAppointmentId == null && bodyAppointmentId == null) {
+            throw diagnosisValidation("appointmentId", "appointmentId is required", "Invalid appointment id");
+        }
+
+        if (queryParamAppointmentId != null && queryParamAppointmentId <= 0) {
+            throw diagnosisValidation("appointmentId", "appointmentId must be a positive integer", "Invalid appointment id");
+        }
+
+        if (bodyAppointmentId != null && bodyAppointmentId <= 0) {
+            throw diagnosisValidation("appointmentId", "appointmentId must be a positive integer", "Invalid appointment id");
+        }
+
+        if (queryParamAppointmentId != null && bodyAppointmentId != null
+                && !queryParamAppointmentId.equals(bodyAppointmentId)) {
+            throw diagnosisValidation("appointmentId", "appointmentId in query and request body must match", "Invalid appointment id");
+        }
+
+        return queryParamAppointmentId != null ? queryParamAppointmentId : bodyAppointmentId;
+    }
+
+    private void validateUpdateRequest(UpdateDiagnosisRequest request) {
+        if (request == null) {
+            throw diagnosisValidation("payload", "payload is required", "Validation failed");
+        }
+
+        if (request.getCurrentName() == null || request.getCurrentName().trim().isEmpty()) {
+            throw diagnosisValidation("currentName", "currentName is required", "Diagnosis not found");
+        }
+    }
+
+    private DiagnosisValidationException diagnosisValidation(String field, String fieldMessage, String error) {
+        return new DiagnosisValidationException(
+                "DIAGNOSIS_002",
+                "DIAGNOSIS_002",
+                "Validation failed",
+                Map.of(field, fieldMessage),
+                List.of(error)
+        );
     }
 }
