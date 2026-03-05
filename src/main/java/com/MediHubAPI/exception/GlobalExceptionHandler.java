@@ -2,6 +2,7 @@ package com.MediHubAPI.exception;
 
 import com.MediHubAPI.dto.ApiResponse;
 import com.MediHubAPI.dto.ErrorResponse;
+import com.MediHubAPI.exception.diagnosis.DiagnosisValidationException;
 import com.MediHubAPI.exception.billing.DuplicateReceiptException;
 import com.MediHubAPI.exception.billing.DuplicateTxnRefException;
 import com.MediHubAPI.exception.billing.IdempotencyConflictException;
@@ -39,16 +40,35 @@ public class GlobalExceptionHandler {
 
     private final ValidationErrorMapper validationErrorMapper;
 
+    @ExceptionHandler(DiagnosisValidationException.class)
+    public ResponseEntity<ErrorResponse> handleDiagnosisValidation(DiagnosisValidationException ex, HttpServletRequest request) {
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI(),
+                Instant.now()
+        );
+        error.setCode(ex.getResponseCode());
+        error.setErrorCode(ex.getCode());
+        error.setValidationErrors(ex.getValidationErrors());
+        error.setErrors(ex.getErrors());
+        error.setTraceId(validationErrorMapper.extractTraceId(request));
+        return ResponseEntity.badRequest().body(error);
+    }
+
     @ExceptionHandler(HospitalAPIException.class)
     public ResponseEntity<ErrorResponse> handleHospitalAPIException(HospitalAPIException ex, WebRequest request) {
+        String path = normalizePath(request.getDescription(false));
         ErrorResponse error = new ErrorResponse(
                 ex.getStatus().value(),
                 ex.getStatus().getReasonPhrase(),
                 ex.getMessage(),
-                request.getDescription(false),
+                path,
                 Instant.now()
         );
         error.setCode(ex.getCode());
+        error.setErrorCode(ex.getCode());
         return new ResponseEntity<>(error, ex.getStatus());
     }
 
@@ -92,7 +112,7 @@ public class GlobalExceptionHandler {
                 status.value(),
                 status.getReasonPhrase(),
                 message,
-                request.getDescription(false),
+                normalizePath(request.getDescription(false)),
                 Instant.now()
         );
         return new ResponseEntity<>(error, status);
@@ -101,7 +121,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(
             AccessDeniedException ex, WebRequest request) {
-        String path = request.getDescription(false); // e.g. "uri=/api/test-roles/super-admin"
+        String path = normalizePath(request.getDescription(false)); // e.g. "/api/test-roles/super-admin"
+        if (path == null) {
+            path = "";
+        }
         String message;
 
         if (path.contains("/api/test-roles/super-admin")) {
@@ -181,7 +204,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
                 ex.getMessage(), //  USE ACTUAL ERROR MESSAGE INSTEAD OF GENERIC
-                request.getDescription(false),
+                normalizePath(request.getDescription(false)),
                 Instant.now()
         );
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -194,7 +217,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT.getReasonPhrase(),
                 ex.getMessage(),
 //                "Slot conflict: Either the doctor or patient is already booked in this slot.", //  User-friendly message
-                request.getDescription(false),
+                normalizePath(request.getDescription(false)),
                 Instant.now()
         );
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
@@ -242,5 +265,12 @@ public class GlobalExceptionHandler {
         errorResponse.setErrorCode("VALIDATION_ERROR");
         errorResponse.setTraceId(validationErrorMapper.extractTraceId(request));
         return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    private String normalizePath(String path) {
+        if (path == null) {
+            return null;
+        }
+        return path.startsWith("uri=") ? path.substring(4) : path;
     }
 }

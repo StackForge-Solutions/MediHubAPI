@@ -44,6 +44,8 @@ public class VisitSummary {
     @OneToOne(mappedBy = "visitSummary", cascade = CascadeType.ALL, orphanRemoval = true)
     private MedicalHistory medicalHistory;
 
+    @OneToMany(mappedBy = "visitSummary", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Diagnosis> diagnoses;
 
 }
 
