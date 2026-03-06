@@ -1,28 +1,26 @@
 package com.MediHubAPI.controller;
 
-import com.MediHubAPI.dto.emr.IpAdmissionFetchResponse;
-import com.MediHubAPI.dto.emr.IpAdmissionSaveRequest;
-import com.MediHubAPI.dto.emr.IpAdmissionSaveResponse;
-import com.MediHubAPI.exception.GlobalExceptionHandler;
-import com.MediHubAPI.exception.HospitalAPIException;
-import com.MediHubAPI.exception.ValidationErrorMapper;
-import com.MediHubAPI.service.emr.IpAdmissionService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.time.LocalDate;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
-import java.time.LocalDate;
+import com.MediHubAPI.controller.emr.EmrIpAdmissionController;
+import com.MediHubAPI.dto.emr.IpAdmissionFetchResponse;
+import com.MediHubAPI.dto.emr.IpAdmissionSaveRequest;
+import com.MediHubAPI.dto.emr.IpAdmissionSaveResponse;
+import com.MediHubAPI.exception.GlobalExceptionHandler;
+import com.MediHubAPI.exception.ValidationErrorMapper;
+import com.MediHubAPI.service.emr.IpAdmissionService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -124,13 +122,6 @@ class EmrIpAdmissionControllerIntegrationTest {
     @Test
     @DisplayName("POST /api/emr/appointments/{id}/ip-admission without visitDate returns validation error")
     void saveIpAdmissionWithoutVisitDateReturnsValidationError() throws Exception {
-        when(ipAdmissionService.saveIpAdmission(eq(5L), any(IpAdmissionSaveRequest.class)))
-                .thenThrow(new HospitalAPIException(
-                        HttpStatus.BAD_REQUEST,
-                        "VISIT_DATE_REQUIRED",
-                        "visitDate is required"
-                ));
-
         String requestBody = """
                 {
                   "admissionAdvised": "yes",
@@ -145,11 +136,64 @@ class EmrIpAdmissionControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("VISIT_DATE_REQUIRED"))
-                .andExpect(jsonPath("$.errorCode").value("VISIT_DATE_REQUIRED"))
-                .andExpect(jsonPath("$.message").value("visitDate is required"))
-                .andExpect(jsonPath("$.path").value("/api/emr/appointments/5/ip-admission"));
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.validationErrors.visitDate").value("visitDate is required"));
 
-        verify(ipAdmissionService).saveIpAdmission(eq(5L), any(IpAdmissionSaveRequest.class));
+        verifyNoInteractions(ipAdmissionService);
+    }
+
+    @Test
+    @DisplayName("POST /api/emr/appointments/{id}/ip-admission with admissionAdvised=na succeeds without reason")
+    void saveIpAdmissionWithNa() throws Exception {
+        IpAdmissionSaveResponse resp = IpAdmissionSaveResponse.builder()
+                .ipAdmissionId(12L)
+                .appointmentId(6L)
+                .savedAt("2026-03-06T12:00:00Z")
+                .build();
+        when(ipAdmissionService.saveIpAdmission(eq(6L), any(IpAdmissionSaveRequest.class))).thenReturn(resp);
+
+        String requestBody = """
+                {
+                  "visitDate": "2026-03-07",
+                  "admissionAdvised": "na",
+                  "remarks": "Undecided",
+                  "notes": "Pending decision"
+                }
+                """;
+
+        mockMvc.perform(post("/api/emr/appointments/{appointmentId}/ip-admission", 6L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ipAdmissionId").value(12))
+                .andExpect(jsonPath("$.appointmentId").value(6))
+                .andExpect(jsonPath("$.savedAt").value("2026-03-06T12:00:00Z"));
+
+        verify(ipAdmissionService).saveIpAdmission(eq(6L), any(IpAdmissionSaveRequest.class));
+    }
+
+    @Test
+    @DisplayName("POST /api/emr/appointments/{id}/ip-admission with invalid admissionAdvised returns error")
+    void saveIpAdmissionWithInvalidAdmissionAdvised() throws Exception {
+        String requestBody = """
+                {
+                  "visitDate": "2026-03-08",
+                  "admissionAdvised": "maybe",
+                  "remarks": "TBD",
+                  "notes": "Check later"
+                }
+                """;
+
+        mockMvc.perform(post("/api/emr/appointments/{appointmentId}/ip-admission", 7L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.validationErrors.admissionAdvised").value(
+                        "admissionAdvised must be one of: yes, no, na"));
+
+        verifyNoInteractions(ipAdmissionService);
     }
 }
