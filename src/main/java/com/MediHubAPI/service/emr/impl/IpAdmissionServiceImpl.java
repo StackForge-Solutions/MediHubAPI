@@ -62,14 +62,37 @@ public class IpAdmissionServiceImpl implements IpAdmissionService {
                         "Appointment not found with ID: " + appointmentId
                 ));
 
-        String admissionAdvised = request.getAdmissionAdvised() == null
-                ? null
-                : request.getAdmissionAdvised().trim().toLowerCase(Locale.ROOT);
+        if (request == null) {
+            throw new HospitalAPIException(
+                    HttpStatus.BAD_REQUEST,
+                    "PAYLOAD_REQUIRED",
+                    "Request body is required"
+            );
+        }
+
+        if (request.getVisitDate() == null) {
+            throw new HospitalAPIException(
+                    HttpStatus.BAD_REQUEST,
+                    "VISIT_DATE_REQUIRED",
+                    "visitDate is required"
+            );
+        }
+
+        String admissionAdvisedRaw = request.getAdmissionAdvised();
+        if (admissionAdvisedRaw == null || admissionAdvisedRaw.trim().isEmpty()) {
+            throw new HospitalAPIException(
+                    HttpStatus.BAD_REQUEST,
+                    "ADMISSION_ADVISED_REQUIRED",
+                    "admissionAdvised is required"
+            );
+        }
+
+        String admissionAdvised = admissionAdvisedRaw.trim().toLowerCase(Locale.ROOT);
 
         if (!"yes".equals(admissionAdvised) && !"no".equals(admissionAdvised) && !"na".equals(admissionAdvised)) {
             throw new HospitalAPIException(
                     HttpStatus.BAD_REQUEST,
-                    "INVALID_INPUT",
+                    "ADMISSION_ADVISED_INVALID",
                     "admissionAdvised must be one of: yes, no, na"
             );
         }
@@ -78,15 +101,22 @@ public class IpAdmissionServiceImpl implements IpAdmissionService {
             if (isBlank(request.getAdmissionReason())) {
                 throw new HospitalAPIException(
                         HttpStatus.BAD_REQUEST,
-                        "INVALID_INPUT",
+                        "ADMISSION_REASON_REQUIRED",
                         "admissionReason is required when admissionAdvised is 'yes'"
                 );
             }
             if (request.getTentativeStayDays() == null) {
                 throw new HospitalAPIException(
                         HttpStatus.BAD_REQUEST,
-                        "INVALID_INPUT",
+                        "TENTATIVE_STAY_REQUIRED",
                         "tentativeStayDays is required when admissionAdvised is 'yes'"
+                );
+            }
+            if (request.getTentativeStayDays() != null && request.getTentativeStayDays() < 1) {
+                throw new HospitalAPIException(
+                        HttpStatus.BAD_REQUEST,
+                        "TENTATIVE_STAY_MIN",
+                        "tentativeStayDays must be at least 1"
                 );
             }
         }
