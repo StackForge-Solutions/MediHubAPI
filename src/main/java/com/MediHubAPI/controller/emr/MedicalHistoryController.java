@@ -1,11 +1,16 @@
-package com.MediHubAPI.controller;
+package com.MediHubAPI.controller.emr;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import com.MediHubAPI.dto.ApiResponse;
 import com.MediHubAPI.dto.MedicalHistoryDTO;
 import com.MediHubAPI.service.MedicalHistoryService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/medical-history")
@@ -15,7 +20,9 @@ public class MedicalHistoryController {
 
     private final MedicalHistoryService medicalHistoryService;
 
-    /** ------------------- Save or Update ------------------- */
+    /**
+     * ------------------- Save or Update -------------------
+     */
     @PostMapping
     public ApiResponse<MedicalHistoryDTO> saveOrUpdateMedicalHistory(
             @RequestParam Long appointmentId,
@@ -27,7 +34,9 @@ public class MedicalHistoryController {
         return ApiResponse.success(saved, "/api/medical-history", "Medical History saved/updated successfully");
     }
 
-    /** ------------------- Get Medical History ------------------- */
+    /**
+     * ------------------- Get Medical History -------------------
+     */
     @GetMapping
     public ApiResponse<MedicalHistoryDTO> getMedicalHistory(
             @RequestParam Long appointmentId

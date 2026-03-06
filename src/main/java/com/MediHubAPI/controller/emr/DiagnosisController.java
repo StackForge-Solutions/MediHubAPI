@@ -1,22 +1,27 @@
-package com.MediHubAPI.controller;
+package com.MediHubAPI.controller.emr;
 
-import com.MediHubAPI.dto.diagnosis.CreateDiagnosisRequest;
-import com.MediHubAPI.dto.diagnosis.CreateDiagnosisResponse;
-import com.MediHubAPI.dto.diagnosis.FetchDiagnosesResponse;
-import com.MediHubAPI.dto.diagnosis.DiagnosisRowResponse;
-import com.MediHubAPI.dto.diagnosis.UpdateDiagnosisRequest;
-import com.MediHubAPI.exception.diagnosis.DiagnosisInvalidInputException;
-import com.MediHubAPI.exception.diagnosis.DiagnosisValidationException;
-import com.MediHubAPI.service.DiagnosisService;
+import java.util.List;
+import java.util.Map;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import com.MediHubAPI.dto.diagnosis.CreateDiagnosisRequest;
+import com.MediHubAPI.dto.diagnosis.CreateDiagnosisResponse;
+import com.MediHubAPI.dto.diagnosis.DiagnosisRowResponse;
+import com.MediHubAPI.dto.diagnosis.FetchDiagnosesResponse;
+import com.MediHubAPI.dto.diagnosis.UpdateDiagnosisRequest;
+import com.MediHubAPI.exception.diagnosis.DiagnosisInvalidInputException;
+import com.MediHubAPI.exception.diagnosis.DiagnosisValidationException;
+import com.MediHubAPI.service.DiagnosisService;
 
 @RestController
 @RequestMapping("/api/diagnoses")
@@ -107,16 +112,19 @@ public class DiagnosisController {
         }
 
         if (queryParamAppointmentId != null && queryParamAppointmentId <= 0) {
-            throw diagnosisValidation("appointmentId", "appointmentId must be a positive integer", "Invalid appointment id");
+            throw diagnosisValidation("appointmentId", "appointmentId must be a positive integer",
+                    "Invalid appointment id");
         }
 
         if (bodyAppointmentId != null && bodyAppointmentId <= 0) {
-            throw diagnosisValidation("appointmentId", "appointmentId must be a positive integer", "Invalid appointment id");
+            throw diagnosisValidation("appointmentId", "appointmentId must be a positive integer",
+                    "Invalid appointment id");
         }
 
         if (queryParamAppointmentId != null && bodyAppointmentId != null
                 && !queryParamAppointmentId.equals(bodyAppointmentId)) {
-            throw diagnosisValidation("appointmentId", "appointmentId in query and request body must match", "Invalid appointment id");
+            throw diagnosisValidation("appointmentId", "appointmentId in query and request body must match",
+                    "Invalid appointment id");
         }
 
         return queryParamAppointmentId != null ? queryParamAppointmentId : bodyAppointmentId;

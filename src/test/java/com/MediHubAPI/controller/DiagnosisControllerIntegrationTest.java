@@ -1,5 +1,18 @@
 package com.MediHubAPI.controller;
 
+import java.time.Instant;
+import java.util.List;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import com.MediHubAPI.controller.emr.DiagnosisController;
 import com.MediHubAPI.dto.diagnosis.DiagnosisRowResponse;
 import com.MediHubAPI.exception.GlobalExceptionHandler;
 import com.MediHubAPI.exception.ValidationErrorMapper;
@@ -7,19 +20,6 @@ import com.MediHubAPI.service.DiagnosisService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
-import java.time.Instant;
-import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -168,7 +168,8 @@ class DiagnosisControllerIntegrationTest {
                 .andExpect(jsonPath("$.path").value("/api/diagnoses"))
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.errorCode").value("DIAGNOSIS_002"))
-                .andExpect(jsonPath("$.validationErrors.appointmentId").value("appointmentId must be a positive integer"))
+                .andExpect(
+                        jsonPath("$.validationErrors.appointmentId").value("appointmentId must be a positive integer"))
                 .andExpect(jsonPath("$.errors[0]").value("Invalid appointment id"));
 
         verifyNoInteractions(diagnosisService);
