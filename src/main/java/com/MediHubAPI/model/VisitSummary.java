@@ -37,6 +37,9 @@ public class VisitSummary {
     @OneToOne(mappedBy = "visitSummary", cascade = CascadeType.ALL, orphanRemoval = true)
     private Vitals vitals;
 
+    @OneToOne(mappedBy = "visitSummary", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Allergy allergy;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "appointment_id")
     private Appointment appointment;
