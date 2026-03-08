@@ -1,8 +1,10 @@
 package com.MediHubAPI.exception;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -14,12 +16,8 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 /**
  * Collects validation errors into a normalized payload that can be reused by different handlers.
@@ -96,16 +94,8 @@ public class ValidationErrorMapper {
             String message = "Malformed JSON";
             map.put("payload", message);
             errors.add(message);
-        } else if (cause instanceof MismatchedInputException mismatched) {
-            String path = formatJsonPath(mismatched.getPath());
-            String message = mismatched.getOriginalMessage();
-            if (path.isBlank()) {
-                path = "payload";
-            }
-            map.put(path, message);
-            errors.add(message);
         } else {
-            String message = cause != null ? cause.getMessage() : ex.getMessage();
+            String message = cause.getMessage();
             map.put("payload", message);
             errors.add(message);
         }
@@ -153,7 +143,8 @@ public class ValidationErrorMapper {
         boolean started = false;
         for (jakarta.validation.Path.Node node : propertyPath) {
             ElementKind kind = node.getKind();
-            if (kind == ElementKind.METHOD || kind == ElementKind.PARAMETER || kind == ElementKind.RETURN_VALUE || kind == ElementKind.CROSS_PARAMETER) {
+            if (kind == ElementKind.METHOD || kind == ElementKind.PARAMETER || kind == ElementKind.RETURN_VALUE ||
+                    kind == ElementKind.CROSS_PARAMETER) {
                 continue;
             }
             String name = node.getName();
@@ -175,6 +166,7 @@ public class ValidationErrorMapper {
     }
 
     public record ValidationProblem(Map<String, String> validationErrors, List<String> errors, String message) {
+
         public ValidationProblem {
             // Preserve insertion order but keep deterministic ordering for map
             validationErrors = validationErrors != null

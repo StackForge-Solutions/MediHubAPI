@@ -47,6 +47,15 @@ public class Diagnosis {
     @Column(length = 1000)
     private String comments;
 
+    @Column(
+            name = "primary_guard",
+            columnDefinition = "bigint GENERATED ALWAYS AS (case when is_primary then visit_summary_id else null end) STORED",
+            insertable = false,
+            updatable = false,
+            unique = true
+    )
+    private Long primaryGuard;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "visit_summary_id", nullable = false)
     private VisitSummary visitSummary;

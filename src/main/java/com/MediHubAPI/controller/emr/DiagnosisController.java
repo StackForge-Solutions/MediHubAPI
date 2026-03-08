@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,6 +19,7 @@ import com.MediHubAPI.dto.diagnosis.CreateDiagnosisRequest;
 import com.MediHubAPI.dto.diagnosis.CreateDiagnosisResponse;
 import com.MediHubAPI.dto.diagnosis.DiagnosisRowResponse;
 import com.MediHubAPI.dto.diagnosis.FetchDiagnosesResponse;
+import com.MediHubAPI.dto.diagnosis.UpdateDiagnosisByIdRequest;
 import com.MediHubAPI.dto.diagnosis.UpdateDiagnosisRequest;
 import com.MediHubAPI.exception.diagnosis.DiagnosisInvalidInputException;
 import com.MediHubAPI.exception.diagnosis.DiagnosisValidationException;
@@ -55,6 +57,18 @@ public class DiagnosisController {
                 resolvedAppointmentId, request.getSource(), request.getCurrentName());
 
         DiagnosisRowResponse updated = diagnosisService.updateDiagnosis(resolvedAppointmentId, request);
+        CreateDiagnosisResponse response = new CreateDiagnosisResponse(updated, "Diagnosis updated successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{diagnosisId}")
+    public ResponseEntity<CreateDiagnosisResponse> updateDiagnosisById(
+            @PathVariable Long diagnosisId,
+            @RequestParam(required = false) Long appointmentId,
+            @RequestBody UpdateDiagnosisByIdRequest request
+    ) {
+        validateUpdateByIdRequest(request);
+        DiagnosisRowResponse updated = diagnosisService.updateDiagnosisById(appointmentId, diagnosisId, request);
         CreateDiagnosisResponse response = new CreateDiagnosisResponse(updated, "Diagnosis updated successfully");
         return ResponseEntity.ok(response);
     }
@@ -137,6 +151,18 @@ public class DiagnosisController {
 
         if (request.getCurrentName() == null || request.getCurrentName().trim().isEmpty()) {
             throw diagnosisValidation("currentName", "currentName is required", "Diagnosis not found");
+        }
+    }
+
+    private void validateUpdateByIdRequest(UpdateDiagnosisByIdRequest request) {
+        if (request == null) {
+            throw diagnosisValidation("payload", "payload is required", "Validation failed");
+        }
+        if (request.getSource() == null || request.getSource().trim().isEmpty()) {
+            throw diagnosisValidation("source", "source is required", "Validation failed");
+        }
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            throw diagnosisValidation("name", "name is required", "Validation failed");
         }
     }
 

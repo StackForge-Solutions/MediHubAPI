@@ -29,4 +29,6 @@ public interface DiagnosisRepository extends JpaRepository<Diagnosis, Long> {
     int clearPrimaryForVisitSummary(@Param("visitSummaryId") Long visitSummaryId);
 
     List<Diagnosis> findByVisitSummary_Appointment_IdOrderByIdAsc(Long appointmentId);
+
+    Optional<Diagnosis> findFirstByVisitSummary_IdAndPrimaryDiagnosisTrue(Long visitSummaryId);
 }

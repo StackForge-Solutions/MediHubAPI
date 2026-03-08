@@ -1,5 +1,12 @@
 package com.MediHubAPI.service.emr.impl;
 
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.MediHubAPI.dto.emr.IpAdmissionFetchResponse;
 import com.MediHubAPI.dto.emr.IpAdmissionSaveRequest;
 import com.MediHubAPI.dto.emr.IpAdmissionSaveResponse;
@@ -9,14 +16,6 @@ import com.MediHubAPI.model.emr.IpAdmission;
 import com.MediHubAPI.repository.AppointmentRepository;
 import com.MediHubAPI.repository.emr.IpAdmissionRepository;
 import com.MediHubAPI.service.emr.IpAdmissionService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Locale;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
@@ -112,7 +111,7 @@ public class IpAdmissionServiceImpl implements IpAdmissionService {
                         "tentativeStayDays is required when admissionAdvised is 'yes'"
                 );
             }
-            if (request.getTentativeStayDays() != null && request.getTentativeStayDays() < 1) {
+            if (request.getTentativeStayDays() < 1) {
                 throw new HospitalAPIException(
                         HttpStatus.BAD_REQUEST,
                         "TENTATIVE_STAY_MIN",

@@ -1,17 +1,18 @@
 package com.MediHubAPI.service.lab.impl;
 
-import com.MediHubAPI.dto.lab.*;
-import com.MediHubAPI.repository.lab.LabTestMasterRepository;
-import com.MediHubAPI.repository.projection.LabTestMasterRowProjection;
-import com.MediHubAPI.service.lab.LabTestMasterService;
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.MediHubAPI.dto.lab.LabTestMasterItemDto;
+import com.MediHubAPI.dto.lab.LabTestMasterMetaDto;
+import com.MediHubAPI.dto.lab.LabTestMasterResponse;
+import com.MediHubAPI.repository.lab.LabTestMasterRepository;
+import com.MediHubAPI.repository.projection.LabTestMasterRowProjection;
+import com.MediHubAPI.service.lab.LabTestMasterService;
 
 @Slf4j
 @Service
@@ -29,7 +30,7 @@ public class LabTestMasterServiceImpl implements LabTestMasterService {
 
         // active: default true
         Boolean activeVal = (active == null) ? Boolean.TRUE : active;
-        Integer activeInt = (activeVal == null) ? null : (activeVal ? 1 : 0);
+        Integer activeInt = activeVal ? 1 : 0;
 
         String safeQ = (q == null) ? null : q.trim();
         String safeSort = (sort == null || sort.trim().isEmpty()) ? "name:asc" : sort.trim();
