@@ -58,11 +58,15 @@ public class PharmacyQueueService {
                     .createdAt(
                             r.getCreatedAt() != null ? r.getCreatedAt().atOffset(java.time.ZoneOffset.UTC).format(ISO) :
                                     null)
-                    .hasInsurance(Boolean.TRUE.equals(r.getHasInsurance()))
-                    .hasReferrer(Boolean.TRUE.equals(r.getHasReferrer()))
+                    .hasInsurance(toBool(r.getHasInsurance()))
+                    .hasReferrer(toBool(r.getHasReferrer()))
                     .status(r.getStatus())
                     .build());
         }
         return out;
+    }
+
+    private boolean toBool(Integer val) {
+        return val != null && val != 0;
     }
 }

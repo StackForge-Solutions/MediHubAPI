@@ -8,7 +8,7 @@ public interface PharmacyQueueRowProjection {
     String getPatientName();
     String getDoctorName();
     LocalDateTime getCreatedAt();
-    Boolean getHasInsurance();
-    Boolean getHasReferrer();
+    Integer getHasInsurance();
+    Integer getHasReferrer();
     String getStatus();
 }
