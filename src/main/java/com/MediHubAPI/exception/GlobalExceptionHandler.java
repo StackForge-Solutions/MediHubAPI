@@ -30,8 +30,11 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @ControllerAdvice
 @RequiredArgsConstructor
@@ -88,6 +91,48 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolations(ConstraintViolationException ex, HttpServletRequest request) {
         ValidationErrorMapper.ValidationProblem problem = validationErrorMapper.from(ex);
+        return buildValidationResponse(problem, request);
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ErrorResponse> handleCustomValidation(ValidationException ex, HttpServletRequest request) {
+        Map<String, String> validationErrors = new LinkedHashMap<>();
+        Set<String> uniqueErrors = new LinkedHashSet<>();
+
+        if (ex.getDetails() != null) {
+            for (ValidationException.ValidationErrorDetail detail : ex.getDetails()) {
+                if (detail == null) {
+                    continue;
+                }
+
+                String field = (detail.getField() == null || detail.getField().isBlank())
+                        ? "_global"
+                        : detail.getField();
+                String message = (detail.getMessage() == null || detail.getMessage().isBlank())
+                        ? "Validation failed"
+                        : detail.getMessage();
+
+                validationErrors.putIfAbsent(field, message);
+                uniqueErrors.add(message);
+            }
+        }
+
+        String summaryMessage = (ex.getMessage() == null || ex.getMessage().isBlank())
+                ? "Validation failed"
+                : ex.getMessage();
+
+        if (validationErrors.isEmpty()) {
+            validationErrors.put("_global", summaryMessage);
+            uniqueErrors.add(summaryMessage);
+        }
+
+        List<String> errors = new ArrayList<>(uniqueErrors);
+
+        ValidationErrorMapper.ValidationProblem problem = new ValidationErrorMapper.ValidationProblem(
+                validationErrors,
+                errors,
+                summaryMessage
+        );
         return buildValidationResponse(problem, request);
     }
 
@@ -252,10 +297,13 @@ public class GlobalExceptionHandler {
 
 
     private ResponseEntity<ErrorResponse> buildValidationResponse(ValidationErrorMapper.ValidationProblem problem, HttpServletRequest request) {
+        String message = (problem.message() == null || problem.message().isBlank())
+                ? "Validation failed"
+                : problem.message();
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "Validation failed",
+                message,
                 request.getRequestURI(),
                 Instant.now()
         );
@@ -264,6 +312,9 @@ public class GlobalExceptionHandler {
         errorResponse.setCode("VALIDATION_ERROR");
         errorResponse.setErrorCode("VALIDATION_ERROR");
         errorResponse.setTraceId(validationErrorMapper.extractTraceId(request));
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("validationErrors", problem.validationErrors());
+        errorResponse.setDetails(details);
         return ResponseEntity.badRequest().body(errorResponse);
     }
 

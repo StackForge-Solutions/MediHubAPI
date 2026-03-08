@@ -22,6 +22,7 @@ public class ErrorResponse {
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Instant timestamp;
 
+    private Map<String, Object> details;
     private Map<String, String> validationErrors;  // Added while keeping legacy fields intact
     private List<String> errors;
 

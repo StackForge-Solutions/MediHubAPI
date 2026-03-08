@@ -25,6 +25,8 @@ import com.MediHubAPI.dto.scheduling.session.publish.PublishResponse;
 import com.MediHubAPI.dto.scheduling.session.search.SearchResponse;
 import com.MediHubAPI.dto.scheduling.session.search.SessionScheduleSummaryDTO;
 import com.MediHubAPI.dto.scheduling.session.validate.ValidateRequest;
+import com.MediHubAPI.dto.scheduling.session.validate.ValidationIssueDTO;
+import com.MediHubAPI.exception.ValidationException;
 import com.MediHubAPI.exception.scheduling.session.SchedulingException;
 import com.MediHubAPI.mapper.scheduling.template.BootstrapSeedWeeklyMapper;
 import com.MediHubAPI.mapper.scheduling.template.BootstrapTemplateMapper;
@@ -57,10 +59,12 @@ import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -80,19 +84,6 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
     private final HolidayCalendarPort     holidayCalendarPort;
 
 
-// SessionScheduleServiceImpl.java (only the bootstrap() method - fully updated)
-//
-// Assumptions (based on your latest changes):
-// 1) BootstrapResponse now has fields:
-//    doctors, departments, holidays, templates, seedGlobalTemplateWeekly, seedOverrideWeekly, serverDate
-// 2) You created SeedWeeklyScheduleDTO + WeeklySessionDTO/WeeklyDayDTO updated,
-//    and BootstrapSeedWeeklyMapper.toSeedWeekly(...)
-// 3) Repository methods exist:
-//    findByModeAndWeekStartDate(...)
-//    findWithChildrenByModeAndWeekStartDate(...)
-//    findWithChildrenByModeAndDoctorIdAndWeekStartDate(...)
-//
-// If any of these names differ in your code, rename accordingly.
 
     @Override
     @Transactional(readOnly = true)
@@ -177,15 +168,15 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
     @Transactional
     public
     DraftResponse draft(DraftRequest request) {
-        // Validate plan using pure validator
         var validateReq = new ValidateRequest(request.mode(), request.doctorId(), request.departmentId(),
                                               request.weekStartDate(), request.slotDurationMin(), request.days());
-
-//        var validation = validationService.validate(validateReq);
-//        if (!validation.valid()) {
-//            throw SchedulingException.badRequest("SCHEDULE_INVALID",
-//                    "Draft validation failed: " + validation.issues().size() + " issue(s)");
-//        }
+        var validation = validationService.validate(validateReq);
+        if (!validation.valid()) {
+            throw new ValidationException(
+                    buildValidationMessage("save", validation.issues()),
+                    toValidationErrorDetails(validation.issues())
+            );
+        }
 
         String actor = actorProvider.currentActor();
 
@@ -295,15 +286,17 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
             throw SchedulingException.conflict("SCHEDULE_LOCKED", "Schedule is locked: " + schedule.getLockedReason());
         }
 
-        // Re-validate before publish (defensive)
         var validateReq = new ValidateRequest(schedule.getMode(), schedule.getDoctorId(), schedule.getDepartmentId(),
                                               schedule.getWeekStartDate(), schedule.getSlotDurationMin(),
                                               SessionScheduleMapper.toDayPlans(schedule.getDays()));
-//        var validation = validationService.validate(validateReq);
-//        if (!validation.valid()) {
-//            throw SchedulingException.badRequest("SCHEDULE_INVALID",
-//                    "Publish validation failed: " + validation.issues().size() + " issue(s)");
-//        }
+        var validation = validationService.validate(validateReq);
+        if (!validation.valid()) {
+            throw new ValidationException(
+                    buildValidationMessage("publish", validation.issues()),
+                    toValidationErrorDetails(validation.issues())
+            );
+        }
+
 
         boolean dryRun       = request.dryRun() || request.slotGenerationMode() == SlotGenerationMode.DRY_RUN;
         boolean failOnBooked = request.failOnBookedConflict();
@@ -496,10 +489,12 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
         // Validate first
         var validateReq = new ValidateRequest(request.mode(), request.doctorId(), request.departmentId(),
                                               request.weekStartDate(), request.slotDurationMin(), request.days());
-        var validation = validationService.validate(validateReq); if (!validation.valid()) {
-            throw SchedulingException.badRequest("SCHEDULE_INVALID",
-                                                 "Preview validation failed: " + validation.issues().size() + " issue"
-                                                 + "(s)");
+        var validation = validationService.validate(validateReq);
+        if (!validation.valid()) {
+            throw new ValidationException(
+                    buildValidationMessage("preview slots", validation.issues()),
+                    toValidationErrorDetails(validation.issues())
+            );
         }
 
         // Build a transient schedule (not saved)
@@ -753,6 +748,126 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
             entity.setBlockType(b.blockType()); entity.setStartTime(b.startTime()); entity.setEndTime(b.endTime());
             entity.setReason(b.reason()); out.add(entity);
         } return out;
+    }
+
+    private
+    String buildValidationMessage(String action, List<ValidationIssueDTO> issues) {
+        String header = "Cannot " + action + ". Fix the following issue(s):\n";
+        if (issues == null || issues.isEmpty()) {
+            return header + "- Validation failed.";
+        }
+
+        Set<String> uniqueMessages = issues.stream()
+                .map(this::toValidationIssueMessage)
+                .filter(obj -> true)
+                .map(String::trim)
+                .filter(message -> !message.isBlank())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        if (uniqueMessages.isEmpty()) {
+            return header + "- Validation failed.";
+        }
+
+        String bulletLines = uniqueMessages.stream()
+                .map(message -> "- " + (message.endsWith(".") ? message : message + "."))
+                .collect(Collectors.joining("\n"));
+
+        return header + bulletLines;
+    }
+
+    private
+    List<ValidationException.ValidationErrorDetail> toValidationErrorDetails(List<ValidationIssueDTO> issues) {
+        if (issues == null || issues.isEmpty()) {
+            return List.of(new ValidationException.ValidationErrorDetail("_global", "Validation failed"));
+        }
+
+        List<ValidationException.ValidationErrorDetail> details = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        for (ValidationIssueDTO issue : issues) {
+            String field = (issue == null || issue.pointer() == null || issue.pointer().isBlank())
+                    ? "_global"
+                    : issue.pointer();
+            String message = toValidationIssueMessage(issue);
+            if (message.isBlank()) {
+                message = "Validation failed";
+            }
+
+            String dedupeKey = field + "\u0000" + message;
+            if (seen.add(dedupeKey)) {
+                details.add(new ValidationException.ValidationErrorDetail(field, message));
+            }
+        }
+        return details;
+    }
+
+    private
+    String toValidationIssueMessage(ValidationIssueDTO issue) {
+        if (issue == null || issue.message() == null || issue.message().isBlank()) {
+            return "Validation failed";
+        }
+
+        String code = issue.code();
+        String message = issue.message().trim();
+
+        if ("INTERVAL_OVERLAP".equals(code)) {
+            return "Sessions overlap " + normalizeOverlapRanges(message, "Intervals overlap: ");
+        }
+        if ("BLOCK_INTERVAL_CONFLICT".equals(code)) {
+            String[] ranges = extractIntervalAndBlockRanges(message);
+            if (ranges != null) {
+                return "Break time " + ranges[1] + " overlaps with session time " + ranges[0];
+            }
+            return "Break time overlaps with session time";
+        }
+        if ("BLOCK_OVERLAP".equals(code)) {
+            return "Break times overlap " + normalizeOverlapRanges(message, "Blocks overlap: ");
+        }
+        if ("DAY_OFF_HAS_INTERVALS".equals(code)) {
+            return "This day is marked as off, so remove session times";
+        }
+        if ("INTERVAL_RANGE_INVALID".equals(code)) {
+            return "Session end time must be after start time";
+        }
+        if ("BLOCK_RANGE_INVALID".equals(code)) {
+            return "Break end time must be after start time";
+        }
+        if ("SLOT_DURATION_INVALID".equals(code)) {
+            return "Slot duration must be greater than 0 minutes";
+        }
+
+        return message;
+    }
+
+    private
+    String normalizeOverlapRanges(String message, String prefix) {
+        String overlap = message;
+        if (overlap.startsWith(prefix)) {
+            overlap = overlap.substring(prefix.length());
+        }
+        return overlap.replace(" with ", " and ");
+    }
+
+    private
+    String[] extractIntervalAndBlockRanges(String message) {
+        String prefix = "Block overlaps interval: interval ";
+        if (!message.startsWith(prefix)) {
+            return null;
+        }
+
+        String remaining = message.substring(prefix.length());
+        String marker = " vs block ";
+        int markerIndex = remaining.indexOf(marker);
+        if (markerIndex < 0) {
+            return null;
+        }
+
+        String intervalRange = remaining.substring(0, markerIndex).trim();
+        String blockRange = remaining.substring(markerIndex + marker.length()).trim();
+        if (intervalRange.isBlank() || blockRange.isBlank()) {
+            return null;
+        }
+
+        return new String[]{intervalRange, blockRange};
     }
 
 

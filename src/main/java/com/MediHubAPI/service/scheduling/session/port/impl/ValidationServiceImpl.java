@@ -11,7 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -41,14 +43,14 @@ public class ValidationServiceImpl implements ValidationService {
 
             // Basic ordering checks
             for (int i = 0; i < intervals.size(); i++) {
-                var it = intervals.get(i);
-                if (isValidRange(it.startTime(), it.endTime())) {
+                SessionScheduleIntervalDTO interval = intervals.get(i);
+                if (isInvalidRange(interval.startTime(), interval.endTime())) {
                     issues.add(new ValidationIssueDTO("INTERVAL_RANGE_INVALID", "startTime must be < endTime", dayPtr + ".intervals[" + i + "]"));
                 }
             }
             for (int b = 0; b < blocks.size(); b++) {
-                var bl = blocks.get(b);
-                if (isValidRange(bl.startTime(), bl.endTime())) {
+                SessionScheduleBlockDTO block = blocks.get(b);
+                if (isInvalidRange(block.startTime(), block.endTime())) {
                     issues.add(new ValidationIssueDTO("BLOCK_RANGE_INVALID", "startTime must be < endTime", dayPtr + ".blocks[" + b + "]"));
                 }
             }
@@ -68,17 +70,23 @@ public class ValidationServiceImpl implements ValidationService {
         return new ValidateResponse(valid, issues);
     }
 
-    private boolean isValidRange(LocalTime start, LocalTime end) {
-        if (start == null || end == null) return true;
+    private boolean isInvalidRange(LocalTime start, LocalTime end) {
+        if (start == null || end == null) {
+            return true;
+        }
         return !start.isBefore(end);
     }
 
-    private void detectOverlapsIntervals(List<SessionScheduleIntervalDTO> intervals, String dayPtr, List<ValidationIssueDTO> issues) {
+    private void detectOverlapsIntervals(List<SessionScheduleIntervalDTO> intervals,
+                                         String dayPtr,
+                                         List<ValidationIssueDTO> issues) {
         List<IdxRange> ranges = new ArrayList<>();
         for (int i = 0; i < intervals.size(); i++) {
-            var it = intervals.get(i);
-            if (it.startTime() == null || it.endTime() == null) continue;
-            ranges.add(new IdxRange(i, it.startTime(), it.endTime()));
+            SessionScheduleIntervalDTO interval = intervals.get(i);
+            if (interval.startTime() == null || interval.endTime() == null) {
+                continue;
+            }
+            ranges.add(new IdxRange(i, interval.startTime(), interval.endTime()));
         }
         ranges.sort(Comparator.comparing(r -> r.start));
         for (int i = 1; i < ranges.size(); i++) {
@@ -94,12 +102,16 @@ public class ValidationServiceImpl implements ValidationService {
         }
     }
 
-    private void detectOverlapsBlocks(List<SessionScheduleBlockDTO> blocks, String dayPtr, List<ValidationIssueDTO> issues) {
+    private void detectOverlapsBlocks(List<SessionScheduleBlockDTO> blocks,
+                                      String dayPtr,
+                                      List<ValidationIssueDTO> issues) {
         List<IdxRange> ranges = new ArrayList<>();
         for (int i = 0; i < blocks.size(); i++) {
-            var bl = blocks.get(i);
-            if (bl.startTime() == null || bl.endTime() == null) continue;
-            ranges.add(new IdxRange(i, bl.startTime(), bl.endTime()));
+            SessionScheduleBlockDTO block = blocks.get(i);
+            if (block.startTime() == null || block.endTime() == null) {
+                continue;
+            }
+            ranges.add(new IdxRange(i, block.startTime(), block.endTime()));
         }
         ranges.sort(Comparator.comparing(r -> r.start));
         for (int i = 1; i < ranges.size(); i++) {
@@ -120,17 +132,21 @@ public class ValidationServiceImpl implements ValidationService {
                                               String dayPtr,
                                               List<ValidationIssueDTO> issues) {
         for (int i = 0; i < intervals.size(); i++) {
-            var it = intervals.get(i);
-            if (it.startTime() == null || it.endTime() == null) continue;
+            SessionScheduleIntervalDTO interval = intervals.get(i);
+            if (interval.startTime() == null || interval.endTime() == null) {
+                continue;
+            }
 
-            for (SessionScheduleBlockDTO bl : blocks) {
-                if (bl.startTime() == null || bl.endTime() == null) continue;
+            for (SessionScheduleBlockDTO block : blocks) {
+                if (block.startTime() == null || block.endTime() == null) {
+                    continue;
+                }
 
-                if (overlaps(it.startTime(), it.endTime(), bl.startTime(), bl.endTime())) {
+                if (overlaps(interval.startTime(), interval.endTime(), block.startTime(), block.endTime())) {
                     issues.add(new ValidationIssueDTO(
                             "BLOCK_INTERVAL_CONFLICT",
-                            "Block overlaps interval: interval " + it.startTime() + "-" + it.endTime() +
-                                    " vs block " + bl.startTime() + "-" + bl.endTime(),
+                            "Block overlaps interval: interval " + interval.startTime() + "-" + interval.endTime() +
+                                    " vs block " + block.startTime() + "-" + block.endTime(),
                             dayPtr + ".intervals[" + i + "]"
                     ));
                 }
