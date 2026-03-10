@@ -78,9 +78,23 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpec
             Pageable pageable
     );
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+               select distinct i from Invoice i
+               join i.items it
+               where i.appointmentId = :appointmentId
+                 and it.itemType = :itemType
+               order by i.createdAt desc
+            """)
+    List<Invoice> findLatestByAppointmentIdAndItemTypeForUpdate(
+            @Param("appointmentId") Long appointmentId,
+            @Param("itemType") InvoiceDtos.ItemType itemType,
+            Pageable pageable
+    );
+
     @Query(value = """
             select concat('TKN-', lpad(i.token_no, 3, '0')) as tokenNo,
-                   pu.hospital_id                           as patientId,
+                   i.patient_id                              as patientId,
                    concat(pu.first_name, ' ', pu.last_name) as patientName,
                    concat(du.first_name, ' ', du.last_name) as doctorName,
                    i.created_at                             as createdAt,
@@ -98,11 +112,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpec
                      left join patients pat on pat.user_id = i.patient_id
             where i.created_at >= :start
               and i.created_at < :end
+              and upper(coalesce(i.queue, '')) like '%PHARM%'
             order by i.created_at asc
             """,
             nativeQuery = true)
-//    and (i.queue is null or upper(i.queue) like '%PHARM%')
-
     List<PharmacyQueueRowProjection> fetchPharmacyQueue(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end

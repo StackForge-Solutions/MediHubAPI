@@ -1,17 +1,21 @@
 // src/main/java/com/MediHubAPI/billing/dto/InvoiceDtos.java
 package com.MediHubAPI.dto;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 public class InvoiceDtos {
 
-    public enum ItemType {SERVICE, LAB_TEST, MEDICINE, PACKAGE, OTHER}
+    public enum ItemType {SERVICE, LAB_TEST, MEDICINE, PACKAGE, OTHER, PHARMACY}
 
     // ---------- Create Draft ----------
     public record CreateInvoiceReq(
@@ -109,6 +113,7 @@ public class InvoiceDtos {
             String notes
     ) {
     }
+
     public record InvoiceDraftRes(
             Long invoiceId,
             String status,                 // "DRAFT"
@@ -135,6 +140,7 @@ public class InvoiceDtos {
             OffsetDateTime updatedAt,      // UTC ISO
             Long version                  // optimistic lock version
     ) {
+
         public record Item(
                 //  identity/type fields
                 ItemType itemType,

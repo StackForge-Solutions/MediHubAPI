@@ -19,7 +19,7 @@ public class PharmacyQueueService {
 
     private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
     private static final String PHARMACY_QUEUE_SQL = """
-            select concat('TKN-', lpad(i.token_no, 3, '0')) as tokenNo, pu.hospital_id as patientId,
+            select concat('TKN-', lpad(i.token_no, 3, '0')) as tokenNo, i.patient_id as patientId,
                    concat(pu.first_name, ' ', pu.last_name) as patientName, concat(du.first_name, ' ', du.last_name) as doctorName,
                    i.created_at as createdAt,
                    (upper(coalesce(i.queue, '')) like '%INSUR%') as hasInsurance,
@@ -30,7 +30,7 @@ public class PharmacyQueueService {
             join users du on du.id = i.doctor_id
             left join patients pat on pat.user_id = i.patient_id
             where i.created_at >= :start and i.created_at < :end
-              and (i.queue is null or upper(i.queue) like '%PHARM%')
+              and upper(coalesce(i.queue, '')) like '%PHARM%'
             order by i.created_at asc
             """;
 

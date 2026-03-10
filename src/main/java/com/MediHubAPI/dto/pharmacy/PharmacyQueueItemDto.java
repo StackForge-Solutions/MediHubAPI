@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class PharmacyQueueItemDto {
     private int rowId;
     private String tokenNo;
-    private String patientId;
+    private Long patientId;
     private String patientName;
     private String doctorName;
     private String createdAt;   // ISO string

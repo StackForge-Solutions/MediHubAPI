@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 public interface PharmacyQueueRowProjection {
     String getTokenNo();
-    String getPatientId();
+    Long getPatientId();
     String getPatientName();
     String getDoctorName();
     LocalDateTime getCreatedAt();
