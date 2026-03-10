@@ -10,6 +10,7 @@ import com.MediHubAPI.dto.scheduling.session.copy.CopyFromWeekRequest;
 import com.MediHubAPI.dto.scheduling.session.copy.CopyFromWeekResponse;
 import com.MediHubAPI.dto.scheduling.session.copy.CopyLastWeekRequest;
 import com.MediHubAPI.dto.scheduling.session.copy.CopyWeekResponse;
+import com.MediHubAPI.dto.scheduling.session.draft.DraftDayStatusBadgeDTO;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftRequest;
 import com.MediHubAPI.dto.scheduling.session.draft.DraftResponse;
 import com.MediHubAPI.dto.scheduling.session.get.SessionScheduleDetailDTO;
@@ -72,6 +73,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public
 class SessionScheduleServiceImpl implements SessionScheduleService {
+
+    private static final String BADGE_LABEL_OVERRIDDEN = "Overridden";
+    private static final String BADGE_COLOR_HIGHLIGHT = "highlight";
 
     private final SessionScheduleRepository sessionScheduleRepository;
 
@@ -150,11 +154,13 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
                                                                                          Comparator.nullsFirst(Long::compareTo)).thenComparing(SessionSchedule::getId, Comparator.nullsFirst(Long::compareTo))).orElse(null);
 
             if (latestOverride != null) {
+                boolean inheritTemplate = latestOverride.isInheritTemplate();
+                String originForSessions = inheritTemplate ? "OVERRIDDEN" : "LOCAL";
                 seedOverrideWeekly = BootstrapSeedWeeklyMapper.toSeedWeekly(latestOverride, effectiveWeekStart,
-                                                                            pickedTemplateId, true, "Seed doctor " +
+                                                                            pickedTemplateId, inheritTemplate, "Seed doctor " +
                                                                                                     "override " +
                                                                                                     "schedule",
-                                                                            "OVERRIDDEN");
+                                                                            originForSessions);
             }
         }
 
@@ -201,6 +207,7 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
                         .status(ScheduleStatus.DRAFT)
                         .locked(request.locked())
                         .lockedReason(request.lockedReason())
+                        .inheritTemplate(Boolean.TRUE.equals(request.inheritTemplate()))
                         .build();
                 schedule.touchForCreate(actor);
             } else {
@@ -229,6 +236,7 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
                 schedule.setSlotDurationMin(request.slotDurationMin());
                 schedule.setLocked(request.locked());
                 schedule.setLockedReason(request.lockedReason());
+                applyInheritTemplatePreference(schedule, request.inheritTemplate());
                 schedule.touchForUpdate(actor);
             }
         } else {
@@ -251,7 +259,9 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
             schedule.setMode(request.mode()); schedule.setDoctorId(request.doctorId());
             schedule.setDepartmentId(request.departmentId()); schedule.setWeekStartDate(request.weekStartDate());
             schedule.setSlotDurationMin(request.slotDurationMin()); schedule.setLocked(request.locked());
-            schedule.setLockedReason(request.lockedReason()); schedule.touchForUpdate(actor);
+            schedule.setLockedReason(request.lockedReason());
+            applyInheritTemplatePreference(schedule, request.inheritTemplate());
+            schedule.touchForUpdate(actor);
         }
 
         // Map plan -> entities
@@ -262,7 +272,9 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
         log.info("SessionSchedule draft saved: scheduleId={}, doctorId={}, weekStart={}, status={}, version={}",
                  saved.getId(), saved.getDoctorId(), saved.getWeekStartDate(), saved.getStatus(), saved.getVersion());
 
-        return new DraftResponse(saved.getId(), saved.getVersion(), "Schedule draft saved successfully");
+        List<DraftDayStatusBadgeDTO> dayStatusBadges = buildDraftDayStatusBadges(saved);
+        return new DraftResponse(saved.getId(), saved.getVersion(), "Schedule draft saved successfully",
+                                 dayStatusBadges);
     }
 
     @Override
@@ -682,6 +694,22 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
         return skipped;
     }
 
+    private void applyInheritTemplatePreference(SessionSchedule schedule, Boolean inheritTemplate) {
+        if (inheritTemplate != null) {
+            schedule.setInheritTemplate(inheritTemplate);
+        }
+    }
+
+    private List<DraftDayStatusBadgeDTO> buildDraftDayStatusBadges(SessionSchedule saved) {
+        if (!saved.isInheritTemplate()) {
+            return List.of();
+        }
+        return saved.getDays().stream()
+                .sorted(Comparator.comparingInt(d -> d.getDayOfWeek().getValue()))
+                .map(d -> new DraftDayStatusBadgeDTO(d.getDayOfWeek(), BADGE_LABEL_OVERRIDDEN, BADGE_COLOR_HIGHLIGHT))
+                .toList();
+    }
+
 
     private
     List<SessionScheduleDay> toEntityDays(SessionSchedule schedule, List<SessionScheduleDayPlanDTO> plans) {
@@ -759,7 +787,6 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
 
         Set<String> uniqueMessages = issues.stream()
                 .map(this::toValidationIssueMessage)
-                .filter(obj -> true)
                 .map(String::trim)
                 .filter(message -> !message.isBlank())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -813,11 +840,15 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
             return "Sessions overlap " + normalizeOverlapRanges(message, "Intervals overlap: ");
         }
         if ("BLOCK_INTERVAL_CONFLICT".equals(code)) {
+            String blockRange = extractOutOfIntervalBlockRange(message);
+            if (blockRange != null) {
+                return "Break time " + blockRange + " must be inside a session time";
+            }
             String[] ranges = extractIntervalAndBlockRanges(message);
             if (ranges != null) {
                 return "Break time " + ranges[1] + " overlaps with session time " + ranges[0];
             }
-            return "Break time overlaps with session time";
+            return "Break time must be inside a session time";
         }
         if ("BLOCK_OVERLAP".equals(code)) {
             return "Break times overlap " + normalizeOverlapRanges(message, "Blocks overlap: ");
@@ -868,6 +899,17 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
         }
 
         return new String[]{intervalRange, blockRange};
+    }
+
+    private
+    String extractOutOfIntervalBlockRange(String message) {
+        String prefix = "Block outside intervals: block ";
+        if (!message.startsWith(prefix)) {
+            return null;
+        }
+
+        String blockRange = message.substring(prefix.length()).trim();
+        return blockRange.isBlank() ? null : blockRange;
     }
 
 

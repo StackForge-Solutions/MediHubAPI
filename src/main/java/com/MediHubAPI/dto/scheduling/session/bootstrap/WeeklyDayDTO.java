@@ -9,5 +9,7 @@ public record WeeklyDayDTO(
         boolean isDayOff,
         List<WeeklySessionDTO> sessions,
 
-        String notes
+        String notes,
+        String statusBadgeLabel,
+        String statusBadgeHighlightColor
 ) {}

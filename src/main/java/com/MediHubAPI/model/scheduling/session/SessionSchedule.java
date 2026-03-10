@@ -78,6 +78,9 @@ public class SessionSchedule {
     @Column(name = "locked_reason", length = 200)
     private String lockedReason;
 
+    @Column(name = "inherit_template", nullable = false)
+    private boolean inheritTemplate;
+
     @Version
     @Column(nullable = false)
     private Long version;

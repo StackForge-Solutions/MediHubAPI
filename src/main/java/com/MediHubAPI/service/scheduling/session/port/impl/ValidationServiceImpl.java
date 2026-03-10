@@ -61,7 +61,7 @@ public class ValidationServiceImpl implements ValidationService {
             // Overlap checks within blocks
             detectOverlapsBlocks(blocks, dayPtr, issues);
 
-            // Block vs interval conflicts
+            // Blocks must be fully contained in at least one interval
             detectBlockIntervalConflicts(intervals, blocks, dayPtr, issues);
         }
 
@@ -131,31 +131,40 @@ public class ValidationServiceImpl implements ValidationService {
                                               List<SessionScheduleBlockDTO> blocks,
                                               String dayPtr,
                                               List<ValidationIssueDTO> issues) {
-        for (int i = 0; i < intervals.size(); i++) {
-            SessionScheduleIntervalDTO interval = intervals.get(i);
-            if (interval.startTime() == null || interval.endTime() == null) {
+        List<IdxRange> validIntervals = new ArrayList<>();
+        for (SessionScheduleIntervalDTO interval : intervals) {
+            if (isInvalidRange(interval.startTime(), interval.endTime())) {
+                continue;
+            }
+            validIntervals.add(new IdxRange(-1, interval.startTime(), interval.endTime()));
+        }
+
+        for (int b = 0; b < blocks.size(); b++) {
+            SessionScheduleBlockDTO block = blocks.get(b);
+            if (isInvalidRange(block.startTime(), block.endTime())) {
                 continue;
             }
 
-            for (SessionScheduleBlockDTO block : blocks) {
-                if (block.startTime() == null || block.endTime() == null) {
-                    continue;
+            boolean containedInAnyInterval = false;
+            for (IdxRange interval : validIntervals) {
+                if (contains(interval.start, interval.end, block.startTime(), block.endTime())) {
+                    containedInAnyInterval = true;
+                    break;
                 }
+            }
 
-                if (overlaps(interval.startTime(), interval.endTime(), block.startTime(), block.endTime())) {
-                    issues.add(new ValidationIssueDTO(
-                            "BLOCK_INTERVAL_CONFLICT",
-                            "Block overlaps interval: interval " + interval.startTime() + "-" + interval.endTime() +
-                                    " vs block " + block.startTime() + "-" + block.endTime(),
-                            dayPtr + ".intervals[" + i + "]"
-                    ));
-                }
+            if (!containedInAnyInterval) {
+                issues.add(new ValidationIssueDTO(
+                        "BLOCK_INTERVAL_CONFLICT",
+                        "Block outside intervals: block " + block.startTime() + "-" + block.endTime(),
+                        dayPtr + ".blocks[" + b + "]"
+                ));
             }
         }
     }
 
-    private boolean overlaps(LocalTime aStart, LocalTime aEnd, LocalTime bStart, LocalTime bEnd) {
-        return aStart.isBefore(bEnd) && bStart.isBefore(aEnd);
+    private boolean contains(LocalTime containerStart, LocalTime containerEnd, LocalTime targetStart, LocalTime targetEnd) {
+        return !targetStart.isBefore(containerStart) && !targetEnd.isAfter(containerEnd);
     }
 
     private record IdxRange(int idx, LocalTime start, LocalTime end) {}

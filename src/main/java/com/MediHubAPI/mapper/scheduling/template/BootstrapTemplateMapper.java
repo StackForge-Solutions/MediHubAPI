@@ -73,7 +73,9 @@ public class BootstrapTemplateMapper {
                     dateISO.toString(),
                     d.isDayOff(),
                     sessions,
-                    "Notes default"
+                    "Notes default",
+                    null,
+                    null
             ));
         }
 
