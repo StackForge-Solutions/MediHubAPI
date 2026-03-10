@@ -787,7 +787,6 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
 
         Set<String> uniqueMessages = issues.stream()
                 .map(this::toValidationIssueMessage)
-                .filter(obj -> true)
                 .map(String::trim)
                 .filter(message -> !message.isBlank())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -841,11 +840,15 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
             return "Sessions overlap " + normalizeOverlapRanges(message, "Intervals overlap: ");
         }
         if ("BLOCK_INTERVAL_CONFLICT".equals(code)) {
+            String blockRange = extractOutOfIntervalBlockRange(message);
+            if (blockRange != null) {
+                return "Break time " + blockRange + " must be inside a session time";
+            }
             String[] ranges = extractIntervalAndBlockRanges(message);
             if (ranges != null) {
                 return "Break time " + ranges[1] + " overlaps with session time " + ranges[0];
             }
-            return "Break time overlaps with session time";
+            return "Break time must be inside a session time";
         }
         if ("BLOCK_OVERLAP".equals(code)) {
             return "Break times overlap " + normalizeOverlapRanges(message, "Blocks overlap: ");
@@ -896,6 +899,17 @@ class SessionScheduleServiceImpl implements SessionScheduleService {
         }
 
         return new String[]{intervalRange, blockRange};
+    }
+
+    private
+    String extractOutOfIntervalBlockRange(String message) {
+        String prefix = "Block outside intervals: block ";
+        if (!message.startsWith(prefix)) {
+            return null;
+        }
+
+        String blockRange = message.substring(prefix.length()).trim();
+        return blockRange.isBlank() ? null : blockRange;
     }
 
 
