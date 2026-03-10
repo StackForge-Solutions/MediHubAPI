@@ -24,6 +24,7 @@ public record DraftRequest(
 
         boolean locked,
         String lockedReason,
+        Boolean inheritTemplate,
 
         @Valid
         @NotNull

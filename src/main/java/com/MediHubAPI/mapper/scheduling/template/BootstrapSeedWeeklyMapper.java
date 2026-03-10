@@ -21,6 +21,10 @@ public class BootstrapSeedWeeklyMapper {
     private static final List<String> DEFAULT_CHANNELS = List.of("STAFF", "ONLINE", "CALL_CENTER");
     private static final String DEFAULT_ROOM = "OPD-101";
     private static final String TZ = "Asia/Kolkata";
+    private static final String BADGE_LABEL_INHERITED = "Inherited";
+    private static final String BADGE_LABEL_OVERRIDDEN = "Overridden";
+    private static final String BADGE_COLOR_INHERITED = "neutral";
+    private static final String BADGE_COLOR_OVERRIDDEN = "highlight";
 
     public static SeedWeeklyScheduleDTO toSeedWeekly(
             SessionSchedule schedule,
@@ -28,7 +32,7 @@ public class BootstrapSeedWeeklyMapper {
             Long templateId,
             Boolean inheritTemplate,
             String notes,
-            String originForSessions // "LOCAL" or "OVERRIDDEN"
+            String originForSessions // "LOCAL" or "OVERRIDDEN" or "INHERITED"
     ) {
         LocalDate weekEnd = weekStartMonday.plusDays(6);
 
@@ -39,6 +43,9 @@ public class BootstrapSeedWeeklyMapper {
         // Ensure stable ordering MON..SUN
         List<SessionScheduleDay> sortedDays = new ArrayList<>(schedule.getDays());
         sortedDays.sort(Comparator.comparing(d -> d.getDayOfWeek().getValue()));
+
+        String statusBadgeLabel = resolveDayStatusBadgeLabel(inheritTemplate, originForSessions);
+        String statusBadgeColor = resolveDayStatusBadgeColor(inheritTemplate, originForSessions);
 
         for (SessionScheduleDay d : sortedDays) {
             LocalDate dateISO = weekStartMonday.plusDays(d.getDayOfWeek().getValue() - 1);
@@ -81,7 +88,9 @@ public class BootstrapSeedWeeklyMapper {
                     dateISO.toString(),
                     d.isDayOff(),
                     sessions,
-                    null
+                    null,
+                    statusBadgeLabel,
+                    statusBadgeColor
             ));
         }
 
@@ -143,5 +152,25 @@ public class BootstrapSeedWeeklyMapper {
 
     private static String safeId(Long id) {
         return id == null ? "x" : String.valueOf(id);
+    }
+
+    private static String resolveDayStatusBadgeLabel(Boolean inheritTemplate, String originForSessions) {
+        if (!Boolean.TRUE.equals(inheritTemplate)) {
+            return null;
+        }
+        if ("OVERRIDDEN".equalsIgnoreCase(originForSessions)) {
+            return BADGE_LABEL_OVERRIDDEN;
+        }
+        return BADGE_LABEL_INHERITED;
+    }
+
+    private static String resolveDayStatusBadgeColor(Boolean inheritTemplate, String originForSessions) {
+        if (!Boolean.TRUE.equals(inheritTemplate)) {
+            return null;
+        }
+        if ("OVERRIDDEN".equalsIgnoreCase(originForSessions)) {
+            return BADGE_COLOR_OVERRIDDEN;
+        }
+        return BADGE_COLOR_INHERITED;
     }
 }
