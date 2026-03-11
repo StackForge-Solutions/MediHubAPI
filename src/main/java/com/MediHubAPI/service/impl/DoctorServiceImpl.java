@@ -1,28 +1,43 @@
 package com.MediHubAPI.service.impl;
 
-import com.MediHubAPI.dto.*;
-import com.MediHubAPI.dto.DoctorAvailabilityDto;
-import com.MediHubAPI.exception.HospitalAPIException;
-import com.MediHubAPI.exception.ResourceNotFoundException;
-import com.MediHubAPI.model.*;
-import com.MediHubAPI.model.enums.SlotStatus;
-import com.MediHubAPI.model.enums.SlotType;
-import com.MediHubAPI.repository.SlotRepository;
-import com.MediHubAPI.repository.UserRepository;
-import com.MediHubAPI.service.DoctorService;
-import com.MediHubAPI.specification.DoctorSpecification;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
-import java.time.*;
-import java.util.*;
-import java.util.stream.Collectors;
+import org.modelmapper.ModelMapper;
+import com.MediHubAPI.dto.DoctorAvailabilityDto;
+import com.MediHubAPI.dto.DoctorProfileDto;
+import com.MediHubAPI.dto.DoctorSearchCriteria;
+import com.MediHubAPI.dto.SlotResponseDto;
+import com.MediHubAPI.dto.SpecializationOptionDto;
+import com.MediHubAPI.dto.UserDto;
+import com.MediHubAPI.exception.HospitalAPIException;
+import com.MediHubAPI.exception.ResourceNotFoundException;
+import com.MediHubAPI.model.ERole;
+import com.MediHubAPI.model.Slot;
+import com.MediHubAPI.model.Specialization;
+import com.MediHubAPI.model.User;
+import com.MediHubAPI.model.enums.SlotStatus;
+import com.MediHubAPI.model.enums.SlotType;
+import com.MediHubAPI.repository.SlotRepository;
+import com.MediHubAPI.repository.SpecializationRepository;
+import com.MediHubAPI.repository.UserRepository;
+import com.MediHubAPI.service.DoctorService;
+import com.MediHubAPI.specification.DoctorSpecification;
 
 @Slf4j
 @Service
@@ -31,6 +46,7 @@ public class DoctorServiceImpl implements DoctorService {
 
     private final UserRepository userRepository;
     private final SlotRepository slotRepository;
+    private final SpecializationRepository specializationRepository;
     private final ModelMapper modelMapper;
 
     @Override
@@ -38,6 +54,14 @@ public class DoctorServiceImpl implements DoctorService {
         Specification<User> spec = new DoctorSpecification(criteria);
         return userRepository.findAll(spec, pageable)
                 .map(user -> modelMapper.map(user, UserDto.class));
+    }
+
+    @Override
+    public List<SpecializationOptionDto> getSpecializations() {
+        return specializationRepository.findAll().stream()
+                .sorted(Comparator.comparing(Specialization::getName, String.CASE_INSENSITIVE_ORDER))
+                .map(specialization -> new SpecializationOptionDto(specialization.getId(), specialization.getName()))
+                .toList();
     }
 
     @Override
@@ -67,13 +91,16 @@ public class DoctorServiceImpl implements DoctorService {
         // Validate slot duration
         Integer duration = dto.getSlotDurationInMinutes();
         if (duration == null || duration <= 0 || duration > 240) {
-            throw new HospitalAPIException(HttpStatus.BAD_REQUEST,"Slot duration must be between 1 and 240 minutes.");        }
+            throw new HospitalAPIException(HttpStatus.BAD_REQUEST, "Slot duration must be between 1 and 240 minutes.");
+        }
 
         boolean hasWeekly = dto.getWeeklyAvailability() != null && !dto.getWeeklyAvailability().isEmpty();
         boolean hasDateWise = dto.getDateWiseAvailability() != null && !dto.getDateWiseAvailability().isEmpty();
 
         if (!hasWeekly && !hasDateWise) {
-            throw new HospitalAPIException(HttpStatus.BAD_REQUEST, "Please provide either weeklyAvailability or dateWiseAvailability.");        }
+            throw new HospitalAPIException(HttpStatus.BAD_REQUEST,
+                    "Please provide either weeklyAvailability or dateWiseAvailability.");
+        }
 
         // Track already-added time ranges per date to prevent overlaps
         Map<LocalDate, List<DoctorAvailabilityDto.TimeRange>> slotTracker = new HashMap<>();
@@ -112,6 +139,7 @@ public class DoctorServiceImpl implements DoctorService {
             });
         }
     }
+
     private void validateTimeRange(DoctorAvailabilityDto.TimeRange range, String source) {
         if (range.getStart() == null || range.getEnd() == null) {
             throw new HospitalAPIException(HttpStatus.BAD_REQUEST, "Start and end time must be provided in " + source);
@@ -120,31 +148,35 @@ public class DoctorServiceImpl implements DoctorService {
             throw new HospitalAPIException(HttpStatus.BAD_REQUEST, "End time must be after start time in " + source);
         }
     }
+
     private void checkOverlap(Map<LocalDate, List<DoctorAvailabilityDto.TimeRange>> tracker,
-                              LocalDate date,
-                              DoctorAvailabilityDto.TimeRange newRange) {
+            LocalDate date,
+            DoctorAvailabilityDto.TimeRange newRange) {
         List<DoctorAvailabilityDto.TimeRange> existing = tracker.computeIfAbsent(date, d -> new ArrayList<>());
         for (DoctorAvailabilityDto.TimeRange r : existing) {
             if (isOverlapping(r.getStart(), r.getEnd(), newRange.getStart(), newRange.getEnd())) {
                 throw new HospitalAPIException(
                         HttpStatus.CONFLICT,
-                        String.format("Overlapping time blocks on %s: %s–%s overlaps with %s–%s", date, r.getStart(), r.getEnd(), newRange.getStart(), newRange.getEnd())
+                        String.format("Overlapping time blocks on %s: %s–%s overlaps with %s–%s", date, r.getStart(),
+                                r.getEnd(), newRange.getStart(), newRange.getEnd())
                 );
             }
         }
         existing.add(newRange);
     }
+
     private boolean isOverlapping(LocalTime start1, LocalTime end1, LocalTime start2, LocalTime end2) {
         return !start1.isAfter(end2.minusSeconds(1)) && !start2.isAfter(end1.minusSeconds(1));
     }
+
     private void generateSlotsWithConflictCheck(User doctor,
-                                                LocalDate date,
-                                                LocalTime start,
-                                                LocalTime end,
-                                                int duration) {
+            LocalDate date,
+            LocalTime start,
+            LocalTime end,
+            int duration) {
         LocalTime current = start;
 
-        while (current.plusMinutes(duration).compareTo(end) <= 0) {
+        while (!current.plusMinutes(duration).isAfter(end)) {
             LocalTime slotEnd = current.plusMinutes(duration);
 
             // Check if already booked
@@ -176,8 +208,6 @@ public class DoctorServiceImpl implements DoctorService {
             current = slotEnd;
         }
     }
-
-
 
 
     public void defineAvailabilityByDay(Long doctorId, DoctorAvailabilityDto dto) {

@@ -35,6 +35,7 @@ public class UserFactory {
         user.setPassword(passwordEncoder.encode(dto.getPassword())); // if applicable
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
+        user.setMobileNumber(dto.getMobileNumber());
 
         // Fetch roles from DB
         Set<Role> roles = new HashSet<>();

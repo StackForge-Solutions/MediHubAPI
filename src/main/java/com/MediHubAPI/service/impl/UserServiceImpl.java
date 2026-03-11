@@ -1,20 +1,7 @@
 package com.MediHubAPI.service.impl;
 
-import com.MediHubAPI.config.RolePermissionMatrix;
-import com.MediHubAPI.dto.UserCreateDto;
-import com.MediHubAPI.dto.UserDto;
-import com.MediHubAPI.exception.HospitalAPIException;
-import com.MediHubAPI.exception.ResourceNotFoundException;
-import com.MediHubAPI.exception.RolePermissionException;
-import com.MediHubAPI.factory.UserFactory;
-import com.MediHubAPI.model.ERole;
-import com.MediHubAPI.model.Role;
-import com.MediHubAPI.model.User;
-import com.MediHubAPI.repository.RoleRepository;
-import com.MediHubAPI.repository.UserRepository;
-import com.MediHubAPI.service.UserService;
-import com.MediHubAPI.specification.UserSpecification;
-import org.modelmapper.ModelMapper;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,10 +11,25 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import org.springframework.util.StringUtils;
+import org.modelmapper.ModelMapper;
+import com.MediHubAPI.config.RolePermissionMatrix;
+import com.MediHubAPI.dto.UserCreateDto;
+import com.MediHubAPI.dto.UserDto;
+import com.MediHubAPI.dto.UserUpdateDto;
+import com.MediHubAPI.exception.HospitalAPIException;
+import com.MediHubAPI.exception.ResourceNotFoundException;
+import com.MediHubAPI.exception.RolePermissionException;
+import com.MediHubAPI.factory.UserFactory;
+import com.MediHubAPI.model.ERole;
+import com.MediHubAPI.model.Role;
+import com.MediHubAPI.model.Specialization;
+import com.MediHubAPI.model.User;
+import com.MediHubAPI.repository.RoleRepository;
+import com.MediHubAPI.repository.SpecializationRepository;
+import com.MediHubAPI.repository.UserRepository;
+import com.MediHubAPI.service.UserService;
+import com.MediHubAPI.specification.UserSpecification;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -37,11 +39,13 @@ public class UserServiceImpl implements UserService {
     private final UserFactory userFactory;
     @Autowired
     private RoleRepository roleRepository;
+    @Autowired
+    private SpecializationRepository specializationRepository;
 
 
     public UserServiceImpl(UserRepository userRepository,
-                           ModelMapper mapper,
-                           UserFactory userFactory) {
+            ModelMapper mapper,
+            UserFactory userFactory) {
         this.userRepository = userRepository;
         this.mapper = mapper;
         this.userFactory = userFactory;
@@ -80,12 +84,16 @@ public class UserServiceImpl implements UserService {
             throw new HospitalAPIException(HttpStatus.BAD_REQUEST, "Email is already in use!");
         }
 
+        if (StringUtils.hasText(userCreateDto.getMobileNumber())
+                && userRepository.existsByMobileNumber(userCreateDto.getMobileNumber())) {
+            throw new HospitalAPIException(HttpStatus.BAD_REQUEST, "Mobile number is already in use!");
+        }
+
         User user = userFactory.createUser(userCreateDto);
         User newUser = userRepository.save(user);
 
         return mapToDTO(newUser);
     }
-
 
 
     private void validateUserCreateDto(UserCreateDto userCreateDto) {
@@ -117,7 +125,7 @@ public class UserServiceImpl implements UserService {
                 ERole currentRole = ERole.valueOf(role.replace("ROLE_", ""));
                 if (!RolePermissionMatrix.isRecognizedRole(currentRole)) {
                     throw new HospitalAPIException(HttpStatus.INTERNAL_SERVER_ERROR,
-                            "🏛️ Unrecognized " + currentRole + " Role in Backend");
+                            "ðŸ›ï¸ Unrecognized " + currentRole + " Role in Backend");
                 }
 
                 if (RolePermissionMatrix.canCreate(currentRole, newUserRole)) {
@@ -126,7 +134,7 @@ public class UserServiceImpl implements UserService {
 
             } catch (IllegalArgumentException e) {
                 throw new HospitalAPIException(HttpStatus.INTERNAL_SERVER_ERROR,
-                        "🏛️ Unrecognized " + role + " Role in Backend");
+                        "ðŸ›ï¸ Unrecognized " + role + " Role in Backend");
             }
         }
 
@@ -135,11 +143,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserDto> getAllUsers() {
-        return userRepository.findAll()
-                .stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+    public Page<UserDto> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(this::mapToDTO);
     }
 
 
@@ -149,13 +155,56 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
         return mapToDTO(user);
     }
+
     @Override
-    public void updateUserStatus(Long userId, boolean enabled) {
+    public UserDto updateUser(Long userId, UserUpdateDto userUpdateDto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
-        user.setEnabled(enabled);
-        userRepository.save(user);
+        if (StringUtils.hasText(userUpdateDto.getMobileNumber())
+                && userRepository.existsByMobileNumberAndIdNot(userUpdateDto.getMobileNumber(), userId)) {
+            throw new HospitalAPIException(HttpStatus.BAD_REQUEST, "Mobile number is already in use!");
+        }
+
+        if (userUpdateDto.getRoles().contains(ERole.SUPER_ADMIN)
+                && user.getRoles().stream().noneMatch(role -> role.getName() == ERole.SUPER_ADMIN)) {
+            throw new HospitalAPIException(HttpStatus.BAD_REQUEST, "SUPER_ADMIN role cannot be assigned via update.");
+        }
+
+        Set<Role> roleEntities = userUpdateDto.getRoles().stream()
+                .map(erole -> roleRepository.findByName(erole)
+                        .orElseThrow(() -> new ResourceNotFoundException("Role", "name", erole.name())))
+                .collect(Collectors.toSet());
+
+        boolean isDoctor = roleEntities.stream()
+                .anyMatch(role -> role.getName() == ERole.DOCTOR);
+
+        if (isDoctor) {
+            if (userUpdateDto.getSpecializationId() == null) {
+                throw new HospitalAPIException(HttpStatus.BAD_REQUEST, "Specialization is required for doctors");
+            }
+
+            Specialization specialization = specializationRepository.findById(userUpdateDto.getSpecializationId())
+                    .orElseThrow(() -> new HospitalAPIException(
+                            HttpStatus.BAD_REQUEST,
+                            "Specialization not found: " + userUpdateDto.getSpecializationId()
+                    ));
+            user.setSpecialization(specialization);
+        } else {
+            if (userUpdateDto.getSpecializationId() != null) {
+                throw new HospitalAPIException(HttpStatus.BAD_REQUEST, "Only doctors can have specialization");
+            }
+            user.setSpecialization(null);
+        }
+
+        user.setFirstName(userUpdateDto.getFirstName());
+        user.setLastName(userUpdateDto.getLastName());
+        user.setMobileNumber(userUpdateDto.getMobileNumber());
+        user.setEnabled(userUpdateDto.getEnabled());
+        user.setRoles(roleEntities);
+
+        User updatedUser = userRepository.save(user);
+        return mapToDTO(updatedUser);
     }
 
     @Override
@@ -167,12 +216,15 @@ public class UserServiceImpl implements UserService {
 
     private UserDto mapToDTO(User user) {
         UserDto userDto = mapper.map(user, UserDto.class);
+        userDto.setMobileNumber(user.getMobileNumber());
+        userDto.setSpecialization(user.getSpecialization() != null ? user.getSpecialization().getName() : null);
         Set<ERole> roles = user.getRoles().stream()
                 .map(Role::getName)
                 .collect(Collectors.toSet());
         userDto.setRoles(roles);
         return userDto;
     }
+
     @Override
     public UserDto updateUserRolesByUsername(String username, Set<ERole> roles) {
 
@@ -219,26 +271,4 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAll(spec, pageable)
                 .map(this::mapToDTO);
     }
-    @Override
-    public List<UserDto> createUsersBulk(List<UserCreateDto> users) {
-
-        return users.stream()
-                .map(userCreateDto -> {
-                    try {
-                        // 🔁 Reuse existing single-user logic
-                        return createUser(userCreateDto);
-                    } catch (HospitalAPIException ex) {
-                        // ❌ Stop entire batch on first failure (SAFE DEFAULT)
-                        throw ex;
-                    } catch (Exception ex) {
-                        throw new HospitalAPIException(
-                                HttpStatus.INTERNAL_SERVER_ERROR,
-                                "Failed to create user: " + userCreateDto.getUsername()
-                        );
-                    }
-                })
-                .collect(Collectors.toList());
-    }
-
-
 }
