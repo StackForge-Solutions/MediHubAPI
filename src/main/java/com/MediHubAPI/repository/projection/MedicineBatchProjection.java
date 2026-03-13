@@ -14,5 +14,5 @@ public interface MedicineBatchProjection {
     BigDecimal getSellingPrice();
     Integer getReceivedQty();
     Integer getAvailableQty();
-    Boolean getExpired();
+    Long getExpired();
 }

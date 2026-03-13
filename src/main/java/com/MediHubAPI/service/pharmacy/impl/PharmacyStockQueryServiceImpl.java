@@ -105,9 +105,9 @@ public class PharmacyStockQueryServiceImpl implements PharmacyStockQueryService 
         MdmMedicine medicine = getActiveMedicineOrThrow(medicineId);
         PharmacyStock stock = pharmacyStockRepository.findByMedicine_Id(medicineId).orElse(null);
 
-        Integer availableQty = stock == null || stock.getAvailableQty() == null ? 0 : stock.getAvailableQty();
+        int availableQty = stock == null || stock.getAvailableQty() == null ? 0 : stock.getAvailableQty();
         Integer reservedQty = stock == null || stock.getReservedQty() == null ? 0 : stock.getReservedQty();
-        Integer reorderLevel = stock == null || stock.getReorderLevel() == null ? 0 : stock.getReorderLevel();
+        int reorderLevel = stock == null || stock.getReorderLevel() == null ? 0 : stock.getReorderLevel();
 
         LocalDate nearestExpiryDate = pharmacyStockBatchRepository.findNearestExpiryDate(medicineId);
         BigDecimal stockValue = nullSafe(pharmacyStockBatchRepository.computeStockValue(medicineId));
@@ -287,7 +287,7 @@ public class PharmacyStockQueryServiceImpl implements PharmacyStockQueryService 
                 .sellingPrice(nullSafe(row.getSellingPrice()))
                 .receivedQty(row.getReceivedQty() == null ? 0 : row.getReceivedQty())
                 .availableQty(row.getAvailableQty() == null ? 0 : row.getAvailableQty())
-                .expired(Boolean.TRUE.equals(row.getExpired()))
+                .expired(row.getExpired() != null && row.getExpired() != 0L)
                 .build();
     }
 
