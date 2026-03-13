@@ -20,6 +20,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     Boolean existsByMobileNumber(String mobileNumber);
 
+    Boolean existsByMobileNumberAndIdNot(String mobileNumber, Long id);
+
     Boolean existsByFileNo(String fileNo);
 
     @Query("SELECT u FROM User u JOIN FETCH u.roles WHERE u.username = :value OR u.email = :value")

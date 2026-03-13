@@ -50,9 +50,13 @@ public class AuthServiceImpl implements AuthService {
                         loginDto.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = tokenProvider.generateToken(authentication);
+        User user = userRepository.findByUsernameOrEmailWithRoles(authentication.getName())
+                .orElseThrow(() -> new HospitalAPIException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Authenticated user record not found"
+                ));
+        String token = tokenProvider.generateToken(user);
 
-        // Return the complete JwtAuthResponse object
         return new JwtAuthResponse(token);
     }
 

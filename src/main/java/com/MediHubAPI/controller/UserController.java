@@ -1,12 +1,9 @@
 package com.MediHubAPI.controller;
 
-import com.MediHubAPI.dto.*;
-import com.MediHubAPI.exception.HospitalAPIException;
-import com.MediHubAPI.exception.ResourceNotFoundException;
-import com.MediHubAPI.model.ERole;
-import com.MediHubAPI.model.User;
-import com.MediHubAPI.service.PatientService;
-import com.MediHubAPI.service.UserService;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,13 +14,27 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import com.MediHubAPI.dto.PaginationRequestDto;
+import com.MediHubAPI.dto.UserCreateDto;
+import com.MediHubAPI.dto.UserDto;
+import com.MediHubAPI.dto.UserUpdateDto;
+import com.MediHubAPI.exception.HospitalAPIException;
+import com.MediHubAPI.exception.ResourceNotFoundException;
+import com.MediHubAPI.model.ERole;
+import com.MediHubAPI.model.User;
+import com.MediHubAPI.service.PatientService;
+import com.MediHubAPI.service.UserService;
 
 // @CrossOrigin(origins = "http://localhost:4200")
 @RestController
@@ -40,53 +51,12 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createUser(@RequestBody UserCreateDto userCreateDto) {
-        try {
-            return new ResponseEntity<>(userService.createUser(userCreateDto), HttpStatus.CREATED);
-        } catch (HospitalAPIException e) {
-            logger.error("Error creating user: {}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            logger.error("Unexpected error creating user", e);
-            throw new HospitalAPIException(HttpStatus.INTERNAL_SERVER_ERROR, "Error creating user");
-        }
+    public ResponseEntity<?> createUser(@Valid @RequestBody UserCreateDto userCreateDto) {
+        return new ResponseEntity<>(userService.createUser(userCreateDto), HttpStatus.CREATED);
     }
-    @PostMapping("/bulk")
-    public ResponseEntity<List<UserDto>> createUsersBulk(
-            @RequestBody @Valid List<UserCreateDto> users) {
-
-        if (users == null || users.isEmpty()) {
-            throw new HospitalAPIException(
-                    HttpStatus.BAD_REQUEST,
-                    "User list cannot be empty"
-            );
-        }
-
-        List<UserDto> createdUsers = userService.createUsersBulk(users);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUsers);
-    }
-
-
-    /** Create patient with JSON + photo in the same request */
-    @PostMapping(value = "/registerPatient", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<PatientResponseDto> registerPatient(
-            @RequestPart("data") @Valid PatientCreateDto data,
-            @RequestPart(value = "photo", required = false) MultipartFile photo) {
-
-        PatientResponseDto saved = patientService.registerPatient(data, photo);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
-    }
-
-
-    @GetMapping("/users-with-roles")
-    public ResponseEntity<List<UserDto>> getAllUsersWithRoles() {
-        List<UserDto> usersWithRoles = userService.getAllUsers();
-        return ResponseEntity.ok(usersWithRoles);
-    }
-
 
     @PostMapping("/register-superadmin")
-    public ResponseEntity<?> registerSuperAdmin(@RequestBody UserCreateDto userCreateDto) {
+    public ResponseEntity<?> registerSuperAdmin(@Valid @RequestBody UserCreateDto userCreateDto) {
         if (!userCreateDto.getRoles().contains(ERole.SUPER_ADMIN)) {
             throw new HospitalAPIException(HttpStatus.BAD_REQUEST, "Must include SUPER_ADMIN role");
         }
@@ -104,11 +74,12 @@ public class UserController {
     }
 
 
-
     @GetMapping
-    public ResponseEntity<?> getAllUsers() {
+    public ResponseEntity<Page<UserDto>> getAllUsers(
+            @Valid @ModelAttribute PaginationRequestDto pagination) {
         try {
-            return ResponseEntity.ok(userService.getAllUsers());
+            Pageable pageable = PageRequest.of(pagination.getPage(), pagination.getSize());
+            return ResponseEntity.ok(userService.getAllUsers(pageable));
         } catch (Exception e) {
             logger.error("Error fetching users", e);
             throw new HospitalAPIException(HttpStatus.INTERNAL_SERVER_ERROR, "Error fetching users");
@@ -127,14 +98,11 @@ public class UserController {
         }
     }
 
-    @PutMapping("/users/{id}/status")
-    public ResponseEntity<String> updateUserStatus(
-            @PathVariable("id") Long id,
-            @RequestBody UserStatusUpdateDto statusDto) {
-
-        userService.updateUserStatus(id, statusDto.isEnabled());
-        String status = statusDto.isEnabled() ? "enabled" : "disabled";
-        return ResponseEntity.ok("User account has been " + status + ".");
+    @PutMapping("/{id}")
+    public ResponseEntity<UserDto> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UserUpdateDto userUpdateDto) {
+        return ResponseEntity.ok(userService.updateUser(id, userUpdateDto));
     }
 
 
@@ -155,12 +123,13 @@ public class UserController {
     public ResponseEntity<List<String>> getAllRoles() {
         // ERole enum ke saare values ko get karein, unko string mein convert karein, aur ek list mein collect karein
         List<String> roles = Arrays.stream(ERole.values())
-                                     .map(ERole::name)
-                                     .collect(Collectors.toList());
-        
+                .map(ERole::name)
+                .collect(Collectors.toList());
+
         // List ko response mein OK status ke saath return karein
         return ResponseEntity.ok(roles);
     }
+
     @GetMapping("/patients/search")
     public ResponseEntity<Page<UserDto>> searchPatients(
             @RequestParam(required = false) String keyword,
@@ -204,7 +173,6 @@ public class UserController {
         }
         return MediaType.APPLICATION_OCTET_STREAM; // safe fallback when unknown
     }
-
 
 
 }

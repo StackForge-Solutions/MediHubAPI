@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface DoctorService {
     Page<UserDto> searchDoctors(DoctorSearchCriteria criteria, Pageable pageable);
+    List<SpecializationOptionDto> getSpecializations();
     DoctorProfileDto getDoctorById(Long id);
     void defineAvailability(Long id, DoctorAvailabilityDto dto);
     void updateAvailability(Long id, DoctorAvailabilityDto dto);

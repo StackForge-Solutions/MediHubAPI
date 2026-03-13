@@ -171,46 +171,6 @@
           "response": []
         },
         {
-          "name": "3.Register Patient",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "data",
-                  "value": "{\n    \"firstName\": \"Pankaj\",\n    \"lastName\": \"Kumar\",\n    \"mobileNumber\": \"9876501234\",\n    \"alternateContact\": \"9123405678\",\n    \"landlineNumber\": \"0612123456\",\n    \"dateOfBirth\": \"1995-08-20\",\n    \"ageYears\": 30,\n    \"ageMonths\": 0,\n    \"ageDays\": 20,\n    \"sex\": \"MALE\",\n    \"maritalStatus\": \"MARRIED\",\n    \"email\": \"pankaj.kumar@example.com\",\n    \"govtIdType\": \"AADHAAR\",\n    \"govtIdNumber\": \"4321-8765-2109\",\n    \"otherHospitalIds\": \"HOSP-BIH-02\",\n    \"motherTongue\": \"Bhojpuri\",\n    \"referrerType\": \"FRIEND_FAMILY\",\n    \"referrerName\": \"Dr. Rajesh Mishra\",\n    \"referrerNumber\": \"9123412345\",\n    \"referrerEmail\": \"rajesh.mishra@hospitalbihar.com\",\n    \"consultingDoctorId\": 7,\n    \"specializationId\": \"3\",\n    \"mainComplaint\": \"Back pain for 1 month\",\n    \"bloodGroup\": \"B_POS\",\n    \"fathersName\": \"Ram Lakhan Kumar\",\n    \"mothersName\": \"Sita Devi\",\n    \"spousesName\": \"Sunita Kumari\",\n    \"education\": \"SECONDARY\",\n    \"occupation\": \"FARMER\",\n    \"religion\": \"HINDUISM\",\n    \"birthWeightValue\": 3.0,\n    \"birthWeightUnit\": \"kg\"\n}\n",
-                  "contentType": "application/json",
-                  "type": "text"
-                },
-                {
-                  "key": "photo",
-                  "type": "file",
-                  "src": "postman-cloud:///1f08d662-f0d5-4970-965f-71de6f141d17"
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/users/registerPatient",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users",
-                "registerPatient"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
           "name": "3.2.Get profile pic",
           "request": {
             "method": "POST",
@@ -328,30 +288,6 @@
           "response": []
         },
         {
-          "name": "5.Get All Users with Roles",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/users-with-roles",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users",
-                "users-with-roles"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
           "name": "6.Get User By ID",
           "request": {
             "method": "GET",
@@ -391,19 +327,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"enabled\": false\n}"
+              "raw": "{\n  \"firstName\": \"Meera\",\n  \"lastName\": \"Iyer\",\n  \"roles\": [\n    \"DOCTOR\"\n  ],\n  \"enabled\": true,\n  \"mobileNumber\": \"9045682648\",\n  \"specializationId\": 6\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/users/users/1/status",
+              "raw": "{{baseUrl}}/api/users/56",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "users",
-                "users",
-                "1",
-                "status"
+                "56"
               ]
             }
           },

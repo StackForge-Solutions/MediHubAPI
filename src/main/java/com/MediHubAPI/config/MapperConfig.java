@@ -39,10 +39,6 @@ public class MapperConfig {
             }
         });
 
-        // ----------------- Patient Mapping -----------------
-        modelMapper.createTypeMap(PatientCreateDto.class, Patient.class)
-                .addMappings(mapper -> mapper.skip(Patient::setId));
-
         // ----------------- User → DoctorProfileDto -----------------
         modelMapper.createTypeMap(User.class, DoctorProfileDto.class)
                 .addMappings(mapper -> mapper.skip(DoctorProfileDto::setId));
